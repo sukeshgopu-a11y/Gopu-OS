@@ -41,6 +41,8 @@ import {
   Menu,
   Network,
   PackageCheck,
+  Palette,
+  Plug,
   Printer,
   RadioTower,
   Route,
@@ -57,6 +59,7 @@ import {
   TimerReset,
   TriangleAlert,
   UploadCloud,
+  User,
   UsersRound,
   Workflow,
   X,
@@ -2071,6 +2074,444 @@ function useGlobalHotkeys({ onOpenCommandPalette, onToggleSidebar, onExportCSV, 
   }, [onOpenCommandPalette, onToggleSidebar, onExportCSV, onOpenShortcuts, onNewCommand]);
 }
 
+function useSettings() {
+  const [settings, setSettings] = React.useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('gopuos_settings') || 'null') || {
+        profile: {
+          name: 'Sukesh Reddy',
+          role: 'Founder & Director',
+          email: 'sukesh@gopuexports.com',
+          timezone: 'Asia/Kolkata',
+          currency: 'INR',
+          language: 'en',
+        },
+        appearance: {
+          theme: 'dark',
+          accent: 'cyan',
+          fontSize: 'md',
+          reducedMotion: false,
+          compactMode: false,
+        },
+        notifications: {
+          critical: { inApp: true, email: true, whatsapp: true },
+          high: { inApp: true, email: true, whatsapp: false },
+          approvals: { inApp: true, email: false, whatsapp: false },
+          shipments: { inApp: true, email: false, whatsapp: true },
+          payments: { inApp: true, email: true, whatsapp: false },
+          marketing: { inApp: false, email: false, whatsapp: false },
+        },
+        integrations: {
+          supabaseConnected: false,
+          slackWebhook: '',
+          whatsappEnabled: false,
+          whatsappNumber: '',
+        },
+      };
+    } catch { return {}; }
+  });
+
+  function update(section, key, value) {
+    setSettings((prev) => {
+      const next = {
+        ...prev,
+        [section]: { ...prev[section], [key]: value },
+      };
+      try { localStorage.setItem('gopuos_settings', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }
+
+  function updateNested(section, subKey, key, value) {
+    setSettings((prev) => {
+      const next = {
+        ...prev,
+        [section]: {
+          ...prev[section],
+          [subKey]: { ...prev[section]?.[subKey], [key]: value },
+        },
+      };
+      try { localStorage.setItem('gopuos_settings', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }
+
+  return { settings, update, updateNested };
+}
+
+function SettingsPage({ onBack }) {
+  const [activeTab, setActiveTab] = React.useState('profile');
+  const { settings, update, updateNested } = useSettings();
+
+  const tabs = [
+    { id: 'profile', label: 'Profile', icon: User },
+    { id: 'appearance', label: 'Appearance', icon: Palette },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'security', label: 'Security', icon: ShieldCheck },
+    { id: 'integrations', label: 'Integrations', icon: Plug },
+  ];
+
+  function ToggleRow({ label, desc, value, onChange }) {
+    return (
+      <div className="settings-toggle-row">
+        <div className="settings-toggle-copy">
+          <span className="settings-toggle-label">{label}</span>
+          {desc && <span className="settings-toggle-desc">{desc}</span>}
+        </div>
+        <button
+          role="switch"
+          aria-checked={value}
+          className={`settings-toggle-switch ${value ? 'on' : 'off'}`}
+          onClick={() => onChange(!value)}
+          aria-label={label}
+        >
+          <span className="settings-toggle-thumb" />
+        </button>
+      </div>
+    );
+  }
+
+  function SelectRow({ label, value, options, onChange }) {
+    return (
+      <div className="settings-select-row">
+        <label className="settings-select-label">{label}</label>
+        <select
+          className="settings-select"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          aria-label={label}
+        >
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+
+  function InputRow({ label, value, onChange, type = 'text', placeholder = '' }) {
+    return (
+      <div className="settings-input-row">
+        <label className="settings-input-label">{label}</label>
+        <input
+          type={type}
+          className="settings-input"
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          aria-label={label}
+        />
+      </div>
+    );
+  }
+
+  function Section({ title, children }) {
+    return (
+      <div className="settings-section">
+        <h3 className="settings-section-title">{title}</h3>
+        <div className="settings-section-body">{children}</div>
+      </div>
+    );
+  }
+
+  const NotifRow = ({ id, label }) => (
+    <tr className="notif-row">
+      <td className="notif-row-label">{label}</td>
+      {['inApp', 'email', 'whatsapp'].map((ch) => (
+        <td key={ch} className="notif-row-cell">
+          <button
+            role="switch"
+            aria-checked={settings.notifications?.[id]?.[ch] || false}
+            className={`notif-toggle ${settings.notifications?.[id]?.[ch] ? 'on' : 'off'}`}
+            onClick={() => updateNested('notifications', id, ch, !settings.notifications?.[id]?.[ch])}
+            aria-label={`${label} via ${ch}`}
+          />
+        </td>
+      ))}
+    </tr>
+  );
+
+  const p = settings.profile || {};
+  const a = settings.appearance || {};
+  const intg = settings.integrations || {};
+  const avatarInitials = (p.name || 'SR').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+
+  return (
+    <div className="settings-page">
+      <div className="settings-page-header">
+        <div>
+          <h1 className="settings-page-title">Settings</h1>
+          <p className="settings-page-sub">Manage your profile, preferences, and integrations</p>
+        </div>
+        {onBack && (
+          <button className="btn btn-ghost btn-sm" onClick={onBack}>← Back</button>
+        )}
+      </div>
+
+      <div className="settings-layout">
+        <nav className="settings-tabs" aria-label="Settings sections">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                className={`settings-tab ${activeTab === tab.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+                aria-selected={activeTab === tab.id}
+              >
+                <Icon size={16} aria-hidden="true" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="settings-content" role="tabpanel">
+          {activeTab === 'profile' && (
+            <div>
+              <Section title="Your Identity">
+                <div className="profile-avatar-row">
+                  <div className="profile-avatar" aria-label={`Avatar for ${p.name}`}>
+                    {avatarInitials}
+                  </div>
+                  <div>
+                    <p className="profile-avatar-name">{p.name}</p>
+                    <p className="profile-avatar-role">{p.role}</p>
+                  </div>
+                </div>
+                <InputRow label="Full Name" value={p.name} onChange={(v) => update('profile', 'name', v)} placeholder="Your full name" />
+                <InputRow label="Role Title" value={p.role} onChange={(v) => update('profile', 'role', v)} placeholder="e.g. Founder & Director" />
+                <InputRow label="Email" value={p.email} onChange={(v) => update('profile', 'email', v)} type="email" placeholder="you@company.com" />
+              </Section>
+              <Section title="Regional Preferences">
+                <SelectRow
+                  label="Timezone"
+                  value={p.timezone}
+                  onChange={(v) => update('profile', 'timezone', v)}
+                  options={[
+                    { value: 'Asia/Kolkata', label: 'IST - Asia/Kolkata (UTC+5:30)' },
+                    { value: 'Asia/Dubai', label: 'GST - Asia/Dubai (UTC+4)' },
+                    { value: 'Europe/London', label: 'GMT - Europe/London' },
+                    { value: 'America/New_York', label: 'EST - America/New_York' },
+                    { value: 'America/Los_Angeles', label: 'PST - America/Los_Angeles' },
+                  ]}
+                />
+                <SelectRow
+                  label="Currency"
+                  value={p.currency}
+                  onChange={(v) => update('profile', 'currency', v)}
+                  options={[
+                    { value: 'INR', label: 'INR - Indian Rupee' },
+                    { value: 'USD', label: 'USD - US Dollar' },
+                    { value: 'EUR', label: 'EUR - Euro' },
+                    { value: 'AED', label: 'AED - Dirham' },
+                    { value: 'GBP', label: 'GBP - British Pound' },
+                  ]}
+                />
+              </Section>
+            </div>
+          )}
+
+          {activeTab === 'appearance' && (
+            <div>
+              <Section title="Theme">
+                <div className="theme-toggle-row">
+                  {['dark', 'light'].map((t) => (
+                    <button
+                      key={t}
+                      className={`theme-option ${a.theme === t ? 'active' : ''}`}
+                      onClick={() => {
+                        update('appearance', 'theme', t);
+                        document.documentElement.setAttribute('data-theme', t);
+                      }}
+                      aria-pressed={a.theme === t}
+                    >
+                      <span className="theme-option-preview" data-theme-preview={t} />
+                      <span>{t === 'dark' ? 'Dark' : 'Light'}</span>
+                    </button>
+                  ))}
+                </div>
+              </Section>
+              <Section title="Accent Colour">
+                <div className="accent-swatch-row">
+                  {[
+                    { id: 'cyan', color: '#2ef2ff', label: 'Cyan' },
+                    { id: 'blue', color: '#5b8cff', label: 'Blue' },
+                    { id: 'green', color: '#22c55e', label: 'Green' },
+                    { id: 'amber', color: '#f59e0b', label: 'Amber' },
+                    { id: 'purple', color: '#a78bfa', label: 'Purple' },
+                  ].map((acc) => (
+                    <button
+                      key={acc.id}
+                      className={`accent-swatch ${a.accent === acc.id ? 'active' : ''}`}
+                      style={{ '--swatch': acc.color }}
+                      onClick={() => {
+                        update('appearance', 'accent', acc.id);
+                        document.documentElement.setAttribute('data-accent', acc.id);
+                      }}
+                      aria-label={`${acc.label} accent`}
+                      aria-pressed={a.accent === acc.id}
+                    />
+                  ))}
+                </div>
+              </Section>
+              <Section title="Display">
+                <SelectRow
+                  label="Font Size"
+                  value={a.fontSize || 'md'}
+                  onChange={(v) => {
+                    update('appearance', 'fontSize', v);
+                    const scales = { sm: '14px', md: '16px', lg: '18px' };
+                    document.documentElement.style.fontSize = scales[v] || '16px';
+                  }}
+                  options={[
+                    { value: 'sm', label: 'Small (14px)' },
+                    { value: 'md', label: 'Default (16px)' },
+                    { value: 'lg', label: 'Large (18px)' },
+                  ]}
+                />
+                <ToggleRow
+                  label="Compact mode"
+                  desc="Reduce spacing and padding throughout the UI"
+                  value={a.compactMode || false}
+                  onChange={(v) => {
+                    update('appearance', 'compactMode', v);
+                    document.documentElement.toggleAttribute('data-compact', v);
+                  }}
+                />
+                <ToggleRow
+                  label="Reduce motion"
+                  desc="Disable animations and transitions for accessibility"
+                  value={a.reducedMotion || false}
+                  onChange={(v) => {
+                    update('appearance', 'reducedMotion', v);
+                    document.documentElement.setAttribute('data-reduced-motion', v ? 'reduce' : 'no-preference');
+                  }}
+                />
+              </Section>
+            </div>
+          )}
+
+          {activeTab === 'notifications' && (
+            <Section title="Alert Channels">
+              <table className="notif-table">
+                <thead>
+                  <tr>
+                    <th>Alert Type</th>
+                    <th>In-App</th>
+                    <th>Email</th>
+                    <th>WhatsApp</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <NotifRow id="critical" label="Critical Blockers" />
+                  <NotifRow id="high" label="High Priority" />
+                  <NotifRow id="approvals" label="Approval Requests" />
+                  <NotifRow id="shipments" label="Shipment Updates" />
+                  <NotifRow id="payments" label="Payment Alerts" />
+                  <NotifRow id="marketing" label="Market Intelligence" />
+                </tbody>
+              </table>
+            </Section>
+          )}
+
+          {activeTab === 'security' && (
+            <div>
+              <Section title="Current Session">
+                <div className="security-session-card active-session">
+                  <div>
+                    <strong>This device</strong>
+                    <span className="session-meta">Chrome on macOS - IST - Active now</span>
+                  </div>
+                  <span className="session-badge current">Current</span>
+                </div>
+              </Section>
+              <Section title="Other Sessions">
+                {[
+                  { device: 'Safari on iPhone', location: 'Mumbai, IN', time: '2h ago' },
+                  { device: 'Chrome on Windows', location: 'Dubai, UAE', time: '1d ago' },
+                ].map((s, i) => (
+                  <div key={i} className="security-session-card">
+                    <div>
+                      <strong>{s.device}</strong>
+                      <span className="session-meta">{s.location} - {s.time}</span>
+                    </div>
+                    <button className="btn btn-ghost btn-sm session-revoke">Revoke</button>
+                  </div>
+                ))}
+                <button className="btn btn-ghost btn-sm" style={{ marginTop: 'var(--space-3)', color: 'var(--danger, #ff4d6d)' }}>
+                  Revoke all other sessions
+                </button>
+              </Section>
+              <Section title="Password">
+                <InputRow label="Current password" type="password" value="" onChange={() => {}} placeholder="Current password" />
+                <InputRow label="New password" type="password" value="" onChange={() => {}} placeholder="New password" />
+                <InputRow label="Confirm password" type="password" value="" onChange={() => {}} placeholder="Confirm password" />
+                <button className="btn btn-primary btn-sm" style={{ marginTop: 'var(--space-3)' }}>Update password</button>
+              </Section>
+            </div>
+          )}
+
+          {activeTab === 'integrations' && (
+            <div>
+              <Section title="Supabase">
+                <div className={`integration-status-card ${intg.supabaseConnected ? 'connected' : 'disconnected'}`}>
+                  <div className="integration-status-dot" />
+                  <div>
+                    <strong>{intg.supabaseConnected ? 'Connected' : 'Not connected'}</strong>
+                    <span className="integration-status-desc">
+                      {intg.supabaseConnected
+                        ? 'Live authentication and database are active.'
+                        : 'Add your Supabase anon key to enable live auth and data.'}
+                    </span>
+                  </div>
+                </div>
+                <InputRow
+                  label="Supabase Anon Key"
+                  type="password"
+                  value={intg.supabaseKey || ''}
+                  onChange={(v) => update('integrations', 'supabaseKey', v)}
+                  placeholder="Supabase anon key"
+                />
+              </Section>
+              <Section title="WhatsApp Business">
+                <ToggleRow
+                  label="WhatsApp notifications"
+                  desc="Send critical alerts and daily briefings via WhatsApp"
+                  value={intg.whatsappEnabled || false}
+                  onChange={(v) => update('integrations', 'whatsappEnabled', v)}
+                />
+                {intg.whatsappEnabled && (
+                  <InputRow
+                    label="WhatsApp number"
+                    type="tel"
+                    value={intg.whatsappNumber || ''}
+                    onChange={(v) => update('integrations', 'whatsappNumber', v)}
+                    placeholder="+91 98765 43210"
+                  />
+                )}
+              </Section>
+              <Section title="Slack">
+                <InputRow
+                  label="Webhook URL"
+                  value={intg.slackWebhook || ''}
+                  onChange={(v) => update('integrations', 'slackWebhook', v)}
+                  placeholder="https://hooks.slack.com/services/..."
+                />
+                {intg.slackWebhook && (
+                  <button className="btn btn-ghost btn-sm" style={{ marginTop: 'var(--space-2)' }}>
+                    Send test message
+                  </button>
+                )}
+              </Section>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function usePrintReady() {
   React.useEffect(() => {
     function onBeforePrint() {
@@ -2112,6 +2553,333 @@ function PrintButton({ label = 'Print / Save PDF', className = '' }) {
       <Printer size={15} aria-hidden="true" />
       {printing ? 'Preparing...' : label}
     </button>
+  );
+}
+
+const ANALYTICS_DATA = {
+  '7d': {
+    revenue: [42, 38, 55, 61, 49, 67, 72],
+    shipments: [3, 2, 4, 5, 3, 6, 5],
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    totalRevenue: '₹48.2L',
+    revenueChange: 12,
+    totalShipments: 28,
+    shipmentChange: 8,
+    pendingApprovals: 5,
+    approvalChange: -2,
+    avgMargin: '18.4%',
+    marginChange: 1.2,
+  },
+  '30d': {
+    revenue: [120, 135, 118, 142, 155, 148, 163, 171, 158, 168, 175, 182, 170, 188, 195, 182, 199, 210, 198, 215, 208, 222, 218, 235, 228, 242, 238, 251, 245, 258],
+    shipments: [8, 10, 7, 12, 11, 9, 14, 13, 10, 15, 12, 16, 11, 14, 18, 13, 17, 20, 15, 19, 16, 21, 18, 23, 20, 24, 22, 26, 21, 25],
+    labels: Array.from({ length: 30 }, (_, i) => `${i + 1}`),
+    totalRevenue: '₹2.14Cr',
+    revenueChange: 18,
+    totalShipments: 124,
+    shipmentChange: 15,
+    pendingApprovals: 12,
+    approvalChange: -5,
+    avgMargin: '19.1%',
+    marginChange: 2.3,
+  },
+  '90d': {
+    revenue: [380, 420, 395, 445, 468, 432, 478, 512, 488, 524, 506, 548, 532, 568, 552, 589, 575, 610, 592, 628, 614, 645, 630, 658, 645, 672, 660, 685, 670, 694, 682, 708, 695, 720, 708, 732, 718, 745, 730, 755, 742, 768, 755, 778, 765, 790, 778, 802, 790, 815],
+    shipments: [22, 26, 24, 28, 30, 27, 32, 35, 31, 36, 34, 38, 36, 40, 38, 42, 40, 45, 43, 47, 45, 49, 47, 52, 50, 54, 52, 56, 54, 58],
+    labels: ['Jan W1', 'Jan W2', 'Jan W3', 'Jan W4', 'Feb W1', 'Feb W2', 'Feb W3', 'Feb W4', 'Mar W1', 'Mar W2', 'Mar W3', 'Mar W4'],
+    totalRevenue: '₹6.8Cr',
+    revenueChange: 24,
+    totalShipments: 412,
+    shipmentChange: 22,
+    pendingApprovals: 28,
+    approvalChange: -12,
+    avgMargin: '20.2%',
+    marginChange: 3.8,
+  },
+  '1yr': {
+    revenue: [820, 940, 880, 1020, 980, 1150, 1080, 1240, 1180, 1320, 1260, 1420],
+    shipments: [48, 56, 52, 62, 58, 70, 66, 76, 72, 82, 78, 90],
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    totalRevenue: '₹28.4Cr',
+    revenueChange: 31,
+    totalShipments: 1810,
+    shipmentChange: 28,
+    pendingApprovals: 0,
+    approvalChange: 0,
+    avgMargin: '21.5%',
+    marginChange: 5.2,
+  },
+};
+
+const TOP_MARKETS = [
+  { country: 'UAE', flag: '🇦🇪', revenue: '₹8.2L', share: 72, shipments: 34, trend: 'up' },
+  { country: 'Saudi Arabia', flag: '🇸🇦', revenue: '₹5.6L', share: 49, shipments: 22, trend: 'up' },
+  { country: 'USA', flag: '🇺🇸', revenue: '₹4.1L', share: 36, shipments: 16, trend: 'stable' },
+  { country: 'UK', flag: '🇬🇧', revenue: '₹2.8L', share: 25, shipments: 11, trend: 'up' },
+  { country: 'Germany', flag: '🇩🇪', revenue: '₹1.9L', share: 17, shipments: 8, trend: 'down' },
+];
+
+const PRODUCT_MIX = [
+  { name: 'Turmeric', share: 38, color: '#f59e0b' },
+  { name: 'Black Pepper', share: 27, color: '#2ef2ff' },
+  { name: 'Cardamom', share: 18, color: '#a78bfa' },
+  { name: 'Chilli', share: 11, color: '#f472b6' },
+  { name: 'Others', share: 6, color: '#60a5fa' },
+];
+
+function LineChart({ data, labels, color = 'var(--accent)', height = 160, title }) {
+  const W = 520;
+  const H = height;
+  const PAD = { t: 12, r: 8, b: 28, l: 36 };
+  const cW = W - PAD.l - PAD.r;
+  const cH = H - PAD.t - PAD.b;
+  const max = Math.max(...data) * 1.1 || 1;
+  const min = 0;
+  const range = max - min || 1;
+  const gradientId = `lineGrad-${String(color).replace(/[^a-z0-9]/gi, '')}`;
+
+  const points = data.map((v, i) => {
+    const x = PAD.l + (i / (data.length - 1 || 1)) * cW;
+    const y = PAD.t + cH - ((v - min) / range) * cH;
+    return [x, y];
+  });
+  const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+  const areaD = `${pathD} L${points[points.length - 1][0].toFixed(1)},${(PAD.t + cH).toFixed(1)} L${PAD.l},${(PAD.t + cH).toFixed(1)} Z`;
+
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((t) => ({
+    val: (min + range * t).toFixed(0),
+    y: PAD.t + cH - t * cH,
+  }));
+  const labelStep = Math.ceil(labels.length / 8);
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="analytics-chart" role="img" aria-label={title}>
+      <title>{title}</title>
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.22" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {yTicks.map((t) => (
+        <g key={t.val}>
+          <line x1={PAD.l} y1={t.y} x2={W - PAD.r} y2={t.y} stroke="var(--border)" strokeWidth="1" />
+          <text x={PAD.l - 6} y={t.y + 4} textAnchor="end" fontSize="9" fill="var(--dim)">{t.val}</text>
+        </g>
+      ))}
+      <path d={areaD} fill={`url(#${gradientId})`} className="analytics-chart-area" />
+      <path d={pathD} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="analytics-chart-line" />
+      {labels.map((label, i) => i % labelStep === 0 && (
+        <text key={`${label}-${i}`} x={PAD.l + (i / (labels.length - 1 || 1)) * cW} y={H - 6} textAnchor="middle" fontSize="9" fill="var(--dim)">{label}</text>
+      ))}
+      <circle cx={points[points.length - 1][0]} cy={points[points.length - 1][1]} r="3.5" fill={color} />
+    </svg>
+  );
+}
+
+function BarChart({ data, labels, color = 'var(--accent)', height = 140, title }) {
+  const W = 520;
+  const H = height;
+  const PAD = { t: 12, r: 8, b: 28, l: 32 };
+  const cW = W - PAD.l - PAD.r;
+  const cH = H - PAD.t - PAD.b;
+  const max = Math.max(...data) * 1.1 || 1;
+  const barW = Math.max(2, (cW / data.length) * 0.6);
+  const gap = cW / data.length;
+  const labelStep = Math.ceil(labels.length / 10);
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="analytics-chart" role="img" aria-label={title}>
+      <title>{title}</title>
+      {data.map((v, i) => {
+        const bH = (v / max) * cH;
+        const x = PAD.l + i * gap + (gap - barW) / 2;
+        const y = PAD.t + cH - bH;
+        return (
+          <g key={`${v}-${i}`}>
+            <rect x={x} y={y} width={barW} height={bH} fill={color} opacity="0.75" rx="2" className="analytics-chart-bar" />
+            {i % labelStep === 0 && (
+              <text x={x + barW / 2} y={H - 6} textAnchor="middle" fontSize="9" fill="var(--dim)">{labels[i] || ''}</text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function DonutChart({ segments, size = 120, title }) {
+  const R = 42;
+  const cx = size / 2;
+  const cy = size / 2;
+  const strokeW = 14;
+  const circ = 2 * Math.PI * R;
+  let offset = 0;
+
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={title}>
+      <title>{title}</title>
+      <circle cx={cx} cy={cy} r={R} fill="none" stroke="var(--border)" strokeWidth={strokeW} />
+      {segments.map((seg, i) => {
+        const dash = (seg.share / 100) * circ;
+        const gap2 = circ - dash;
+        const rot = (offset / 100) * 360 - 90;
+        offset += seg.share;
+        return (
+          <circle
+            key={`${seg.name}-${i}`}
+            cx={cx}
+            cy={cy}
+            r={R}
+            fill="none"
+            stroke={seg.color}
+            strokeWidth={strokeW}
+            strokeDasharray={`${dash} ${gap2}`}
+            transform={`rotate(${rot} ${cx} ${cy})`}
+            strokeLinecap="butt"
+            className="analytics-donut-segment"
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
+function AnalyticsDashboard({ onBack }) {
+  const [period, setPeriod] = React.useState('30d');
+  const d = ANALYTICS_DATA[period];
+
+  const periods = [
+    { value: '7d', label: '7 Days' },
+    { value: '30d', label: '30 Days' },
+    { value: '90d', label: '90 Days' },
+    { value: '1yr', label: '1 Year' },
+  ];
+
+  const chartRevenue = d.revenue.slice(-Math.min(d.revenue.length, 30));
+  const chartShipments = d.shipments.slice(-Math.min(d.shipments.length, 30));
+  const chartLabels = d.labels.slice(-Math.min(d.labels.length, 30));
+
+  return (
+    <div className="analytics-page">
+      <div className="analytics-header">
+        <div>
+          <h1 className="analytics-title">Analytics</h1>
+          <p className="analytics-sub">Export performance intelligence</p>
+        </div>
+        <div className="analytics-period-tabs" role="tablist" aria-label="Select time period">
+          {periods.map((p) => (
+            <button
+              key={p.value}
+              className={`analytics-period-tab ${period === p.value ? 'active' : ''}`}
+              onClick={() => setPeriod(p.value)}
+              role="tab"
+              aria-selected={period === p.value}
+              type="button"
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        {onBack && (
+          <button className="btn btn-ghost btn-sm" onClick={onBack} type="button">← Back</button>
+        )}
+      </div>
+
+      <div className="analytics-kpi-row">
+        {[
+          { label: 'Total Revenue', value: d.totalRevenue, change: d.revenueChange, trend: 'up-good', color: '#2ef2ff' },
+          { label: 'Shipments Completed', value: String(d.totalShipments), change: d.shipmentChange, trend: 'up-good', color: '#22c55e' },
+          { label: 'Pending Approvals', value: String(d.pendingApprovals), change: d.approvalChange, trend: 'down-good', color: '#f59e0b' },
+          { label: 'Avg Margin', value: d.avgMargin, change: d.marginChange, trend: 'up-good', color: '#a78bfa' },
+        ].map((k) => (
+          <div key={k.label} className="analytics-kpi-item" style={{ '--kpi-color': k.color }}>
+            <span className="analytics-kpi-label">{k.label}</span>
+            <strong className="analytics-kpi-value">{k.value}</strong>
+            <span
+              className="analytics-kpi-change"
+              style={{
+                color: (k.trend === 'up-good' ? k.change >= 0 : k.change < 0) ? '#22c55e' : '#ff4d6d'
+              }}
+            >
+              {k.change >= 0 ? '▲' : '▼'} {Math.abs(k.change)}%
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="analytics-charts-row">
+        <div className="analytics-chart-card wide">
+          <div className="analytics-chart-header">
+            <span className="analytics-chart-title">Revenue Trend</span>
+            <span className="analytics-chart-meta">INR (Lakhs)</span>
+          </div>
+          <LineChart data={chartRevenue} labels={chartLabels} color="#2ef2ff" title={`Revenue trend for last ${period}`} />
+        </div>
+        <div className="analytics-chart-card">
+          <div className="analytics-chart-header">
+            <span className="analytics-chart-title">Shipment Volume</span>
+            <span className="analytics-chart-meta">Count</span>
+          </div>
+          <BarChart data={chartShipments} labels={chartLabels} color="#22c55e" height={140} title={`Shipment volume for last ${period}`} />
+        </div>
+      </div>
+
+      <div className="analytics-bottom-row">
+        <div className="analytics-chart-card">
+          <div className="analytics-chart-header">
+            <span className="analytics-chart-title">Top Export Markets</span>
+          </div>
+          <table className="analytics-markets-table">
+            <thead>
+              <tr>
+                <th>Market</th>
+                <th>Revenue</th>
+                <th>Share</th>
+                <th>Shipments</th>
+                <th>Trend</th>
+              </tr>
+            </thead>
+            <tbody>
+              {TOP_MARKETS.map((m) => (
+                <tr key={m.country}>
+                  <td><span className="market-flag">{m.flag}</span> {m.country}</td>
+                  <td><strong>{m.revenue}</strong></td>
+                  <td>
+                    <div className="market-share-bar-wrap">
+                      <div className="market-share-bar" style={{ width: `${m.share}%` }} />
+                      <span>{m.share}%</span>
+                    </div>
+                  </td>
+                  <td>{m.shipments}</td>
+                  <td style={{ color: m.trend === 'up' ? '#22c55e' : m.trend === 'down' ? '#ff4d6d' : 'var(--dim)' }}>
+                    {m.trend === 'up' ? '▲' : m.trend === 'down' ? '▼' : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="analytics-chart-card product-mix-card">
+          <div className="analytics-chart-header">
+            <span className="analytics-chart-title">Product Mix</span>
+          </div>
+          <div className="product-mix-body">
+            <DonutChart segments={PRODUCT_MIX} size={130} title="Export product mix by share" />
+            <ul className="product-mix-legend">
+              {PRODUCT_MIX.map((p) => (
+                <li key={p.name} className="product-mix-item">
+                  <span className="product-mix-dot" style={{ background: p.color }} />
+                  <span className="product-mix-name">{p.name}</span>
+                  <span className="product-mix-share">{p.share}%</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -2350,23 +3118,8 @@ function App() {
     return <SecurityDashboard navigate={navigate} onBack={() => navigate('/export-os')} view={route.split('/').pop()} />;
   }
 
-  if (route === '/export-os/admin' || route === '/export-os/admin-settings') {
-    return (
-      <ExportOSShell className="admin-settings-shell">
-        <header className="deck-header">
-          <div className="deck-header-copy">
-            <span>GOPU Export OS</span>
-            <h1>Admin Settings</h1>
-            <p>Identity, policy, approval rails, Slack alerts, and founder governance.</p>
-          </div>
-          <div className="deck-header-controls">
-            <div className="coo-verified"><ShieldCheck size={16} /><span>Founder session verified</span></div>
-            <button className="ghost-button deck-logout" onClick={() => navigate('/export-os')}><ArrowLeft size={15} />? Command Deck</button>
-          </div>
-        </header>
-        <AdminPage />
-      </ExportOSShell>
-    );
+  if (route === '/export-os/admin' || route === '/export-os/admin-settings' || route === '/export-os/settings') {
+    return <SettingsPage onBack={() => navigate('/export-os')} />;
   }
 
   if (route === '/export-os/mobile' || route === '/export-os/founder-mobile' || route === '/export-os/mobile-approvals' || route === '/export-os/mobile-briefing') {
@@ -2432,7 +3185,11 @@ function App() {
     return <BuyerCRMPage navigate={navigate} onBack={() => navigate('/export-os/buyers')} view="detail" buyerId={buyerId} />;
   }
 
-  if (route === '/export-os/analytics' || route === '/export-os/founder-intelligence' || route === '/export-os/reports') {
+  if (route === '/export-os/analytics') {
+    return <AnalyticsDashboard onBack={() => navigate('/export-os')} />;
+  }
+
+  if (route === '/export-os/founder-intelligence' || route === '/export-os/reports') {
     return <FounderIntelligenceDashboard navigate={navigate} onBack={() => navigate('/export-os')} view={route.split('/').pop()} />;
   }
 
