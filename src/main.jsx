@@ -282,6 +282,18 @@ import {
 import { getTrustCenterData } from './services/trustCenterService.js';
 import './styles.css';
 
+function highlightMatch(text, query) {
+  if (!query || !text) return text;
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+  const parts = String(text).split(regex);
+  return parts.map((part, i) =>
+    regex.test(part)
+      ? <mark key={i} className="search-highlight">{part}</mark>
+      : part
+  );
+}
+
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: Command },
   { id: 'price', label: 'Price Engine', icon: CircleDollarSign },
@@ -1977,7 +1989,6 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
   const [values, setValues] = useState({ identity: '', password: '', pin: '' });
   const [errors, setErrors] = useState({});
   const [authMessage, setAuthMessage] = useState(backendStatus.mode === 'Connected' ? 'Live Auth Connected' : 'Integration Pending');
-  const [authModal, setAuthModal] = useState(null);
 
   useEffect(() => {
     let disposed = false;
@@ -2006,8 +2017,6 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
     if (!identity) nextErrors.identity = 'Email is required.';
     else if (blockedExampleIdentityPattern.test(identity)) nextErrors.identity = 'Use a real Supabase Auth email. Local .example identities are blocked in production.';
     if (!values.password.trim()) nextErrors.password = 'Password is required.';
-    if (!values.pin.trim()) nextErrors.pin = 'Secure PIN is required.';
-    else if (!pinPattern.test(values.pin.trim())) nextErrors.pin = 'PIN must be 4 to 8 digits.';
     setErrors(nextErrors);
 
     if (Object.keys(nextErrors).length === 0 && backendStatus.mode === 'Connected') {
@@ -2020,7 +2029,6 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
       }
       window.sessionStorage.setItem('selectedOS', osId);
       window.sessionStorage.setItem('executiveSessionState', 'Session Created');
-      window.sessionStorage.setItem('founderSecurityPinSet', values.pin ? 'true' : 'false');
       setAuthMessage('Session Created');
       onSuccess();
       return;
@@ -2039,31 +2047,10 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
         Back to OS Selection
       </button>
       <section className="login-shell" aria-labelledby="login-title">
-        <div className="login-brand-panel">
-          <span className="selected-os-badge">{config.badge}</span>
-          <h1 id="login-title">{config.title}</h1>
-          <p>{config.subtitle}</p>
-          <div className="fingerprint-core" aria-hidden="true">
-            <ShieldCheck size={48} />
-            <Fingerprint size={28} />
-            <div className="fingerprint-scan" />
-          </div>
-          <div className="secure-session">
-            <ShieldCheck size={17} />
-            <span>Secure access required</span>
-          </div>
-          <AuthStatusBadge status={authMessage} />
-          <ul className="login-security-list">
-            <li>Executive session security</li>
-            <li>Registered mobile OTP recovery</li>
-            <li>Secure PIN required for OS access</li>
-          </ul>
-        </div>
         <div className="login-form-panel">
           <div className="login-form-heading">
-            <span>Secure Sign In</span>
-            <h2>Access executive workspace</h2>
-            <p>{backendStatus.mode === 'Connected' ? 'Live authentication is connected.' : 'Integration pending - add Supabase anon key to enable live login.'}</p>
+            <span>{config.badge}</span>
+            <h1 id="login-title">{config.title}</h1>
           </div>
           <form className="login-form" onSubmit={submitLogin} noValidate>
             <SecureField
@@ -2083,46 +2070,13 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
               error={errors.password}
               onChange={(value) => updateField('password', value)}
             />
-            <SecurePinInput
-              id="founder-pin"
-              label="Secure PIN"
-              value={values.pin}
-              error={errors.pin}
-              onChange={(value) => updateField('pin', value)}
-            />
             <button className="tactical-button login-submit" type="submit">
-              {config.button}
+              Login
               <ChevronRight size={16} />
             </button>
           </form>
-          <div className="login-secondary-actions">
-            <button type="button" onClick={async () => {
-              const identity = normalizeLoginEmail(values.identity);
-              if (!identity) {
-                setErrors((currentErrors) => ({ ...currentErrors, identity: 'Enter your Supabase Auth email before requesting a password reset.' }));
-                return;
-              }
-              if (blockedExampleIdentityPattern.test(identity)) {
-                setErrors((currentErrors) => ({ ...currentErrors, identity: 'Local .example identities cannot request production password resets.' }));
-                return;
-              }
-              if (backendStatus.mode !== 'Connected') {
-                setAuthMessage('Supabase auth is not configured');
-                return;
-              }
-              const { error } = await sendPasswordReset(identity);
-              setAuthMessage(error ? 'Password reset failed' : 'Password reset email requested');
-              if (error) setErrors((currentErrors) => ({ ...currentErrors, identity: error.message }));
-            }}>Change Password</button>
-            <button type="button" onClick={() => setAuthModal('pin')}>Forgot PIN</button>
-          </div>
-          <p className="login-audit-note">Safe audit events only: login attempted, login success/failure, OTP requested, OTP verified, password changed, PIN reset requested. Passwords, PINs, OTPs, and full mobile numbers are never logged.</p>
         </div>
       </section>
-      <AnimatePresence>
-        {authModal === 'password' && <ChangePasswordModal onClose={() => setAuthModal(null)} />}
-        {authModal === 'pin' && <PINResetModal onClose={() => setAuthModal(null)} />}
-      </AnimatePresence>
     </main>
   );
 }
@@ -3457,6 +3411,48 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+function ConfirmDialog({ open, title, message, confirmLabel = 'Confirm', confirmClass = 'tactical-button', onConfirm, onCancel }) {
+  const ref = React.useRef(null);
+  useFocusTrap(ref, open);
+  if (!open) return null;
+  return (
+    <div className="confirm-overlay" role="presentation">
+      <div
+        ref={ref}
+        className="confirm-dialog"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="confirm-title"
+        aria-describedby="confirm-message"
+      >
+        <AlertTriangle size={28} className="confirm-icon" aria-hidden="true" />
+        <h2 id="confirm-title">{title}</h2>
+        <p id="confirm-message">{message}</p>
+        <div className="confirm-actions">
+          <button className="ghost-button" onClick={onCancel}>Cancel</button>
+          <button className={confirmClass} onClick={onConfirm}>{confirmLabel}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function useConfirm() {
+  const [state, setState] = React.useState({ open: false });
+  const confirm = React.useCallback((options) => {
+    return new Promise((resolve) => {
+      setState({
+        open: true,
+        ...options,
+        onConfirm: () => { setState({ open: false }); resolve(true); },
+        onCancel: () => { setState({ open: false }); resolve(false); },
+      });
+    });
+  }, []);
+  const Dialog = <ConfirmDialog {...state} />;
+  return { confirm, Dialog };
+}
+
 function useToast() {
   const [toast, setToast] = React.useState(null);
   const show = React.useCallback((message, type = 'success') => {
@@ -3488,6 +3484,44 @@ function LiveClock() {
     >
       {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
     </time>
+  );
+}
+
+function ConnectionBanner() {
+  const [offline, setOffline] = React.useState(!navigator.onLine);
+  React.useEffect(() => {
+    const on = () => setOffline(false);
+    const off = () => setOffline(true);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
+  }, []);
+  if (!offline) return null;
+  return (
+    <div className="connection-banner" role="alert" aria-live="assertive">
+      <AlertTriangle size={14} aria-hidden="true" />
+      You are offline — changes may not save until connection is restored.
+    </div>
+  );
+}
+
+function Tooltip({ text, children }) {
+  const [visible, setVisible] = React.useState(false);
+  return (
+    <span
+      className="tooltip-wrap"
+      onMouseEnter={() => setVisible(true)}
+      onMouseLeave={() => setVisible(false)}
+      onFocus={() => setVisible(true)}
+      onBlur={() => setVisible(false)}
+    >
+      {children}
+      {visible && (
+        <span className="tooltip-bubble" role="tooltip">
+          {text}
+        </span>
+      )}
+    </span>
   );
 }
 
@@ -3581,6 +3615,7 @@ function ExportOSShell({ children, className = '', liveDataConnected = backendSt
       transition={{ duration: 0.52, ease: [0.16, 1, 0.3, 1] }}
     >
       <a href="#main-content" className="skip-link">Skip to main content</a>
+      <ConnectionBanner />
       <div className="background-grid" />
       <GlobalBackNavigation />
       <div className={`backend-status-banner ${liveDataConnected ? 'connected' : 'pending'}`}>
@@ -3842,11 +3877,17 @@ function CommandDeckHeader({ navigate, onLogout, showSearch = false, setShowSear
         <button className="coo-time top-command-control" onClick={() => togglePanel('clock')} aria-expanded={activePanel === 'clock'}>
           <CalendarClock size={16} /><span>{now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span>
         </button>
-        <button className="icon-button top-icon-button notification-button" aria-label="Notifications" onClick={() => togglePanel('notifications')} aria-expanded={activePanel === 'notifications'}>
-          <Bell size={18} /><span>{unreadCount}</span>
-        </button>
-        <button className="icon-button top-icon-button" aria-label="Global operational command search" onClick={() => togglePanel('search')} aria-expanded={activePanel === 'search'}><Search size={18} /></button>
-        <button className="icon-button top-icon-button director-command-icon" aria-label="Director AI command console" onClick={() => openRoute('/export-os/director-console')}><Fingerprint size={18} /></button>
+        <Tooltip text="Notifications">
+          <button className="icon-button top-icon-button notification-button" aria-label="Notifications" onClick={() => togglePanel('notifications')} aria-expanded={activePanel === 'notifications'}>
+            <Bell size={18} /><span>{unreadCount}</span>
+          </button>
+        </Tooltip>
+        <Tooltip text="Global operational command search">
+          <button className="icon-button top-icon-button" aria-label="Global operational command search" onClick={() => togglePanel('search')} aria-expanded={activePanel === 'search'}><Search size={18} /></button>
+        </Tooltip>
+        <Tooltip text="Director AI command console">
+          <button className="icon-button top-icon-button director-command-icon" aria-label="Director AI command console" onClick={() => openRoute('/export-os/director-console')}><Fingerprint size={18} /></button>
+        </Tooltip>
         <button className="ghost-button deck-logout" onClick={onLogout} title="Securely end current executive session" aria-label="Securely end current executive session">Logout</button>
       </div>
       <AnimatePresence>
@@ -4171,7 +4212,7 @@ function GlobalCommandSearch({ query, setQuery, records, navigate }) {
           <button key={result.id} onClick={() => navigate(result.route)}>
             <div>
               <span>{result.type} / {result.owner}</span>
-              <strong>{result.title}</strong>
+              <strong>{highlightMatch(result.title, query)}</strong>
               <small>{result.route}</small>
             </div>
             <div>
@@ -5860,6 +5901,7 @@ function FounderApprovalWall({ onBack, onOpenTasks }) {
   const [auditExpanded, setAuditExpanded] = useState(false);
   const [approvalStatusMessage, setApprovalStatusMessage] = useState('Approval engine loading...');
   const { show, ToastUI } = useToast();
+  const { confirm, Dialog } = useConfirm();
   const selectedRequest = requests.find((request) => request.id === selectedId) || requests[0];
 
   useEffect(() => {
@@ -5930,6 +5972,38 @@ function FounderApprovalWall({ onBack, onOpenTasks }) {
     setModalAction(null);
   }
 
+  async function requestApprovalAction(action) {
+    if (action === 'Approve Selected') {
+      const ok = await confirm({
+        title: 'Approve this request?',
+        message: `This will approve "${selectedRequest?.title || 'this request'}" and notify the team.`,
+        confirmLabel: 'Approve',
+      });
+      if (ok) await runApprovalAction(action);
+      return;
+    }
+    if (action === 'Reject Selected') {
+      const ok = await confirm({
+        title: 'Reject this request?',
+        message: 'This action will be logged and cannot be undone.',
+        confirmLabel: 'Reject',
+        confirmClass: 'tactical-button danger-button',
+      });
+      if (ok) await runApprovalAction(action);
+      return;
+    }
+    if (action === 'Escalate to Executive') {
+      const ok = await confirm({
+        title: 'Escalate to Director?',
+        message: 'This will flag the item as urgent and alert the Director command.',
+        confirmLabel: 'Escalate',
+      });
+      if (ok) await runApprovalAction(action);
+      return;
+    }
+    setModalAction(action);
+  }
+
   return (
     <ExportOSShell className="operational-export-shell approval-wall-shell">
       <ApprovalWallHeader
@@ -5959,7 +6033,7 @@ function FounderApprovalWall({ onBack, onOpenTasks }) {
           onSelect={setSelectedId}
         />
         <div className="approval-center-stack">
-          <ApprovalDetailPanel request={selectedRequest} onAction={setModalAction} />
+          <ApprovalDetailPanel request={selectedRequest} onAction={requestApprovalAction} />
           <FounderNotesPanel value={founderNote} setValue={setFounderNote} />
           <ApprovalAnalytics />
         </div>
@@ -5974,7 +6048,7 @@ function FounderApprovalWall({ onBack, onOpenTasks }) {
           <ApprovalMemoryPanel patterns={approvalMemoryPatterns} />
         </aside>
       </div>
-      <ApprovalActionBar selectedRequest={selectedRequest} onAction={setModalAction} />
+      <ApprovalActionBar selectedRequest={selectedRequest} onAction={requestApprovalAction} />
       {modalAction && (
         <ApprovalConfirmationModal
           action={modalAction}
@@ -5984,6 +6058,7 @@ function FounderApprovalWall({ onBack, onOpenTasks }) {
           onConfirm={() => runApprovalAction(modalAction)}
         />
       )}
+      {Dialog}
       {ToastUI}
     </ExportOSShell>
   );
