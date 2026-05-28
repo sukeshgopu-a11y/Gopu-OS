@@ -517,7 +517,7 @@ const KEYBOARD_SHORTCUTS = [
     shortcuts: [
       { keys: ['?'], action: 'Shortcuts', desc: 'Show this keyboard shortcuts reference' },
       { keys: ['⌘', 'D'], action: 'Toggle dark mode', desc: 'Switch between dark and light theme' },
-      { keys: ['⌘', 'Shift', 'L'], action: 'Logout', desc: 'Securely end current session' },
+      { keys: ['⌘', 'Shift', 'L'], action: 'End Session', desc: 'Securely end current session' },
     ],
   },
 ];
@@ -1096,7 +1096,7 @@ const masterDataAuditTrail = [
   ['09:22', 'System', 'Export registration field updated', 'Needs Review'],
   ['09:40', 'Documentation', 'Document upload pending generated', 'Missing'],
   ['10:05', 'Founder Office', 'Approval rule changed', 'Founder Review Required'],
-  ['10:18', 'System', 'Memory sync requested', 'Integration Pending'],
+  ['10:18', 'System', 'Memory sync requested', 'Connect Supabase to activate'],
   ['10:30', 'System', 'Founder review pending', 'Sync Pending']
 ].map(([time, user, event, status], index) => ({ id: `audit-${index}`, time, user, event, status }));
 
@@ -2241,19 +2241,19 @@ function App() {
 
   if (isProtectedRoute && (!authState.session || backendStatus.mode !== 'Connected')) {
     const osId = route === '/plant-os' ? 'plant' : 'export';
-    return <SelectedOSLogin osId={osId} onBack={() => navigate('/')} onSuccess={() => navigate(route === '/plant-os' ? '/plant-os' : '/export-os')} />;
+    return withSessionWarning(<SelectedOSLogin osId={osId} onBack={() => navigate('/')} onSuccess={() => navigate(route === '/plant-os' ? '/plant-os' : '/export-os')} />);
   }
 
   if (route === '/') {
-    return <OSGateway onSelectOS={(osId) => navigate(`/login/${osId}`)} />;
+    return withSessionWarning(<OSGateway onSelectOS={(osId) => navigate(`/login/${osId}`)} />);
   }
 
   if (route === '/login/export') {
-    return <SelectedOSLogin osId="export" onBack={() => navigate('/')} onSuccess={() => navigate('/export-os')} />;
+    return withSessionWarning(<SelectedOSLogin osId="export" onBack={() => navigate('/')} onSuccess={() => navigate('/export-os')} />);
   }
 
   if (route === '/login/plant') {
-    return <SelectedOSLogin osId="plant" onBack={() => navigate('/')} onSuccess={() => navigate('/plant-os')} />;
+    return withSessionWarning(<SelectedOSLogin osId="plant" onBack={() => navigate('/')} onSuccess={() => navigate('/plant-os')} />);
   }
 
   if (route === '/export-os/agents/coo') {
@@ -2360,7 +2360,7 @@ function App() {
           </div>
           <div className="deck-header-controls">
             <div className="coo-verified"><ShieldCheck size={16} /><span>Founder session verified</span></div>
-            <button className="ghost-button deck-logout" onClick={() => navigate('/export-os')}><ArrowLeft size={15} />Back to Command Deck</button>
+            <button className="ghost-button deck-logout" onClick={() => navigate('/export-os')}><ArrowLeft size={15} />? Command Deck</button>
           </div>
         </header>
         <AdminPage />
@@ -2551,8 +2551,8 @@ function OSGateway({ onSelectOS }) {
               aria-labelledby="os-selection-title"
             >
               <div className="selection-copy">
-                <span>FOUNDER ROUTE CONTROL</span>
-                <h1 id="os-selection-title">Please choose the OS you wish to start with.</h1>
+                <span>Select your workspace</span>
+                <h1 id="os-selection-title">Where would you like to work today?</h1>
               </div>
             <div className="os-card-grid grid">
                 <OSSelectionCard
@@ -2587,14 +2587,14 @@ const osLoginConfig = {
     badge: 'GOPU Export OS',
     title: 'Secure Export OS Access',
     subtitle: 'Global Trade Command System',
-    button: 'Login to Export OS',
+    button: 'Enter Export OS',
     tone: 'cyan'
   },
   plant: {
     badge: 'Spice Plant OS',
     title: 'Secure Plant OS Access',
     subtitle: 'Factory & Processing Intelligence',
-    button: 'Login to Plant OS',
+    button: 'Enter Plant OS',
     tone: 'amber'
   }
 };
@@ -2613,7 +2613,7 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
   const config = osLoginConfig[osId] ?? osLoginConfig.export;
   const [values, setValues] = useState({ identity: '', password: '', pin: '' });
   const [errors, setErrors] = useState({});
-  const [authMessage, setAuthMessage] = useState(backendStatus.mode === 'Connected' ? 'Live Auth Connected' : 'Integration Pending');
+  const [authMessage, setAuthMessage] = useState(backendStatus.mode === 'Connected' ? 'Live Auth Connected' : 'Connect Supabase to activate');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const hasLoginError = Object.values(errors).some(Boolean) || /failed|blocked|pending/i.test(authMessage);
 
@@ -2665,7 +2665,7 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
     }
 
     if (Object.keys(nextErrors).length === 0) {
-      setAuthMessage('Integration Pending - configure Supabase anon key to enable login');
+      setAuthMessage('Connect Supabase to activate - configure Supabase anon key to enable login');
     } else if (nextErrors.identity) {
       setAuthMessage('Live GOPU login requires the Supabase Auth user for this project.');
     } else {
@@ -2820,7 +2820,7 @@ function OSSelectionCard({ id, title, subtitle, description, icon: Icon, selecte
         <p>{description}</p>
       </div>
       <div className="os-card-footer">
-        <span>{selected ? 'INITIALIZING' : 'SELECT OS'}</span>
+        <span>{selected ? 'Starting…' : 'Launch'}</span>
         <ChevronRight size={17} />
       </div>
     </motion.button>
@@ -2872,9 +2872,9 @@ function Sidebar({ activePage, setActivePage, drawerOpen, setDrawerOpen }) {
         </button>
         <div className="secure-core">
           <div className="core-orbit"><ShieldCheck size={28} /></div>
-          <span>SECURE CORE</span>
-          <strong>Quantum ledger verified</strong>
-          <small>18 nodes synced</small>
+          <span>Secure Core</span>
+          <strong>Session encrypted</strong>
+          <small>All systems online</small>
         </div>
       </aside>
       <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
@@ -3061,7 +3061,7 @@ function LearningCentrePage({ navigate, onBack, reportMode = false }) {
           <p>Read-only public research ingestion for executive summaries, source-traced findings, and vector memory storage.</p>
         </div>
         <div className="deck-header-controls">
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
           <button className="ghost-button" onClick={() => navigate('/export-os/learning-centre')}>Live Stream</button>
           {run.status === 'completed' && <button className="tactical-button" onClick={() => navigate('/export-os/learning-centre/report')}>Intelligence Report</button>}
         </div>
@@ -3631,7 +3631,7 @@ function ShipmentTrackerPage({ navigate, onBack, shipmentId }) {
           <div className="coo-verified"><ShieldCheck size={16} /><span>Founder session verified</span></div>
           <StatusBadge label={dataMode} state={dataMode === 'Live Supabase' ? 'online' : 'attention'} />
           <StatusBadge label={`${shipments.length} shipments`} state="progress" />
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
 
@@ -4701,7 +4701,7 @@ function NotificationCentre({ open, onClose, notifications = [] }) {
             description="No active alerts or notifications."
           />
         ) : (
-          <div className="notif-scroll">
+          <div className="notif-scroll" aria-live="polite" aria-relevant="additions removals">
             {groups.map((group) => (
               <section key={group.key}>
                 <div className={`notification-group-header ${group.cls}`}>
@@ -5825,7 +5825,7 @@ function getGlobalBackContext(pathname) {
     ['/export-os/workflow-dependencies', 'Back to Workflow Engine']
   ];
   const match = pairs.find(([prefix]) => pathname.startsWith(prefix));
-  const label = match?.[1] || 'Back to Command Deck';
+  const label = match?.[1] || '? Command Deck';
   return { label, aria: `${label} previous operational context`, fallback: '/export-os' };
 }
 
@@ -6040,7 +6040,7 @@ function CommandDeckHeader({ navigate, onLogout, showSearch = false, setShowSear
         <Tooltip text="Director AI command console">
           <button className="icon-button top-icon-button director-command-icon" aria-label="Director AI command console" onClick={() => openRoute('/export-os/director-console')}><Fingerprint size={18} /></button>
         </Tooltip>
-        <button className="ghost-button deck-logout" onClick={onLogout} title="Securely end current executive session" aria-label="Securely end current executive session">Logout</button>
+        <button className="ghost-button deck-logout" onClick={onLogout} title="Securely end current executive session" aria-label="Securely end current executive session">End Session</button>
         <UserChip session={session} onSettings={() => shellControls?.openSettings?.()} />
       </div>
       <AnimatePresence>
@@ -6244,7 +6244,7 @@ function SessionSecurityPanel({ now, navigate }) {
         <button className="tactical-button">Lock Session</button>
         <button className="ghost-button" onClick={() => navigate('/export-os/security')}>Open Security</button>
         <button className="ghost-button" onClick={() => navigate('/export-os/access-audit')}>View Audit</button>
-        <button className="ghost-button">Logout All Devices</button>
+        <button className="ghost-button">Sign Out Everywhere</button>
       </div>
     </section>
   );
@@ -6312,7 +6312,7 @@ function TopNotificationPanel({ notifications, filter, setFilter, navigate }) {
       <div className="top-filter-row">
         {sections.map((section) => <button key={section} className={filter === section ? 'active' : ''} onClick={() => setFilter(section)}>{section}</button>)}
       </div>
-      <div className="top-alert-list">
+      <div className="top-alert-list" aria-live="polite" aria-relevant="additions removals">
         {visible.map((item) => {
           const delivery = getOperationalDeliveryChannel(item);
           return (
@@ -6758,7 +6758,7 @@ function OperatingSpinePage({ navigate, onBack }) {
         <div className="deck-header-controls">
           <div className="coo-verified"><ShieldCheck size={16} /><span>Founder session verified</span></div>
           <div className="coo-status"><StatusPulse /><strong>Architecture Mode</strong></div>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
       <section className="architecture-intro-panel">
@@ -6832,7 +6832,7 @@ function ForexTicker({ items, status }) {
   const tickerItems = [...items, ...items];
 
   return (
-    <section className="forex-ticker" aria-label="Live forex rates local ticker">
+    <section className="forex-ticker" aria-label="Live foreign exchange rates" aria-live="polite">
       <div className="forex-label">
         <StatusPulse />
         <span>Live Forex Rates</span>
@@ -6967,7 +6967,7 @@ function getApprovalState(status) {
 function getAutomationState(status) {
   if (status === 'Failed' || status === 'Blocked' || status === 'Critical') return 'error';
   if (status === 'Attention' || status === 'Retry Pending' || status === 'Waiting Approval') return 'attention';
-  if (status === 'Monitoring' || status === 'Retrying' || status === 'Integration Pending' || status === 'Paused') return 'progress';
+  if (status === 'Monitoring' || status === 'Retrying' || status === 'Connect Supabase to activate' || status === 'Paused') return 'progress';
   return 'online';
 }
 
@@ -8321,7 +8321,7 @@ function ApprovalWallHeader({ onBack, onOpenTasks, pendingCount, highRiskCount }
         <div className="coo-time"><CalendarClock size={16} /><span>{now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span></div>
         <button className="icon-button" aria-label="Notifications"><Bell size={18} /></button>
         <button className="ghost-button deck-logout" onClick={onOpenTasks}><Workflow size={15} />Task Engine</button>
-        <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+        <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
       </div>
     </header>
   );
@@ -10238,7 +10238,7 @@ function PricingEnginePage({ onBack, onOpenApprovalWall, onOpenTasks }) {
   const [costRows, setCostRows] = useState(() => buildAiAssistedCostRows(defaultPricingInputs));
   const [errors, setErrors] = useState({});
   const [audit, setAudit] = useState(pricingAuditEvents);
-  const [message, setMessage] = useState('Pricing logic is running in Integration Pending. Old GOPU OS source file verification is still required before commercial sign-off.');
+  const [message, setMessage] = useState('Pricing logic is running in Connect Supabase to activate. Old GOPU OS source file verification is still required before commercial sign-off.');
   const [cfoData, setCfoData] = useState(() => ({
     summary: null,
     marginAnalytics: null,
@@ -11731,7 +11731,7 @@ function PricingEngineHeader({ onBack, rates, onOpenTasks }) {
         <div className="coo-status"><CircleDollarSign size={15} /><strong>USD/INR {usd}</strong></div>
         <div className="coo-time"><CalendarClock size={16} /><span>{now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span></div>
         <button className="ghost-button deck-logout" onClick={onOpenTasks}><Workflow size={15} />Task Engine</button>
-        <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+        <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
       </div>
     </header>
   );
@@ -11957,7 +11957,7 @@ function CFOReviewPanel({ calc, risk }) {
     ['FX Exposure', 'Uses old exchange-rate conversion field. Refresh or enter manually before quote use.'],
     ['Payment Risk', risk.risks.some((item) => item.factor === 'Payment terms' && item.impact === 'NEGATIVE') ? 'Risky payment terms require founder review.' : 'No automatic payment approval trigger.'],
     ['Freight Risk', risk.missingCriticalFields.includes('freight_cost') ? 'Freight cost is required by selected Incoterm.' : 'Freight follows selected Incoterm inclusion.'],
-    ['Discount Impact', 'No discount approved in Integration Pending.'],
+    ['Discount Impact', 'No discount approved in Connect Supabase to activate.'],
     ['Customer Risk', risk.decision === 'FOUNDER_REVIEW' ? 'Founder review required where buyer risk is high or blocked.' : 'Buyer risk does not block quote preview.'],
     ['Operational Risk', 'COO availability confirmation required before release.']
   ];
@@ -12060,7 +12060,7 @@ function CFOCommandPage({ onBack, onOpenPricing, onOpenApprovalWall, onOpenPayme
           <button className="ghost-button deck-logout" onClick={onOpenPricing}><CircleDollarSign size={15} />Pricing Engine</button>
           <button className="ghost-button deck-logout" onClick={onOpenPaymentVault}><FileCheck2 size={15} />Payment Vault</button>
           <button className="ghost-button deck-logout" onClick={onOpenApprovalWall}><FileCheck2 size={15} />Director Queue</button>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
       <section className="cfo-command-layout">
@@ -12421,7 +12421,7 @@ function InvoiceLibrary({ navigate, onBack, onOpenTasks }) {
 function InvoiceBuilder({ navigate, invoiceId, onBack, onOpenTasks }) {
   const seed = invoiceId === 'new' ? initialInvoiceDraft : invoiceLibraryItems.find((invoice) => invoice.id === invoiceId) || initialInvoiceDraft;
   const [invoice, setInvoice] = useState(() => ({ ...seed, id: invoiceId === 'new' ? `invoice-${Date.now()}` : seed.id, company_snapshot: { ...seed.company_snapshot }, items: seed.items.map((item) => ({ ...item })) }));
-  const [snapshotStatus, setSnapshotStatus] = useState(invoiceBackendStatus.mode === 'Connected' ? 'Loading Company Master Data Vault...' : 'Integration Pending - Company data not backend connected.');
+  const [snapshotStatus, setSnapshotStatus] = useState(invoiceBackendStatus.mode === 'Connected' ? 'Loading Company Master Data Vault...' : 'Connect Supabase to activate - Company data not backend connected.');
   const [snapshotLoading, setSnapshotLoading] = useState(invoiceId === 'new');
   const [audit, setAudit] = useState([
     { id: 'audit-created', actor: 'System', timestamp: 'Now', action: 'invoice draft created', previous_status: '-', new_status: 'Draft', notes: 'Company snapshot injected from Company Master Data Vault.' },
@@ -12458,15 +12458,15 @@ function InvoiceBuilder({ navigate, invoiceId, onBack, onOpenTasks }) {
           items: current.items.map((item) => ({ ...item, tax_rate: 0, tax_amount: 0 }))
         }));
         setAudit((current) => [
-          { id: `audit-snapshot-${Date.now()}`, actor: 'System', timestamp: 'Now', action: 'Company data snapshot injected', previous_status: '-', new_status: 'Draft', notes: result.backend.mode === 'Connected' ? 'Snapshot copied from Company Master Data Vault.' : 'Integration Pending - Company data not backend connected.' },
+          { id: `audit-snapshot-${Date.now()}`, actor: 'System', timestamp: 'Now', action: 'Company data snapshot injected', previous_status: '-', new_status: 'Draft', notes: result.backend.mode === 'Connected' ? 'Snapshot copied from Company Master Data Vault.' : 'Connect Supabase to activate - Company data not backend connected.' },
           ...current
         ]);
-        setSnapshotStatus(result.backend.mode === 'Connected' ? 'Company data snapshot injected from Supabase.' : 'Integration Pending - Company data not backend connected.');
+        setSnapshotStatus(result.backend.mode === 'Connected' ? 'Company data snapshot injected from Supabase.' : 'Connect Supabase to activate - Company data not backend connected.');
       } else {
         const snapshot = await buildCompanySnapshotFromVault(invoiceTenantId);
         if (disposed) return;
         setInvoice((current) => ({ ...current, company_snapshot: current.company_snapshot?.snapshot_created_at ? current.company_snapshot : snapshot }));
-        setSnapshotStatus(invoiceBackendStatus.mode === 'Connected' ? 'Historical invoice snapshot loaded.' : 'Integration Pending - Company data not backend connected.');
+        setSnapshotStatus(invoiceBackendStatus.mode === 'Connected' ? 'Historical invoice snapshot loaded.' : 'Connect Supabase to activate - Company data not backend connected.');
       }
       setSnapshotLoading(false);
     }
@@ -12746,7 +12746,7 @@ function InvoiceBackendNotice({ status, loading }) {
         <div><span>Company Vault Connection</span><h2>{loading ? 'Injecting snapshot' : status}</h2></div>
         <Database size={18} />
       </div>
-      <p>{invoiceBackendStatus.mode === 'Connected' ? 'Invoice data is sourced from Company Master Data Vault and copied into an immutable invoice snapshot.' : 'Integration Pending - Company data not backend connected. Draft preview remains blocked for release until backend vault data is complete.'}</p>
+      <p>{invoiceBackendStatus.mode === 'Connected' ? 'Invoice data is sourced from Company Master Data Vault and copied into an immutable invoice snapshot.' : 'Connect Supabase to activate - Company data not backend connected. Draft preview remains blocked for release until backend vault data is complete.'}</p>
     </section>
   );
 }
@@ -13143,7 +13143,7 @@ function TaskEngineHeader({ onBack }) {
         <div className="coo-verified"><ShieldCheck size={16} /><span>Founder session verified</span></div>
         <div className="coo-status"><Workflow size={15} /><strong>Task Engine: Monitoring</strong></div>
         <div className="coo-time"><CalendarClock size={16} /><span>{now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span></div>
-        <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+        <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
       </div>
     </header>
   );
@@ -13255,7 +13255,7 @@ function CollapsibleVaultSection({ title, subtitle, icon: Icon = ShieldCheck, ch
 }
 
 function CompanyMasterDataVault({ onBack }) {
-  const [actionMessage, setActionMessage] = useState(backendStatus.mode === 'Connected' ? 'Backend Connected - Company Master Data ready.' : 'Integration Pending - Backend not connected.');
+  const [actionMessage, setActionMessage] = useState(backendStatus.mode === 'Connected' ? 'Backend Connected - Company Master Data ready.' : 'Connect Supabase to activate - Backend not connected.');
   const [loading, setLoading] = useState(true);
   const [serviceError, setServiceError] = useState('');
   const [companyProfile, setCompanyProfile] = useState(null);
@@ -13300,7 +13300,7 @@ function CompanyMasterDataVault({ onBack }) {
 
   function showLocalAction(message) {
     setActionMessage(message);
-    window.setTimeout(() => setActionMessage(backendStatus.mode === 'Connected' ? 'Backend Connected - Company Master Data ready.' : 'Integration Pending - Backend not connected.'), 4200);
+    window.setTimeout(() => setActionMessage(backendStatus.mode === 'Connected' ? 'Backend Connected - Company Master Data ready.' : 'Connect Supabase to activate - Backend not connected.'), 4200);
   }
 
   async function refreshAuditLog() {
@@ -13313,7 +13313,7 @@ function CompanyMasterDataVault({ onBack }) {
     const result = await saveCompanyProfile(demoTenantId, payload);
     if (result.ok) {
       setCompanyProfile(result.data);
-      setActionMessage(backendStatus.mode === 'Connected' ? 'Company profile saved to Supabase.' : 'Company profile saved in local Integration Pending.');
+      setActionMessage(backendStatus.mode === 'Connected' ? 'Company profile saved to Supabase.' : 'Company profile saved in local Connect Supabase to activate.');
       await refreshAuditLog();
     } else {
       setServiceError(result.error?.message || 'Company profile save failed.');
@@ -13332,7 +13332,7 @@ function CompanyMasterDataVault({ onBack }) {
         next[index] = result.data;
         return next;
       });
-      setActionMessage(`${result.data.registration_type} saved${backendStatus.mode === 'Connected' ? ' to Supabase.' : ' in Integration Pending.'}`);
+      setActionMessage(`${result.data.registration_type} saved${backendStatus.mode === 'Connected' ? ' to Supabase.' : ' in Connect Supabase to activate.'}`);
       await refreshAuditLog();
     } else {
       setServiceError(result.error?.message || 'Registration save failed.');
@@ -13350,7 +13350,7 @@ function CompanyMasterDataVault({ onBack }) {
         next[index] = result.data;
         return next;
       });
-      setActionMessage(`${result.data.document_type} metadata saved${backendStatus.mode === 'Connected' ? ' to Supabase.' : ' in Integration Pending.'}`);
+      setActionMessage(`${result.data.document_type} metadata saved${backendStatus.mode === 'Connected' ? ' to Supabase.' : ' in Connect Supabase to activate.'}`);
       await refreshAuditLog();
     } else {
       setServiceError(result.error?.message || 'Document save failed.');
@@ -13362,7 +13362,7 @@ function CompanyMasterDataVault({ onBack }) {
     const result = await saveDocumentDefaults(demoTenantId, payload);
     if (result.ok) {
       setDocumentDefaults(result.data);
-      setActionMessage(backendStatus.mode === 'Connected' ? 'Document defaults saved to Supabase.' : 'Document defaults saved in Integration Pending.');
+      setActionMessage(backendStatus.mode === 'Connected' ? 'Document defaults saved to Supabase.' : 'Document defaults saved in Connect Supabase to activate.');
       await refreshAuditLog();
     } else {
       setServiceError(result.error?.message || 'Document defaults save failed.');
@@ -13374,7 +13374,7 @@ function CompanyMasterDataVault({ onBack }) {
     const result = await saveLutDetails(demoTenantId, payload);
     if (result.ok) {
       setLutDetails(result.data);
-      setActionMessage(backendStatus.mode === 'Connected' ? 'LUT details saved to Supabase.' : 'LUT details saved in Integration Pending.');
+      setActionMessage(backendStatus.mode === 'Connected' ? 'LUT details saved to Supabase.' : 'LUT details saved in Connect Supabase to activate.');
       await refreshAuditLog();
     } else {
       setServiceError(result.error?.message || 'LUT details save failed.');
@@ -13516,9 +13516,9 @@ function VaultHeader({ onBack, dataMode }) {
       <div className="deck-header-controls">
         <div className="coo-verified"><ShieldCheck size={16} /><span>Founder session verified</span></div>
         <div className="coo-status"><StatusPulse /><strong>Vault Status: Online</strong></div>
-        <div className="coo-status"><Database size={15} /><strong>{dataMode === 'Connected' ? 'Data Mode: Backend Connected' : 'Integration Pending - Backend not connected'}</strong></div>
+        <div className="coo-status"><Database size={15} /><strong>{dataMode === 'Connected' ? 'Data Mode: Backend Connected' : 'Connect Supabase to activate - Backend not connected'}</strong></div>
         <div className="coo-time"><CalendarClock size={16} /><span>{now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span></div>
-        <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+        <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
       </div>
     </header>
   );
@@ -14387,7 +14387,7 @@ function CTOCommandPage({ navigate, onBack }) {
   const cmoPublishingWorkflow = dashboard?.cmoPublishingWorkflow || [];
   const supabaseConnection = dashboard?.supabaseConnection || {
     live: false,
-    status: backendStatus.mode === 'Connected' ? 'Verification Pending' : 'Integration Pending',
+    status: backendStatus.mode === 'Connected' ? 'Verification Pending' : 'Connect Supabase to activate',
     health: backendStatus.mode === 'Connected' ? 'Verification Pending' : 'Configuration Missing',
     message: backendStatus.message,
     lastChecked: 'No live check yet',
@@ -14523,7 +14523,7 @@ function CTOCommandPage({ navigate, onBack }) {
           <div className="coo-verified"><ShieldCheck size={16} /><span>Founder session verified</span></div>
           <button className="ghost-button deck-logout" onClick={() => openAddIntegration('openai')}><KeyRound size={15} />Add Integration</button>
           <button className="ghost-button deck-logout" onClick={() => navigate('/export-os/executives/cto/integrations')}><KeyRound size={15} />{ctoLabels.integrationVaultButton}</button>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
 
@@ -15006,7 +15006,7 @@ function CTOSupabaseFinalCheck({ connection }) {
         </div>
       </div>
       <div className="cto-supabase-final-grid">
-        <div><span>Status</span><strong>{connection?.status || 'Integration Pending'}</strong></div>
+        <div><span>Status</span><strong>{connection?.status || 'Connect Supabase to activate'}</strong></div>
         <div><span>Health</span><strong>{connection?.health || 'Configuration Missing'}</strong></div>
         <div><span>Project</span><strong>{connection?.projectRef || supabaseConfigStatus.projectRef || 'Not configured'}</strong></div>
         <div><span>URL Env</span><strong>{supabaseConfigStatus.hasUrl ? 'Configured' : 'Missing'}</strong></div>
@@ -16172,7 +16172,7 @@ function PaymentVaultDashboard({ navigate, onBack, view = 'payment-vault', payme
           <StatusBadge label={paymentProviderConnected || billingMethods.length ? 'Live tokenized billing enabled' : 'Payment provider not connected'} state={paymentProviderConnected || billingMethods.length ? 'progress' : 'attention'} />
           <StatusBadge label={`${billingMethods.length} tokenized methods`} state="progress" />
           <div className="coo-status"><CircleDollarSign size={16} /><strong>{formatInr(payments.reduce((sum, item) => sum + item.amountInr, 0))} monthly view</strong></div>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
 
@@ -17022,7 +17022,7 @@ function WorkflowGuidanceEngine({ navigate, onBack, initialView = 'Workflow Guid
           <StatusBadge label={data?.summary?.buyerStatus || 'Guidance Loading'} state="attention" />
           <StatusBadge label={`${data?.summary?.missingDependencies || 0} Missing Dependencies`} state="attention" />
           <div className="coo-time"><CalendarClock size={16} /><span>{now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span></div>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
 
@@ -17139,7 +17139,7 @@ function WorkflowDependencyEngine({ navigate, onBack }) {
           <StatusBadge label={`${summary?.blockerCount || 0} blockers`} state={(summary?.criticalCount || 0) ? 'error' : 'attention'} />
           <StatusBadge label={`${summary?.averageHealth || 0}% health`} state={(summary?.averageHealth || 0) < 55 ? 'attention' : 'progress'} />
           <div className="coo-time"><CalendarClock size={16} /><span>{now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span></div>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
 
@@ -17398,7 +17398,7 @@ function WorkflowJourneyDashboard({ navigate, onBack }) {
           <StatusBadge label={`${data?.summary?.blockedStages || 0} blocked stages`} state={(data?.summary?.blockedStages || 0) ? 'attention' : 'progress'} />
           <StatusBadge label={`${data?.summary?.approvalsRequired || 0} approvals`} state="attention" />
           <div className="coo-time"><CalendarClock size={16} /><span>{now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span></div>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
 
@@ -17709,7 +17709,7 @@ function ExecutiveWarRoom({ navigate, onBack, mode = 'Sync' }) {
           <StatusBadge label={`${data?.warRoom?.criticalAlerts || 0} critical alerts`} state={(data?.warRoom?.criticalAlerts || 0) ? 'error' : 'progress'} />
           <StatusBadge label={`${data?.warRoom?.operationalReadiness || 0}% readiness`} state={(data?.warRoom?.operationalReadiness || 0) < 55 ? 'attention' : 'progress'} />
           <div className="coo-time"><CalendarClock size={16} /><span>{now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span></div>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
 
@@ -17880,7 +17880,7 @@ function NotificationCenter({ navigate, onBack }) {
           <StatusBadge label={`${data?.counts?.critical || 0} Critical Alerts`} state="error" />
           <StatusBadge label={`${data?.counts?.pendingReviews || 0} Pending Reviews`} state="attention" />
           <div className="coo-time"><CalendarClock size={16} /><span>{now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span></div>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
       <section className="notification-filter-bar">
@@ -18204,7 +18204,7 @@ function WarehouseDashboard({ navigate, onBack, view = 'warehouse', inventoryId 
 
   function reserveBatch(batch) {
     setInventory((current) => current.map((item) => item.batch === batch ? { ...item, status: 'Reserved', reserved: Math.max(item.reserved, Math.min(item.available, 250)) } : item));
-    setActionNotice(`Batch ${batch} reserved in Integration Pending. No shipment dispatch was confirmed.`);
+    setActionNotice(`Batch ${batch} reserved in Connect Supabase to activate. No shipment dispatch was confirmed.`);
     setTimeline((current) => [['COO Command', 'Now', `batch ${batch} reservation prepared`, 'Reserved'], ...current]);
   }
 
@@ -18217,12 +18217,12 @@ function WarehouseDashboard({ navigate, onBack, view = 'warehouse', inventoryId 
 
   function generateDispatchPlan() {
     setDispatchPlan('1. Prioritize Country pending-SHP-001 packing bags reorder.\n2. Keep CS2404 blocked until quality review closes.\n3. Allocate BP2401 only after packing confirmation.\n4. Prepare COO follow-up for export bags and carton readiness.\n5. Escalate shortage if bags are not confirmed by evening.');
-    setActionNotice('COO dispatch plan generated in Integration Pending.');
+    setActionNotice('COO dispatch plan generated in Connect Supabase to activate.');
     setTimeline((current) => [['COO Command', 'Now', 'dispatch plan generated for warehouse review', 'Monitoring'], ...current]);
   }
 
   function createProcurementFollowup() {
-    setActionNotice('Procurement follow-up task prepared in Integration Pending for export bags and wrapping material.');
+    setActionNotice('Procurement follow-up task prepared in Connect Supabase to activate for export bags and wrapping material.');
     setTimeline((current) => [['Task Engine', 'Now', 'procurement follow-up task prepared', 'Review Required'], ...current]);
   }
 
@@ -18245,7 +18245,7 @@ function WarehouseDashboard({ navigate, onBack, view = 'warehouse', inventoryId 
           <StatusBadge label={`${lowStockCount} low stock`} state="attention" />
           <StatusBadge label={`${shipmentAllocationSeed.length} dispatch pending`} state="progress" />
           <span className="deck-time-chip">{currentDateTime}</span>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
 
@@ -18519,7 +18519,7 @@ function SupplierProcurementDashboard({ navigate, onBack, view = 'suppliers', su
       priority: 'Critical'
     };
     setRequests((current) => [request, ...current]);
-    setNotice('Procurement request created in Integration Pending. No supplier purchase or payment was made.');
+    setNotice('Procurement request created in Connect Supabase to activate. No supplier purchase or payment was made.');
   }
 
   function createSupplierFollowup() {
@@ -18538,7 +18538,7 @@ function SupplierProcurementDashboard({ navigate, onBack, view = 'suppliers', su
   }
 
   function updateConfirmationStatus(productId) {
-    setNotice('Confirmation status updated in Integration Pending for COO review. Supplier confirmation is still pending backend proof.');
+    setNotice('Confirmation status updated in Connect Supabase to activate for COO review. Supplier confirmation is still pending backend proof.');
   }
 
   function escalateSupplierDelay() {
@@ -18547,7 +18547,7 @@ function SupplierProcurementDashboard({ navigate, onBack, view = 'suppliers', su
   }
 
   function linkProcurementToShipment() {
-    setNotice('Procurement linked to Country pending-SHP-001 in Integration Pending. Shipment dispatch was not confirmed.');
+    setNotice('Procurement linked to Country pending-SHP-001 in Connect Supabase to activate. Shipment dispatch was not confirmed.');
   }
 
   return (
@@ -18564,7 +18564,7 @@ function SupplierProcurementDashboard({ navigate, onBack, view = 'suppliers', su
           <StatusBadge label={`${pendingConfirmations} pending confirmations`} state="attention" />
           <StatusBadge label={`${procurementRisks} procurement risks`} state="attention" />
           <span className="deck-time-chip">{currentDateTime}</span>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
 
@@ -18898,7 +18898,7 @@ function CIOCommandPage({ navigate, onBack, view = 'overview', importerId }) {
           <StatusBadge label={`${summary.activeImporterRecords || 0} sample records`} state="progress" />
           <StatusBadge label="Live data not connected" state="attention" />
           <div className="coo-time"><CalendarClock size={16} /><span>{now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span></div>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
 
@@ -19275,7 +19275,7 @@ function TrustCenterDashboard({ navigate, onBack, view = 'overview' }) {
           <StatusBadge label={`${data?.summary?.markets || 0} market regions`} state="progress" />
           <StatusBadge label={`${data?.summary?.certificationsUnderReview || 0} verification items`} state="attention" />
           <div className="coo-time"><CalendarClock size={16} /><span>{now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span></div>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
 
@@ -19420,7 +19420,7 @@ function MarketIntelligenceDashboard({ navigate, onBack }) {
           <StatusBadge label={`${data?.summary?.activeSignals || 0} market signals`} state="progress" />
           <StatusBadge label={`${data?.summary?.highOpportunityAlerts || 0} high opportunities`} state="attention" />
           <div className="coo-time"><CalendarClock size={16} /><span>{now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span></div>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
 
@@ -19545,22 +19545,22 @@ function BuyerCRMPage({ navigate, onBack, view = 'buyers', buyerId }) {
       status: 'Follow-up Due'
     };
     setFollowups((current) => [followup, ...current]);
-    setNotice(`Follow-up created for ${selectedBuyer.company} in Integration Pending.`);
+    setNotice(`Follow-up created for ${selectedBuyer.company} in Connect Supabase to activate.`);
   }
 
   function linkBuyerWorkflow() {
-    setNotice(`${selectedBuyer.company} linked to lead, pricing, invoice, and shipment workflows in Integration Pending. No buyer confirmation is claimed.`);
+    setNotice(`${selectedBuyer.company} linked to lead, pricing, invoice, and shipment workflows in Connect Supabase to activate. No buyer confirmation is claimed.`);
   }
 
   function addBuyerNote() {
     const note = `${new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}: ${selectedBuyer.company} relationship note added under CMO ownership; COO/CFO review only where workflow or commercial risk is involved.`;
     setNotes((current) => [note, ...current]);
-    setNotice('Buyer communication note added in Integration Pending.');
+    setNotice('Buyer communication note added in Connect Supabase to activate.');
   }
 
   function generateBuyerSummary() {
     setSummary(`Buyer Intelligence Summary\n1. Strategic owner: CMO Command\n2. Company: ${selectedBuyer.company}, ${selectedBuyer.country}\n3. Product interests: ${selectedBuyer.interests.join(', ')}\n4. Relationship value: ${selectedBuyer.relationshipValue}\n5. Commercial risk: ${selectedBuyer.risk}\n6. COO action: keep enquiry, quotation coordination, documents, and shipment communication disciplined.\n7. CFO action: review payment behavior, pricing pressure, margin exposure, and payment-term exceptions.\n8. CTO support: keep CRM automations, WhatsApp workflows, notifications, and follow-up triggers monitored.\n9. Recommended action: ${selectedBuyer.status === 'Risk Review' ? 'Route sensitive claims and terms through Director Command Center.' : 'Prepare structured follow-up and keep buyer intelligence available to pricing, operations, and marketing.'}`);
-    setNotice('Buyer summary generated in Integration Pending.');
+    setNotice('Buyer summary generated in Connect Supabase to activate.');
   }
 
   return (
@@ -19578,7 +19578,7 @@ function BuyerCRMPage({ navigate, onBack, view = 'buyers', buyerId }) {
           <StatusBadge label={`${dueFollowups} follow-ups due`} state="attention" />
           <StatusBadge label={`${highValueBuyers} high-value buyers`} state="online" />
           <span className="deck-time-chip">{currentDateTime}</span>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
 
@@ -19976,7 +19976,7 @@ function FounderIntelligenceDashboard({ navigate, onBack, view = 'analytics' }) 
           <StatusBadge label={`${highRiskAlerts} high risk alerts`} state="attention" />
           <StatusBadge label="No live pipeline data" state="progress" />
           <span className="deck-time-chip">{currentDateTime}</span>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
 
@@ -20055,7 +20055,7 @@ function WorkflowMonitoringPanel() {
     ['Lead Intake -> Pricing', 'Monitoring', 'CFO validation waits for pricing review'],
     ['Invoice -> Director Queue', 'Attention', 'LUT blocker routes to founder approval'],
     ['Task -> COO Escalation', 'Retry Pending', 'Overdue task rule queued'],
-    ['WhatsApp -> Parser', 'Integration Pending', 'Webhook pending before live routing']
+    ['WhatsApp -> Parser', 'Connect Supabase to activate', 'Webhook pending before live routing']
   ];
   return (
     <section className="cto-panel">
@@ -20099,7 +20099,7 @@ function PlatformArchitectureMap({ nodes = [] }) {
     { node: 'Workflow Engine', status: 'Attention' },
     { node: 'Approval Engine', status: 'Online' },
     { node: 'Invoice/Pricing/Tasks', status: 'Attention' },
-    { node: 'WhatsApp/Automation Layer', status: 'Integration Pending' }
+    { node: 'WhatsApp/Automation Layer', status: 'Connect Supabase to activate' }
   ];
   const mapNodes = nodes.length ? nodes : fallbackNodes;
   return (
@@ -20264,7 +20264,7 @@ function getPaymentWatchState(item, liveConnected, savedSecrets = {}) {
 function cleanCtoLabel(value = '') {
   const text = String(value || '').trim();
   if (!text || text === 'N/A') return 'Awaiting integration';
-  if (/Integration Pending/i.test(text)) return 'Awaiting Connection';
+  if (/Connect Supabase to activate/i.test(text)) return 'Awaiting Connection';
   if (/monitoring/i.test(text)) return 'Connected';
   if (/local/i.test(text)) return text.replace(/local/gi, 'preview').trim();
   return text;
@@ -20491,7 +20491,7 @@ function buildWorkflowRows(queue = [], systems = [], liveConnected = false) {
 function getCtoState(status) {
   if (['Error', 'Critical', 'Degraded', 'Failed', 'Failure Detected'].includes(status)) return 'error';
   if (['Attention', 'Risk', 'Risk Detected', 'Verification Pending', 'Review Required', 'Sync Delayed', 'Setup Required', 'Required', 'Not Connected'].includes(status)) return 'attention';
-  if (['Monitoring', 'Integration Pending', 'Retry Pending', 'Disabled', 'Waiting Approval', 'Awaiting Connection', 'Workflow Support', 'Approval Queue Only', 'Pending', 'Manual Step'].includes(status)) return 'progress';
+  if (['Monitoring', 'Connect Supabase to activate', 'Retry Pending', 'Disabled', 'Waiting Approval', 'Awaiting Connection', 'Workflow Support', 'Approval Queue Only', 'Pending', 'Manual Step'].includes(status)) return 'progress';
   return 'online';
 }
 
@@ -21006,7 +21006,7 @@ function CMOCommandPage({ view = 'command', navigate, onBack }) {
           <div className="coo-status"><ClipboardList size={16} /><strong>{scheduledCount} scheduled</strong></div>
           <div className="coo-status"><TriangleAlert size={16} /><strong>{approvalCount} approvals</strong></div>
           <div className="coo-time"><CalendarClock size={16} /><span>{now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span></div>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
 
@@ -21029,7 +21029,7 @@ function CMOCommandPage({ view = 'command', navigate, onBack }) {
             <div><span>Growth Objective</span><strong>10% optimization target</strong></div>
             <div><span>Budget Governance</span><strong>CFO-controlled</strong></div>
             <div><span>Publishing</span><strong>Approval queue first</strong></div>
-            <StatusBadge label={data.error ? 'Integration Pending' : 'Growth Intelligence Active'} state={data.error ? 'attention' : 'progress'} />
+            <StatusBadge label={data.error ? 'Connect Supabase to activate' : 'Growth Intelligence Active'} state={data.error ? 'attention' : 'progress'} />
           </section>
 
           <main className="cmo-workspace-layout">
@@ -21083,7 +21083,7 @@ function CMOCleanCommandDashboard({ data, output, navigate, onGenerateTodayPlan,
         <article className="cmo-clean-card cmo-daily-numbers">
           <div className="cmo-clean-card-head">
             <span>Daily Numbers</span>
-            <StatusBadge label={data.error ? 'Integration Pending' : 'Awaiting Sync'} state={data.error ? 'attention' : 'progress'} />
+            <StatusBadge label={data.error ? 'Connect Supabase to activate' : 'Awaiting Sync'} state={data.error ? 'attention' : 'progress'} />
           </div>
           <div className="cmo-daily-number-list">
             {dailyNumbers.map(([label, value]) => (
@@ -21838,7 +21838,7 @@ function getLatestFounderDecisionContent(archive = {}) {
     const status = String(item?.approval_status || item?.content_approvals?.[0]?.approval_status || '').toLowerCase();
     const publishStatus = String(item?.publish_status || '').toLowerCase();
     const itemMetadata = item?.metadata && typeof item.metadata === 'object' ? item.metadata : {};
-    return status.includes('approved') || publishStatus === 'queued' || publishStatus.includes('publishing') || publishStatus.includes('published') || itemMetadata.workflow_stage === 'analytics';
+    return status.includes('approved') || publishStatus === 'queued' || publishStatus.includes('publishing') || publishStatus.includes('published') || itemMetadata.workflow_stage === 'analytics' || itemMetadata.workflow_stage === 'optimization';
   }) || sortedItems.find((item) => {
     const status = String(item?.approval_status || item?.content_approvals?.[0]?.approval_status || '').toLowerCase();
     return status.includes('pending') || status.includes('waiting') || status.includes('rejected') || status.includes('review') || status.includes('edit') || status.includes('hold');
@@ -21869,6 +21869,14 @@ function getCmoWorkflowProgress(content = null) {
   const itemMetadata = content.metadata && typeof content.metadata === 'object' ? content.metadata : {};
   const approvalState = getFounderDecisionState(content);
   const publishState = getCmoPublishState(content);
+  if (itemMetadata.optimization_status === 'completed' || itemMetadata.workflow_stage === 'optimization') {
+    return {
+      currentStep: Number(content.current_step || itemMetadata.current_step || 9),
+      workflowStage: content.workflow_stage || itemMetadata.workflow_stage || 'optimization',
+      approvalState,
+      publishState
+    };
+  }
   if (itemMetadata.analytics_status === 'collected' || itemMetadata.workflow_stage === 'analytics') {
     return {
       currentStep: Number(content.current_step || itemMetadata.current_step || 8),
@@ -21951,10 +21959,25 @@ function applyCmoWorkflowProgression(steps = [], content = null) {
         metrics_collected_at_utc: itemMetadata.metrics_collected_at_utc || latestMetrics?.collected_at_utc || ''
       };
     } else if (active && step.step === 9) {
-      status = 'optimization';
+      status = itemMetadata.optimization_status === 'failed' ? 'error' : itemMetadata.optimization_status === 'completed' ? 'optimization' : 'waiting';
       time = 'AI OPTIMIZATION';
-      healthMessage = 'Optimization is using approved performance signals and audit history.';
+      healthMessage = itemMetadata.optimization_status === 'completed'
+        ? itemMetadata.learned_insight || latestMemory?.campaign_impact || 'Optimization completed and AI learning is stored.'
+        : itemMetadata.optimization_status === 'failed'
+          ? itemMetadata.optimization_error || 'Optimization failed safely.'
+          : 'Optimization pending. Waiting for Step 8 analytics signals.';
       outputs = ['AI optimization running', 'Hashtag optimization', 'Performance adaptation'];
+      healthDetails = {
+        ...healthDetails,
+        optimization_status: itemMetadata.optimization_status || 'pending',
+        learned_insight: itemMetadata.learned_insight || latestMemory?.campaign_impact || '',
+        recommended_next_caption_style: itemMetadata.recommended_next_caption_style || latestMemory?.recommended_next_caption_style || '',
+        recommended_hashtags: itemMetadata.recommended_hashtags || latestMemory?.recommended_hashtags || [],
+        recommended_posting_time: itemMetadata.recommended_posting_time || latestMemory?.recommended_posting_time || '',
+        audience_learning: itemMetadata.audience_learning || latestMemory?.audience_learning || '',
+        platform_learning: itemMetadata.platform_learning || latestMemory?.platform_learning || '',
+        optimization_completed_at_utc: itemMetadata.optimization_completed_at_utc || ''
+      };
     }
 
     return {
@@ -22745,6 +22768,18 @@ function CMOAutomationFlow({ flow, contentMemoryArchive }) {
                         <span>Shares: {step.healthDetails?.metrics?.shares ?? 'Pending'}</span>
                         <span>Engagement: {step.healthDetails?.metrics?.engagement_rate ?? 'Pending'}%</span>
                         {step.healthDetails?.learning_summary ? <span>AI Learning: {truncateText(step.healthDetails.learning_summary, 90)}</span> : null}
+                      </div>
+                    ) : null}
+                    {step.id === 'audit-analytics' ? (
+                      <div className="cmo-flow-outputs cmo-flow-runtime">
+                        <span>Status: {formatContentMemoryLabel(step.healthDetails?.optimization_status || 'pending')}</span>
+                        {step.healthDetails?.learned_insight ? <span>Insight: {truncateText(step.healthDetails.learned_insight, 90)}</span> : null}
+                        {step.healthDetails?.recommended_next_caption_style ? <span>Caption: {truncateText(step.healthDetails.recommended_next_caption_style, 90)}</span> : null}
+                        {normalizeContentArray(step.healthDetails?.recommended_hashtags).length ? (
+                          <span>Hashtags: {normalizeContentArray(step.healthDetails.recommended_hashtags).join(' ')}</span>
+                        ) : null}
+                        {step.healthDetails?.recommended_posting_time ? <span>Next Time: {step.healthDetails.recommended_posting_time}</span> : null}
+                        {step.healthDetails?.platform_learning ? <span>Platform: {truncateText(step.healthDetails.platform_learning, 90)}</span> : null}
                       </div>
                     ) : null}
                   </div>
@@ -24774,7 +24809,7 @@ function BriefingHeader({ now, status, onBack }) {
         <div className="coo-status"><CalendarClock size={16} /><strong>{now.toLocaleDateString([], { dateStyle: 'full' })}</strong></div>
         <div className="coo-time"><TimerReset size={16} /><span>{now.toLocaleTimeString([], { timeStyle: 'short' })}</span></div>
         <StatusBadge label={`Briefing Status: ${status}`} state={status === 'Attention' ? 'attention' : status === 'Generating' ? 'progress' : 'online'} />
-        <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+        <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
       </div>
     </header>
   );
@@ -24786,7 +24821,7 @@ function FounderSummaryHero({ onGenerate, generatedNote }) {
       <div>
         <span className="coo-kicker">Today's Founder Briefing</span>
         <h2>Executive command intelligence for today’s decisions</h2>
-        <p>Consolidated from COO, CFO, CTO, and CMO command units. Integration Pending only: no issue is marked resolved and no release action is claimed.</p>
+        <p>Consolidated from COO, CFO, CTO, and CMO command units. Connect Supabase to activate only: no issue is marked resolved and no release action is claimed.</p>
         <div className="briefing-status-chips">
           {['COO Monitoring', 'CFO Review Active', 'CTO Risk Scan', 'CMO Content Runbook'].map((chip) => <StatusBadge key={chip} label={chip} state="progress" />)}
         </div>
@@ -25018,7 +25053,7 @@ const whatsappCommandMessages = [
 ];
 
 const whatsappIntegrationStatus = [
-  ['WhatsApp API Status', 'Integration Pending'],
+  ['WhatsApp API Status', 'Connect Supabase to activate'],
   ['Webhook Status', 'Webhook Pending'],
   ['Template Status', 'Verification Required'],
   ['Last Message Received', '12:30'],
@@ -25145,9 +25180,9 @@ function WhatsAppFounderCommand({ navigate, onBack, inboxMode = false }) {
         </div>
         <div className="deck-header-controls">
           <div className="coo-verified"><ShieldCheck size={16} /><span>Founder session verified</span></div>
-          <StatusBadge label="WhatsApp Status: Integration Pending" state="progress" />
+          <StatusBadge label="WhatsApp Status: Connect Supabase to activate" state="progress" />
           <div className="coo-status"><Mail size={16} /><strong>{whatsappCommandMessages.length} messages</strong></div>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
 
@@ -25318,7 +25353,7 @@ function CommandAuditTrail({ parsed, routeStatus, selectedMessage }) {
 function WhatsAppIntegrationStatus() {
   return (
     <section className="whatsapp-panel">
-      <div className="approval-section-header"><div><span>WhatsApp Integration Status</span><h2>Integration Pending</h2></div><RadioTower size={18} /></div>
+      <div className="approval-section-header"><div><span>WhatsApp Integration Status</span><h2>Connect Supabase to activate</h2></div><RadioTower size={18} /></div>
       <div className="whatsapp-status-grid">
         {whatsappIntegrationStatus.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}
       </div>
@@ -25332,7 +25367,7 @@ const automationWorkflowDefaults = [
   ['Invoice Validation Automation', 'Attention', 'Invoice Draft Created', '88%', 2, 'Retry Pending', 'Invoice System'],
   ['Founder Approval Routing', 'Active', 'Approval Required', '96%', 0, 'Monitoring', 'Director Queue'],
   ['Daily Briefing Generator', 'Active', 'Scheduled 8:39 AM', '93%', 1, 'Monitoring', 'Morning Briefing'],
-  ['WhatsApp Command Parser', 'Integration Pending', 'Inbound Founder Message', '90%', 0, 'Monitoring', 'WhatsApp Command'],
+  ['WhatsApp Command Parser', 'Connect Supabase to activate', 'Inbound Founder Message', '90%', 0, 'Monitoring', 'WhatsApp Command'],
   ['Task Escalation Engine', 'Monitoring', 'Task Overdue / Blocked', '92%', 1, 'Retry Pending', 'Task Engine'],
   ['Content Scheduling Engine', 'Paused', 'Daily Content Runbook', '86%', 0, 'Founder Approval', 'Content Engine'],
   ['API Monitoring Alerts', 'Failed', 'Health Check Failure', '79%', 3, 'Retry Pending', 'CTO Monitoring']
@@ -25364,7 +25399,7 @@ const automationEventFlows = [
   {
     id: 'whatsapp-flow',
     title: 'WhatsApp command routing chain',
-    status: 'Integration Pending',
+    status: 'Connect Supabase to activate',
     steps: ['WhatsApp Input', 'Command Parsing', 'Lead / Pricing / Invoice Routing', 'Approval Trigger', 'Founder Response Draft']
   }
 ];
@@ -25430,7 +25465,7 @@ function AutomationCenter({ navigate, onBack, view = 'automation-center' }) {
   const [logs, setLogs] = useState(automationLogDefaults);
   const [failures, setFailures] = useState(automationFailureDefaults);
   const [selectedFlow, setSelectedFlow] = useState(view === 'workflow-events' ? 'invoice-flow' : 'lead-flow');
-  const [notice, setNotice] = useState('Controlled automation console ready in Integration Pending.');
+  const [notice, setNotice] = useState('Controlled automation console ready in Connect Supabase to activate.');
   const [summary, setSummary] = useState('');
 
   useEffect(() => {
@@ -25457,7 +25492,7 @@ function AutomationCenter({ navigate, onBack, view = 'automation-center' }) {
         affected_workflow: automationFailureDefaults[index % automationFailureDefaults.length].affected_workflow,
         retry_count: automationFailureDefaults[index % automationFailureDefaults.length].retry_count
       })));
-      setNotice(result.backend.mode === 'Connected' ? 'Backend Connected - workflow automation tables available.' : 'Integration Pending - backend not connected; actions update local state only.');
+      setNotice(result.backend.mode === 'Connected' ? 'Backend Connected - workflow automation tables available.' : 'Connect Supabase to activate - backend not connected; actions update local state only.');
     }
     load();
     return () => {
@@ -25498,10 +25533,10 @@ function AutomationCenter({ navigate, onBack, view = 'automation-center' }) {
         </div>
         <div className="deck-header-controls">
           <div className="coo-verified"><ShieldCheck size={16} /><span>Founder session verified</span></div>
-          <StatusBadge label={notice.includes('Backend Connected') ? 'Backend Connected' : 'Integration Pending'} state={notice.includes('Backend Connected') ? 'online' : 'progress'} />
+          <StatusBadge label={notice.includes('Backend Connected') ? 'Backend Connected' : 'Connect Supabase to activate'} state={notice.includes('Backend Connected') ? 'online' : 'progress'} />
           <button className="ghost-button deck-logout" onClick={() => navigate('/export-os/workflow-events')}><Workflow size={15} />Events</button>
           <button className="ghost-button deck-logout" onClick={() => navigate('/export-os/automation-logs')}><FileBarChart size={15} />Logs</button>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
 
@@ -25687,7 +25722,7 @@ function WhatsAppAutomationPanel() {
         {[
           ['Channel scope', 'Daily briefing / overdue approval only'],
           ['Webhook status', 'Webhook Pending'],
-          ['Parser status', 'Integration Pending'],
+          ['Parser status', 'Connect Supabase to activate'],
           ['Approvals', 'Slack by default'],
           ['Hourly briefing', 'Route to Slack'],
           ['Routing status', 'Routing Prepared'],
@@ -25748,7 +25783,7 @@ function N8nIntegrationPanel() {
         {[
           ['Connection status', 'Not Connected'],
           ['Webhook endpoints', 'Prepared'],
-          ['Queue health', 'Integration Pending'],
+          ['Queue health', 'Connect Supabase to activate'],
           ['Workflow count', '0 connected / 9 planned'],
           ['Retry queue', '3 local items'],
           ['Environment', 'Production-ready structure']
@@ -25840,7 +25875,7 @@ function SecurityDashboard({ navigate, onBack, view = 'security' }) {
   const [selectedRole, setSelectedRole] = useState(view === 'roles' ? 'Founder' : 'Founder');
   const [auditFilter, setAuditFilter] = useState('All');
   const [expandedIncident, setExpandedIncident] = useState(securityIncidentsDefault[0].id);
-  const [notice, setNotice] = useState('Security governance console ready in Integration Pending.');
+  const [notice, setNotice] = useState('Security governance console ready in Connect Supabase to activate.');
   const [freezeState, setFreezeState] = useState('Monitoring');
 
   useEffect(() => {
@@ -25863,7 +25898,7 @@ function SecurityDashboard({ navigate, onBack, view = 'security' }) {
       }
       const auditLogResult = await listAuditLogs(50);
       if (!disposed && auditLogResult.data?.length) setAuditLogs(auditLogResult.data);
-      setNotice(result.backend.mode === 'Connected' ? 'Backend Connected - RBAC tables available.' : 'Integration Pending - backend not connected; controls update local state only.');
+      setNotice(result.backend.mode === 'Connected' ? 'Backend Connected - RBAC tables available.' : 'Connect Supabase to activate - backend not connected; controls update local state only.');
     }
     load();
     return () => {
@@ -25892,7 +25927,7 @@ function SecurityDashboard({ navigate, onBack, view = 'security' }) {
   }
 
   function togglePermission(moduleName, roleName) {
-    pushAudit(`Permission toggle prepared: ${roleName} / ${moduleName}`, 'Roles', 'Medium', 'Permission matrix changed visually only in Integration Pending.');
+    pushAudit(`Permission toggle prepared: ${roleName} / ${moduleName}`, 'Roles', 'Medium', 'Permission matrix changed visually only in Connect Supabase to activate.');
     setNotice(`${roleName} permission toggle prepared for ${moduleName}. Founder approval required before enforcement.`);
   }
 
@@ -25914,11 +25949,11 @@ function SecurityDashboard({ navigate, onBack, view = 'security' }) {
         </div>
         <div className="deck-header-controls">
           <div className="coo-verified"><ShieldCheck size={16} /><span>Founder session verified</span></div>
-          <StatusBadge label={notice.includes('Backend Connected') ? 'Backend Connected' : 'Integration Pending'} state={notice.includes('Backend Connected') ? 'online' : 'progress'} />
+          <StatusBadge label={notice.includes('Backend Connected') ? 'Backend Connected' : 'Connect Supabase to activate'} state={notice.includes('Backend Connected') ? 'online' : 'progress'} />
           <button className="ghost-button deck-logout" onClick={() => navigate('/export-os/users')}><UsersRound size={15} />Users</button>
           <button className="ghost-button deck-logout" onClick={() => navigate('/export-os/roles')}><SlidersHorizontal size={15} />Roles</button>
           <button className="ghost-button deck-logout" onClick={() => navigate('/export-os/access-audit')}><FileBarChart size={15} />Audit</button>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
 
@@ -26045,7 +26080,7 @@ function FounderSecurityControls({ freezeState, onControl }) {
       <div className="security-control-grid">
         {controls.map((control) => <button key={control} onClick={() => onControl(control)}>{control}</button>)}
       </div>
-      <p>These controls are founder-authority gates. Emergency Payment Freeze immediately stops all auto-payment eligibility in connected mode. In Integration Pending, controls create audit evidence only.</p>
+      <p>These controls are founder-authority gates. Emergency Payment Freeze immediately stops all auto-payment eligibility in connected mode. In Connect Supabase to activate, controls create audit evidence only.</p>
       <PaymentGovernancePanel compact />
     </section>
   );
@@ -26063,7 +26098,7 @@ function SessionMonitoringPanel({ sessions, onRevoke }) {
             <small>Last active: {session.last_active}</small>
             <div className="security-action-row three">
               <button onClick={() => onRevoke(session.id)}>Revoke Session</button>
-              <button>Logout Devices</button>
+              <button>Sign Out Everywhere</button>
               <button>Require Re-auth</button>
             </div>
           </article>
@@ -26248,7 +26283,7 @@ function ExecutiveCommandPlaceholder({ command, onBack, onOpenApprovalWall, navi
           <div className="coo-verified"><ShieldCheck size={16} /><span>Founder session verified</span></div>
           {command?.id === 'cto' && <button className="ghost-button deck-logout" onClick={() => navigate('/export-os/executives/cto/integrations')}><KeyRound size={15} />{ctoLabels.integrationVaultButton}</button>}
           <button className="ghost-button deck-logout" onClick={onOpenApprovalWall}><FileCheck2 size={15} />Director Queue</button>
-          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />Back to Command Deck</button>
+          <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
       <section className="placeholder-command-page">
@@ -26261,7 +26296,7 @@ function ExecutiveCommandPlaceholder({ command, onBack, onOpenApprovalWall, navi
           <p>{command?.current_focus}</p>
         </div>
         <div className="coo-mode-note">
-          <strong>Integration Pending</strong>
+          <strong>Connect Supabase to activate</strong>
           <p>This command page route is ready for Connected Memory Mode and Automation Mode. It uses static frontend data until backend memory and workflow triggers are connected.</p>
           <small>Final legal, customs, tax, banking, contractual, pricing, discount, and irreversible financial actions still require founder approval.</small>
         </div>
@@ -26798,7 +26833,7 @@ function COOOperationsHeader({ onBack, summary }) {
 }
 
 function COOConnectionStatus({ mode }) {
-  const label = mode === 'Connected' ? 'Live Connected' : mode === 'Error' ? 'Offline' : 'Integration Pending';
+  const label = mode === 'Connected' ? 'Live Connected' : mode === 'Error' ? 'Offline' : 'Connect Supabase to activate';
   return (
     <div className={`coo-connection-strip state-${label.toLowerCase().replace(/\s+/g, '-')}`}>
       <span className="coo-status-dot" />
@@ -27218,7 +27253,7 @@ function COOHeader({ onBack, onOpenTasks }) {
         </button>
         <button className="ghost-button coo-back" onClick={onBack}>
           <ArrowLeft size={15} />
-          Back to Command Deck
+          ? Command Deck
         </button>
       </div>
     </header>
@@ -27759,7 +27794,7 @@ function COOIntelligenceLayer({ memory, selectedMode, setSelectedMode, promptVal
       </div>
       <div className="coo-mode-note">
         <strong>Mode readiness</strong>
-        <p>Integration Pending uses static sample data. Connected Memory Mode and Automation Mode are prepared for future backend tables and workflow triggers.</p>
+        <p>Connect Supabase to activate uses static sample data. Connected Memory Mode and Automation Mode are prepared for future backend tables and workflow triggers.</p>
         <small>Automation cannot finalise legal, customs, banking, tax, contract, or irreversible financial actions.</small>
       </div>
     </aside>
@@ -27963,4 +27998,10 @@ function MiniBars({ values }) {
 const rootElement = document.getElementById('root');
 const appRoot = window.__gopuRoot ?? createRoot(rootElement);
 window.__gopuRoot = appRoot;
-appRoot.render(<ErrorBoundary><App /></ErrorBoundary>);
+appRoot.render(
+  <React.StrictMode>
+    <GlobalErrorBoundary>
+      <App />
+    </GlobalErrorBoundary>
+  </React.StrictMode>
+);
