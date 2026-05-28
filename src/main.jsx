@@ -209,7 +209,7 @@ function LearningIcon() {
     </svg>
   );
 }
-import { backendStatus, supabaseConfigStatus, getCurrentSession, onAuthStateChange, sendPasswordReset, signInWithPassword, signOut } from './lib/supabaseClient';
+import { backendStatus, supabaseConfigStatus } from './lib/supabaseClient';
 import { ctoLabels } from '../GOPU_OS/cto/labels.js';
 import {
   DEFAULT_CMO_TIMEZONE,
@@ -2884,17 +2884,20 @@ function AnalyticsDashboard({ onBack }) {
   );
 }
 
-function getLocalDevSession() {
-  if (!import.meta.env.DEV || typeof window === 'undefined') return null;
+const LOCAL_AUTH_EMAIL = 'test@gopuexports.com';
+const LOCAL_AUTH_PASSWORD = 'Test@12345';
+
+function getLocalAuthSession() {
+  if (typeof window === 'undefined') return null;
   try {
     const state = window.sessionStorage.getItem('executiveSessionState');
     const osId = window.sessionStorage.getItem('selectedOS');
     if (!state || !osId) return null;
     return {
-      access_token: 'local-dev-session',
+      access_token: 'local-test-session',
       user: {
-        id: 'local-dev-founder',
-        email: 'admin@gopuexports.com'
+        id: 'local-test-user',
+        email: LOCAL_AUTH_EMAIL
       }
     };
   } catch {
@@ -2902,13 +2905,13 @@ function getLocalDevSession() {
   }
 }
 
-function setLocalDevSession(osId) {
-  if (!import.meta.env.DEV || typeof window === 'undefined') return null;
+function setLocalAuthSession(osId) {
+  if (typeof window === 'undefined') return null;
   try {
     window.sessionStorage.setItem('selectedOS', osId);
-    window.sessionStorage.setItem('executiveSessionState', 'Local Dev Session');
+    window.sessionStorage.setItem('executiveSessionState', 'Local Test Session');
   } catch {}
-  return getLocalDevSession();
+  return getLocalAuthSession();
 }
 
 function App() {
@@ -2916,8 +2919,8 @@ function App() {
   usePrintReady();
   const [route, setRoute] = useState(() => window.location.pathname);
   const [authState, setAuthState] = useState(() => ({
-    ready: backendStatus.mode !== 'Connected' || Boolean(getLocalDevSession()),
-    session: getLocalDevSession()
+    ready: true,
+    session: getLocalAuthSession()
   }));
   const [activePage, setActivePage] = useState('dashboard');
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -2935,7 +2938,11 @@ function App() {
   const isProtectedRoute = route === '/plant-os' || route === '/export-os' || route.startsWith('/export-os/');
   const handleSessionTimeout = React.useCallback(async () => {
     if (!isProtectedRoute || !authState.session) return;
-    await signOut();
+    try {
+      window.sessionStorage.removeItem('selectedOS');
+      window.sessionStorage.removeItem('executiveSessionState');
+    } catch {}
+    setAuthState({ ready: true, session: null });
     navigate('/login/export');
   }, [authState.session, isProtectedRoute]);
   const { showWarning, extend } = useSessionTimeout(handleSessionTimeout, 25 * 60 * 1000);
@@ -2990,28 +2997,7 @@ function App() {
   }, [route]);
 
   useEffect(() => {
-    let disposed = false;
-
-    if (backendStatus.mode !== 'Connected') {
-      setAuthState({ ready: true, session: null });
-      return undefined;
-    }
-
-    getCurrentSession().then(({ session, error }) => {
-      if (!disposed) setAuthState({ ready: true, session: session || getLocalDevSession() });
-      if (error && import.meta.env.DEV) {
-        console.warn('Supabase session check failed; using local development session if available.', error.message);
-      }
-    });
-
-    const { data } = onAuthStateChange((_event, session) => {
-      setAuthState({ ready: true, session });
-    });
-
-    return () => {
-      disposed = true;
-      data?.subscription?.unsubscribe?.();
-    };
+    setAuthState({ ready: true, session: getLocalAuthSession() });
   }, []);
 
   useEffect(() => {
@@ -3038,13 +3024,19 @@ function App() {
     announceToSR(`Navigated to ${getRouteAnnouncement(path)}`);
   }
 
-  if (isProtectedRoute && backendStatus.mode === 'Connected' && !authState.ready) {
+  function completeLocalLogin(osId, path) {
+    const session = setLocalAuthSession(osId);
+    setAuthState({ ready: true, session });
+    navigate(path);
+  }
+
+  if (isProtectedRoute && !authState.ready) {
     return withSessionWarning(<AuthRouteLoading />);
   }
 
-  if (isProtectedRoute && (!authState.session || backendStatus.mode !== 'Connected')) {
+  if (isProtectedRoute && !authState.session) {
     const osId = route === '/plant-os' ? 'plant' : 'export';
-    return withSessionWarning(<SelectedOSLogin osId={osId} onBack={() => navigate('/')} onSuccess={() => navigate(route === '/plant-os' ? '/plant-os' : '/export-os')} />);
+    return withSessionWarning(<SelectedOSLogin osId={osId} onBack={() => navigate('/')} onSuccess={() => completeLocalLogin(osId, route === '/plant-os' ? '/plant-os' : '/export-os')} />);
   }
 
   if (route === '/') {
@@ -3052,11 +3044,11 @@ function App() {
   }
 
   if (route === '/login/export') {
-    return withSessionWarning(<SelectedOSLogin osId="export" onBack={() => navigate('/')} onSuccess={() => navigate('/export-os')} />);
+    return withSessionWarning(<SelectedOSLogin osId="export" onBack={() => navigate('/')} onSuccess={() => completeLocalLogin('export', '/export-os')} />);
   }
 
   if (route === '/login/plant') {
-    return withSessionWarning(<SelectedOSLogin osId="plant" onBack={() => navigate('/')} onSuccess={() => navigate('/plant-os')} />);
+    return withSessionWarning(<SelectedOSLogin osId="plant" onBack={() => navigate('/')} onSuccess={() => completeLocalLogin('plant', '/plant-os')} />);
   }
 
   if (route === '/export-os/agents/coo') {
@@ -3268,11 +3260,11 @@ function App() {
   return withSessionWarning(
     <>
       <ExecutiveCommandDeck navigate={navigate} showSearch={showSearch} setShowSearch={setShowSearch} setShowShortcuts={setShowShortcuts} session={authState.session} onLogout={async () => {
-        await signOut();
         window.sessionStorage.removeItem('selectedOS');
         window.sessionStorage.removeItem('executiveSessionState');
         window.sessionStorage.removeItem('founderSessionPin');
         window.sessionStorage.removeItem('founderSecurityPinSet');
+        setAuthState({ ready: true, session: null });
         navigate('/login/export');
       }} />
       {showTour && <OnboardingTour onDone={() => setShowTour(false)} />}
@@ -3291,7 +3283,7 @@ function AuthRouteLoading() {
           </div>
           <span className="selected-os-badge">GOPU Export OS</span>
           <h1 id="auth-loading-title">Checking secure session</h1>
-          <p>Supabase authentication is verifying the current browser session.</p>
+          <p>Local authentication is verifying the current browser session.</p>
           <AuthStatusBadge status="Session Check" />
         </div>
       </section>
@@ -3391,15 +3383,8 @@ const osLoginConfig = {
   }
 };
 
-const blockedExampleIdentityPattern = /(^founder@gopu\.example$|\.example$)/i;
-const supabaseJwtKeyPattern = /^eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/;
-const pinPattern = /^\d{4,8}$/;
 function normalizeLoginEmail(value) {
   return value.trim().replace(/\s+/g, '').toLowerCase();
-}
-
-function isLikelySupabaseApiKey(value) {
-  return supabaseJwtKeyPattern.test(value.trim()) || /^sb_(publishable|secret)_/i.test(value.trim());
 }
 
 function SelectedOSLogin({ osId, onBack, onSuccess }) {
@@ -3408,32 +3393,22 @@ function SelectedOSLogin({ osId, onBack, onSuccess }) {
 
 function ExportOSLoginPage({ osId, onBack, onSuccess }) {
   const config = osLoginConfig[osId] ?? osLoginConfig.export;
-  const [values, setValues] = useState({ identity: '', password: '', pin: '' });
+  const [values, setValues] = useState({ identity: LOCAL_AUTH_EMAIL, password: LOCAL_AUTH_PASSWORD, pin: '' });
   const [errors, setErrors] = useState({});
-  const [resetStatus, setResetStatus] = useState('');
-  const [authMessage, setAuthMessage] = useState(backendStatus.mode === 'Connected' ? 'Live Auth Connected' : 'Connect Supabase to activate');
+  const [authMessage, setAuthMessage] = useState('Local test login enabled');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const hasLoginError = Object.values(errors).some(Boolean) || /failed|blocked|pending/i.test(authMessage);
+  const hasLoginError = Object.values(errors).some(Boolean) || /failed|invalid/i.test(authMessage);
 
   useEffect(() => {
-    let disposed = false;
-    if (backendStatus.mode !== 'Connected') return undefined;
-    getCurrentSession().then(({ session }) => {
-      if (disposed || !session) return;
-      window.sessionStorage.setItem('selectedOS', osId);
-      window.sessionStorage.setItem('executiveSessionState', 'Session Restored');
-      setAuthMessage('Session Restored');
+    if (getLocalAuthSession()) {
+      setAuthMessage('Local test session restored');
       onSuccess();
-    });
-    return () => {
-      disposed = true;
-    };
+    }
   }, [osId, onSuccess]);
 
   function updateField(field, value) {
     setValues((currentValues) => ({ ...currentValues, [field]: value }));
     setErrors((currentErrors) => ({ ...currentErrors, [field]: '' }));
-    setResetStatus('');
   }
 
   async function submitLogin(event) {
@@ -3442,69 +3417,22 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
     const nextErrors = {};
     const identity = normalizeLoginEmail(values.identity);
     if (!identity) nextErrors.identity = 'Email is required.';
-    else if (blockedExampleIdentityPattern.test(identity)) nextErrors.identity = 'Use a real Supabase Auth email. Local .example identities are blocked in production.';
+    else if (identity !== LOCAL_AUTH_EMAIL) nextErrors.identity = `Use ${LOCAL_AUTH_EMAIL} for local test access.`;
     if (!values.password.trim()) nextErrors.password = 'Password is required.';
-    else if (isLikelySupabaseApiKey(values.password)) nextErrors.password = 'Do not paste a Supabase API key here. Use the Supabase Auth password for this email.';
+    else if (values.password !== LOCAL_AUTH_PASSWORD) nextErrors.password = 'Invalid local test password.';
     setErrors(nextErrors);
 
-    if (Object.keys(nextErrors).length === 0 && backendStatus.mode === 'Connected') {
-      setAuthMessage('Verifying live Supabase session...');
+    if (Object.keys(nextErrors).length === 0) {
+      setAuthMessage('Creating local test session...');
       setIsSubmitting(true);
-      const { error } = await signInWithPassword(identity, values.password);
+      setLocalAuthSession(osId);
       setIsSubmitting(false);
-      if (error) {
-        if (import.meta.env.DEV && /invalid api key/i.test(error.message || '')) {
-          setLocalDevSession(osId);
-          setAuthMessage('Local Dev Session');
-          onSuccess();
-          return;
-        }
-        setAuthMessage('Login failed');
-        const message = /invalid api key/i.test(error.message || '')
-          ? 'Supabase project key was rejected. Restart the dev server after the env sync, then try the Supabase Auth password.'
-          : error.message || 'Supabase authentication failed.';
-        setErrors({ password: message });
-        return;
-      }
-      window.sessionStorage.setItem('selectedOS', osId);
-      window.sessionStorage.setItem('executiveSessionState', 'Session Created');
-      setAuthMessage('Session Created');
+      setAuthMessage('Local test session created');
       onSuccess();
       return;
     }
 
-    if (Object.keys(nextErrors).length === 0) {
-      setAuthMessage('Connect Supabase to activate - configure Supabase anon key to enable login');
-    } else if (nextErrors.identity) {
-      setAuthMessage('Live GOPU login requires the Supabase Auth user for this project.');
-    } else {
-      setAuthMessage('Complete the required login fields.');
-    }
-  }
-
-  async function requestPasswordReset() {
-    const identity = normalizeLoginEmail(values.identity);
-    if (!identity) {
-      setErrors((currentErrors) => ({ ...currentErrors, identity: 'Enter the account email before requesting a reset link.' }));
-      setAuthMessage('Email required for password reset');
-      return;
-    }
-    if (blockedExampleIdentityPattern.test(identity)) {
-      setErrors((currentErrors) => ({ ...currentErrors, identity: 'Use a real Supabase Auth email. Local .example identities are blocked in production.' }));
-      setAuthMessage('Password reset blocked');
-      return;
-    }
-    setResetStatus('Sending password reset link...');
-    const { error } = await sendPasswordReset(identity);
-    if (error) {
-      setResetStatus('');
-      setAuthMessage('Password reset failed');
-      setErrors((currentErrors) => ({ ...currentErrors, identity: error.message || 'Could not send password reset link.' }));
-      return;
-    }
-    setErrors((currentErrors) => ({ ...currentErrors, identity: '' }));
-    setResetStatus('Password reset link requested. Check the Supabase Auth email inbox.');
-    setAuthMessage('Password reset link sent');
+    setAuthMessage('Invalid local test credentials');
   }
 
   return (
@@ -3522,11 +3450,11 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
             </div>
             <span>{config.badge}</span>
             <h1 id="login-title">{config.title}</h1>
-            <p>Use the live GOPU Supabase account. Demo `.example` emails are blocked.</p>
+            <p>Use the local test account while Supabase authentication is disabled.</p>
           </div>
           <div className={`login-auth-status ${hasLoginError ? 'status-error' : 'status-live'}`} role="status" aria-live="polite">
             <span>{authMessage}</span>
-            <small>{supabaseConfigStatus.projectRef ? `Project: ${supabaseConfigStatus.projectRef}` : 'Supabase project not configured'}</small>
+            <small>{LOCAL_AUTH_EMAIL}</small>
           </div>
           <form className="login-form" onSubmit={submitLogin} noValidate>
             <SecureField
@@ -3537,7 +3465,7 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
               value={values.identity}
               error={errors.identity}
               onChange={(value) => updateField('identity', value)}
-              placeholder="Enter your Supabase Auth email"
+              placeholder={LOCAL_AUTH_EMAIL}
             />
             <PasswordInput
               id="founder-password"
@@ -3547,13 +3475,9 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
               onChange={(value) => updateField('password', value)}
             />
             <button className="tactical-button login-submit" type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Verifying...' : 'Login'}
+              {isSubmitting ? 'Signing in...' : 'Login'}
               <ChevronRight size={16} />
             </button>
-            <button className="ghost-button login-reset-button" type="button" onClick={requestPasswordReset}>
-              Send Password Reset Link
-            </button>
-            {resetStatus && <p className="login-reset-status">{resetStatus}</p>}
           </form>
         </div>
       </section>
@@ -6746,7 +6670,6 @@ function ExportOSShell({ children, className = '', liveDataConnected = backendSt
       return;
     }
     if (action === 'signout') {
-      await signOut();
       window.sessionStorage.removeItem('selectedOS');
       window.sessionStorage.removeItem('executiveSessionState');
       window.sessionStorage.removeItem('founderSessionPin');
@@ -7812,11 +7735,11 @@ function AuthStatusBadge({ status }) {
 }
 
 function ChangePasswordModal({ onClose }) {
-  return <SecureRecoveryNotice title="Change Password" onClose={onClose} message="Enter your Supabase Auth email on the login screen, then request a password reset email." />;
+  return <SecureRecoveryNotice title="Change Password" onClose={onClose} message="Local test authentication is enabled. Password changes are disabled until live auth is reconnected." />;
 }
 
 function PINResetModal({ onClose }) {
-  return <SecureRecoveryNotice title="Forgot PIN" onClose={onClose} message="The login PIN is a browser-only second checkpoint for this session. Enter a new 4 to 8 digit PIN after your Supabase password is accepted." />;
+  return <SecureRecoveryNotice title="Forgot PIN" onClose={onClose} message="PIN recovery is disabled while local test authentication is enabled." />;
 }
 
 function SecureRecoveryNotice({ title, message, onClose }) {
@@ -7825,7 +7748,7 @@ function SecureRecoveryNotice({ title, message, onClose }) {
       <motion.section className="secure-recovery-modal" initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 16, opacity: 0 }}>
         <header>
           <div>
-            <span>Supabase Auth Only</span>
+            <span>Local Auth Only</span>
             <h2 id="secure-modal-title">{title}</h2>
           </div>
           <button className="drawer-back-button" onClick={onClose}><ArrowLeft size={15} />Back</button>
@@ -25252,6 +25175,125 @@ function CMOTabWorkspace({ tab, data, output, navigate, onGenerateTodayPlan, onG
   if (tab === 'Analytics') return <PerformanceAnalyticsPanel data={data} onGenerate={onGenerateReport} output={output} />;
   if (tab === 'Approvals') return <ContentApprovalQueue queue={data.approvalQueue} brandRisks={data.brandRisks} onRouteBrandRisk={onRouteBrandRisk} navigate={navigate} />;
   return <CMOCalendarWorkspace data={data} />;
+}
+
+function formatLearningDate(value) {
+  if (!value) return 'Not recorded';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function learningFilterMatches(finding, filter) {
+  if (filter === 'All') return true;
+  const text = [
+    finding.sourcePlatform,
+    finding.companyName,
+    finding.topic,
+    finding.contentCategory,
+    finding.learningSummary,
+    finding.gopuLearning,
+    finding.visualStyle,
+    finding.captionStyle,
+    finding.sourceDomain,
+    ...(finding.hashtagsUsed || [])
+  ].join(' ').toLowerCase();
+  return text.includes(filter.toLowerCase().replace('/', ' ')) || text.includes(filter.toLowerCase());
+}
+
+function CMOLearningCentreDashboard({ dashboard }) {
+  const [activeFilter, setActiveFilter] = useState('All');
+  const findings = Array.isArray(dashboard?.findings) ? dashboard.findings : [];
+  const filters = ['All', ...(dashboard?.filters || [])];
+  const filteredFindings = findings.filter((finding) => learningFilterMatches(finding, activeFilter));
+  const growthPlan = dashboard?.growthPlan || {};
+  const hasFindings = filteredFindings.length > 0;
+
+  return (
+    <section className="cmo-tab-workspace cmo-learning-dashboard">
+      <section className="cmo-growth-hero compact cmo-learning-hero">
+        <div>
+          <span>CMO Learning Centre</span>
+          <h2>Auditable research memory before it influences content generation.</h2>
+          <p>Every recorded source, insight, caption pattern, visual cue, avoid rule, and confidence score is visible here before GOPU uses it for future drafts.</p>
+        </div>
+        <StatusBadge label={dashboard?.connected ? 'Research Memory Connected' : 'Awaiting Research Data'} state={dashboard?.connected ? 'progress' : 'attention'} />
+      </section>
+
+      <section className="cmo-clean-metrics cmo-learning-status-grid">
+        {(dashboard?.statusCards || []).map((card) => (
+          <article key={card.label} className="cmo-clean-card">
+            <span>{card.label}</span>
+            <strong>{card.value ?? 'Not recorded'}</strong>
+          </article>
+        ))}
+      </section>
+
+      <section className="cmo-panel cmo-learning-growth-plan">
+        <div className="approval-section-header"><div><span>Follower Goal</span><h2>{growthPlan.followerGoal || '100,000 followers in 1 month'}</h2></div><TrendingUp size={18} /></div>
+        <p>{growthPlan.goalNote || 'Growth target only. No results are claimed without connected platform analytics.'}</p>
+        <div className="cmo-learning-plan-grid">
+          <div>
+            <strong>Strategy</strong>
+            {(growthPlan.strategy || []).map((item) => <span key={item}>{item}</span>)}
+          </div>
+          <div>
+            <strong>Warning rules</strong>
+            {(growthPlan.warningRules || []).map((item) => <span key={item}>{item}</span>)}
+          </div>
+        </div>
+      </section>
+
+      <section className="cmo-panel cmo-learning-findings-panel">
+        <div className="approval-section-header"><div><span>Top Content Examples Found</span><h2>Research findings used as supervised content resources</h2></div><BrainCircuit size={18} /></div>
+        <div className="cmo-learning-filter-row">
+          {filters.map((filter) => (
+            <button key={filter} className={activeFilter === filter ? 'active' : ''} onClick={() => setActiveFilter(filter)}>{filter}</button>
+          ))}
+        </div>
+        {hasFindings ? (
+          <div className="cmo-learning-finding-list">
+            {filteredFindings.map((finding) => <CMOLearningFindingCard key={finding.id} finding={finding} />)}
+          </div>
+        ) : (
+          <div className="cmo-memory-empty">
+            <Database size={28} />
+            <strong>No CMO research findings recorded for this filter.</strong>
+            <span>Run the Learning Centre ingestion and save findings before they can influence content generation.</span>
+          </div>
+        )}
+      </section>
+    </section>
+  );
+}
+
+function CMOLearningFindingCard({ finding }) {
+  const confidence = `${Math.round((Number(finding.confidenceScore) || 0) * 100)}%`;
+  return (
+    <article className="cmo-learning-finding-card">
+      <div className="cmo-learning-finding-head">
+        <div>
+          <span>{finding.sourcePlatform}</span>
+          <strong>{finding.companyName}</strong>
+          <small>{finding.sourceDomain || 'Source domain not recorded'} / {formatLearningDate(finding.recordedAt)}</small>
+        </div>
+        <StatusBadge label={`Confidence ${confidence}`} state={(Number(finding.confidenceScore) || 0) >= 0.7 ? 'progress' : 'attention'} />
+      </div>
+      <div className="cmo-learning-source-row">
+        <span>{finding.topic}</span>
+        {finding.sourceUrl ? <a href={finding.sourceUrl} target="_blank" rel="noreferrer">Source URL <ExternalLink size={13} /></a> : <span>Source URL not recorded</span>}
+      </div>
+      <div className="cmo-learning-detail-grid">
+        <section><span>Caption style</span><p>{finding.captionStyle}</p></section>
+        <section><span>Hashtags used</span><p>{finding.hashtagsUsed?.length ? finding.hashtagsUsed.join(' ') : 'No hashtag record'}</p></section>
+        <section><span>Visual style</span><p>{finding.visualStyle}</p></section>
+        <section><span>Engagement signals</span><p>{finding.engagementSignals}</p></section>
+        <section><span>Why it performed well</span><p>{finding.whyPerformedWell}</p></section>
+        <section><span>What GOPU can learn</span><p>{finding.gopuLearning}</p></section>
+        <section><span>What should be avoided</span><p>{finding.avoid}</p></section>
+      </div>
+    </article>
+  );
 }
 
 function CMOOverviewWorkspaceV2({ data, output, onGenerateTodayPlan, onGenerateFounderSummary, navigate }) {
