@@ -21,6 +21,8 @@
   --surface-2: var(--panel-2);
   --accent: var(--cyan);
   --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --blur-sm: 10px;
   --blur-md: 16px;
@@ -71,6 +73,8 @@
   --space-5: 20px;
   --space-6: 24px;
   --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
 
   font-family: var(--font-ui);
   background: var(--bg-0);
@@ -221,6 +225,198 @@ textarea {
   line-height: var(--leading-normal);
 }
 button { cursor: pointer; }
+
+.btn {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 15px;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--fg);
+  background: rgba(255, 255, 255, 0.045);
+  transition: transform 0.18s var(--ease), border-color 0.18s var(--ease), background 0.18s var(--ease);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(46, 242, 255, 0.28);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.btn-primary {
+  border-color: rgba(46, 242, 255, 0.35);
+  color: #041014;
+  background: linear-gradient(135deg, var(--accent), #a7f3ff);
+  box-shadow: 0 12px 34px rgba(46, 242, 255, 0.16);
+}
+
+.btn-ghost {
+  color: var(--fg);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.btn-sm {
+  padding: 7px 11px;
+  font-size: var(--text-xs);
+}
+
+.btn .ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  animation: ripple-anim 0.55s linear;
+  background: rgba(255, 255, 255, 0.28);
+  pointer-events: none;
+}
+
+@keyframes ripple-anim {
+  to { transform: scale(4); opacity: 0; }
+}
+
+.tour-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  pointer-events: none;
+}
+
+.tour-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  z-index: 9001;
+  pointer-events: all;
+}
+
+.tour-spotlight {
+  position: fixed;
+  z-index: 9002;
+  border-radius: var(--radius-md);
+  box-shadow:
+    0 0 0 4px var(--accent),
+    0 0 0 9999px rgba(0, 0, 0, 0.72);
+  pointer-events: none;
+  transition: all 0.35s cubic-bezier(.4,0,.2,1);
+}
+
+.tour-card {
+  position: fixed;
+  z-index: 9003;
+  background: var(--surface-2);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-6);
+  width: 300px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  pointer-events: all;
+  animation: tour-card-in 0.3s ease;
+}
+
+@keyframes tour-card-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tour-card h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+  color: var(--fg);
+  margin: 0 0 var(--space-2);
+}
+
+.tour-card p {
+  font-size: var(--text-sm);
+  color: var(--dim);
+  line-height: var(--leading-relaxed);
+  margin: 0 0 var(--space-4);
+}
+
+.tour-dots {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.tour-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.2s;
+}
+
+.tour-dot.active { background: var(--accent); }
+
+.tour-actions {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.tour-actions .btn-skip {
+  margin-left: auto;
+  font-size: var(--text-xs);
+  color: var(--dim);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+}
+
+.tour-actions .btn-skip:hover { color: var(--fg); }
+
+.tour-welcome {
+  position: fixed;
+  inset: 0;
+  z-index: 9010;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(6px);
+}
+
+.tour-welcome-card {
+  background: var(--surface-2);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-10) var(--space-12);
+  width: min(460px, 90vw);
+  text-align: center;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+  animation: tour-card-in 0.4s ease;
+}
+
+.tour-welcome-card .tour-logo {
+  font-family: var(--font-display);
+  font-size: var(--text-4xl);
+  font-weight: var(--weight-extrabold);
+  background: linear-gradient(135deg, var(--accent), #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: var(--space-3);
+}
+
+.tour-welcome-card h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--fg);
+  margin: 0 0 var(--space-3);
+}
+
+.tour-welcome-card p {
+  font-size: var(--text-sm);
+  color: var(--dim);
+  line-height: var(--leading-relaxed);
+  margin: 0 0 var(--space-8);
+}
 
 .founder-gateway {
   min-height: 100vh;
@@ -2332,6 +2528,28 @@ input[type="range"] {
 .search-result-list small {
   color: var(--muted);
   line-height: 1.45;
+}
+
+.search-result-list .virtual-list {
+  height: min(420px, 60vh);
+}
+
+.search-result-list .virtual-list-row {
+  min-height: 56px;
+  height: 56px;
+  display: flex;
+  grid-template-columns: none;
+  align-items: center;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  padding: 0 var(--space-4);
+}
+
+.search-result-list > .virtual-list-row {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
 }
 
 .top-alert-list article {

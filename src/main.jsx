@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useMemo, useState } from 'react';
+import React, { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -1743,7 +1743,7 @@ function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeCommand, setActiveCommand] = useState('repricing');
   const [showSearch, setShowSearch] = useState(false);
-  const [showTour, setShowTour] = useState(() => {
+  const [showTour, setShowTour] = React.useState(() => {
     try {
       return typeof window !== 'undefined' && localStorage.getItem('gopuos_tour_done') !== 'true';
     } catch {
@@ -2470,6 +2470,7 @@ function Sidebar({ activePage, setActivePage, drawerOpen, setDrawerOpen }) {
                 key={item.id}
                 className={`nav-item ${activePage === item.id ? 'active' : ''}`}
                 onClick={() => setActivePage(item.id)}
+                data-tour={item.id === 'reports' ? 'analytics-tab' : undefined}
               >
                 <Icon size={18} />
                 <span>{item.label}</span>
@@ -4383,6 +4384,20 @@ function SettingsPanel({ open, onClose, prefs, onPref }) {
               value={prefs.autoRefresh}
               onChange={(v) => onPref('autoRefresh', v)}
             />
+            <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border)' }}>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--dim)', marginBottom: 'var(--space-2)' }}>
+                Onboarding
+              </p>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => {
+                  localStorage.removeItem('gopuos_tour_done');
+                  window.location.reload();
+                }}
+              >
+                Restart welcome tour
+              </button>
+            </div>
           </section>
         </div>
       </aside>
@@ -5640,10 +5655,25 @@ function GlobalCommandSearch({ query, setQuery, records, navigate }) {
   const suggestions = ['Show delayed shipments', 'Find Country pending buyers', 'Open pending invoices', 'Any high-risk workflows?', 'Show OpenAI renewal', 'What is pending today?'];
   const debouncedQuery = useDebounce(query, 250);
   const normalized = debouncedQuery.trim().toLowerCase();
-  const results = (normalized
-    ? records.filter((record) => `${record.title} ${record.type} ${record.owner} ${record.status} ${record.priority} ${record.keywords}`.toLowerCase().includes(normalized) || normalized.split(/\s+/).some((part) => record.keywords.toLowerCase().includes(part)))
-    : records.slice(0, 6)
-  ).slice(0, 8);
+  const results = React.useMemo(() => (
+    normalized
+      ? records.filter((record) => `${record.title} ${record.type} ${record.owner} ${record.status} ${record.priority} ${record.keywords}`.toLowerCase().includes(normalized) || normalized.split(/\s+/).some((part) => record.keywords.toLowerCase().includes(part)))
+      : records.slice(0, 6)
+  ), [normalized, records]);
+  const renderSearchResult = React.useCallback((result) => (
+    <button className="virtual-list-row" key={result.id} onClick={() => navigate(result.route)}>
+      <StatusBadge status={result.status} />
+      <span style={{ flex: 1 }}>
+        <strong>{highlightMatch(result.title || result.command || result.name, query)}</strong>
+        <small>{result.route}</small>
+      </span>
+      <span style={{ color: 'var(--dim)', fontSize: 'var(--text-xs)' }}>
+        {result.type || result.division || result.role || ''} / {result.owner || ''}
+      </span>
+      <RiskBadge label={result.priority} />
+    </button>
+  ), [navigate, query]);
+
   return (
     <section className="top-panel-section">
       <div className="top-panel-heading">
@@ -5659,19 +5689,17 @@ function GlobalCommandSearch({ query, setQuery, records, navigate }) {
         {suggestions.map((item) => <button key={item} onClick={() => setQuery(item)}>{item}</button>)}
       </div>
       <div className="search-result-list">
-        {results.map((result) => (
-          <button key={result.id} onClick={() => navigate(result.route)}>
-            <div>
-              <span>{result.type} / {result.owner}</span>
-              <strong>{highlightMatch(result.title, query)}</strong>
-              <small>{result.route}</small>
-            </div>
-            <div>
-              <StatusBadge label={result.status} state={getApprovalState(result.status)} />
-              <RiskBadge label={result.priority} />
-            </div>
-          </button>
-        ))}
+        {results.length > 50 ? (
+          <VirtualList
+            items={results}
+            itemHeight={56}
+            className="global-command-virtual-list"
+            getItemKey={(item) => item.id}
+            renderItem={renderSearchResult}
+          />
+        ) : (
+          results.map(renderSearchResult)
+        )}
       </div>
     </section>
   );
@@ -7389,13 +7417,13 @@ function FounderApprovalWall({ onBack, onOpenTasks }) {
     return request.category === activeFilter || request.department === activeFilter;
   });
 
-  function replaceRequest(updatedRequest) {
+  const replaceRequest = React.useCallback((updatedRequest) => {
     setRequests((current) => current.map((request) => (
       request.id === updatedRequest.id ? { ...request, ...updatedRequest, updated_at: new Date().toISOString() } : request
     )));
-  }
+  }, []);
 
-  async function runApprovalAction(action) {
+  const runApprovalAction = React.useCallback(async (action) => {
     if (!selectedRequest) return;
     try {
       let result;
@@ -7429,9 +7457,9 @@ function FounderApprovalWall({ onBack, onOpenTasks }) {
       show('Action failed — please retry', 'error');
     }
     setModalAction(null);
-  }
+  }, [founderNote, replaceRequest, selectedRequest, show]);
 
-  async function requestApprovalAction(action) {
+  const requestApprovalAction = React.useCallback(async (action) => {
     if (action === 'Approve Selected') {
       const ok = await confirm({
         title: 'Approve this request?',
@@ -7461,7 +7489,12 @@ function FounderApprovalWall({ onBack, onOpenTasks }) {
       return;
     }
     setModalAction(action);
-  }
+  }, [confirm, runApprovalAction, selectedRequest]);
+
+  const handleApprovalFilterChange = React.useCallback((filter) => setActiveFilter(filter), []);
+  const handleApprovalSelect = React.useCallback((id) => setSelectedId(id), []);
+  const handleApprovalModalCancel = React.useCallback(() => setModalAction(null), []);
+  const handleApprovalModalConfirm = React.useCallback(() => runApprovalAction(modalAction), [modalAction, runApprovalAction]);
 
   return (
     <ExportOSShell className="operational-export-shell approval-wall-shell">
@@ -7487,9 +7520,9 @@ function FounderApprovalWall({ onBack, onOpenTasks }) {
           requests={filteredRequests}
           filters={approvalFilters}
           activeFilter={activeFilter}
-          setActiveFilter={setActiveFilter}
+          setActiveFilter={handleApprovalFilterChange}
           selectedId={selectedRequest?.id}
-          onSelect={setSelectedId}
+          onSelect={handleApprovalSelect}
         />
         <div className="approval-center-stack">
           <ApprovalDetailPanel request={selectedRequest} onAction={requestApprovalAction} />
@@ -7513,8 +7546,8 @@ function FounderApprovalWall({ onBack, onOpenTasks }) {
           action={modalAction}
           request={selectedRequest}
           note={founderNote}
-          onCancel={() => setModalAction(null)}
-          onConfirm={() => runApprovalAction(modalAction)}
+          onCancel={handleApprovalModalCancel}
+          onConfirm={handleApprovalModalConfirm}
         />
       )}
       {Dialog}
@@ -9708,11 +9741,23 @@ function PricingEnginePage({ onBack, onOpenApprovalWall, onOpenTasks }) {
     onOpenApprovalWall();
   }
 
+  const handleCfoTabChange = React.useCallback((tab) => setActiveTab(tab), []);
+  const handleOpenPricingTab = React.useCallback(() => setActiveTab('Quotations'), []);
+  const handleOpenPaymentVaultTab = React.useCallback(() => setActiveTab('Payment Vault'), []);
+  const handleGenerateCfoReport = React.useCallback(async () => {
+    const response = await generateCFOReport();
+    setCfoOutput(response.data || 'CFO report could not be generated.');
+  }, []);
+  const handleGenerateFounderFinancialSummary = React.useCallback(async () => {
+    const response = await generateFounderFinancialSummary();
+    setCfoOutput(response.data || 'Founder financial summary could not be generated.');
+  }, []);
+
   return (
     <ExportOSShell className="operational-export-shell pricing-engine-shell cfo-grade-pricing-shell">
       <PricingEngineHeader onBack={onBack} rates={rates} onOpenTasks={onOpenTasks} />
       <section className="cfo-pricing-toolbar">
-        {cfoWorkspaceTabs.map((tab) => <button key={tab} className={activeTab === tab ? 'active' : ''} onClick={() => setActiveTab(tab)}>{tab}</button>)}
+        {cfoWorkspaceTabs.map((tab) => <button key={tab} className={activeTab === tab ? 'active' : ''} onClick={() => handleCfoTabChange(tab)}>{tab}</button>)}
       </section>
       {activeTab !== 'Quotations' && (
         <section className="cfo-pricing-controlbar">
@@ -9746,19 +9791,13 @@ function PricingEnginePage({ onBack, onOpenApprovalWall, onOpenTasks }) {
               tab={activeTab}
               data={cfoData}
               reportOutput={cfoOutput}
-              onOpenPricing={() => setActiveTab('Quotations')}
-              onOpenPaymentVault={() => setActiveTab('Payment Vault')}
-              onGenerateReport={async () => {
-                const response = await generateCFOReport();
-                setCfoOutput(response.data || 'CFO report could not be generated.');
-              }}
-              onGenerateFounderSummary={async () => {
-                const response = await generateFounderFinancialSummary();
-                setCfoOutput(response.data || 'Founder financial summary could not be generated.');
-              }}
+              onOpenPricing={handleOpenPricingTab}
+              onOpenPaymentVault={handleOpenPaymentVaultTab}
+              onGenerateReport={handleGenerateCfoReport}
+              onGenerateFounderSummary={handleGenerateFounderFinancialSummary}
             />
           </main>
-          <CfoIntelligencePanel data={cfoData} onOpenPricing={() => setActiveTab('Quotations')} onOpenPaymentVault={() => setActiveTab('Payment Vault')} />
+          <CfoIntelligencePanel data={cfoData} onOpenPricing={handleOpenPricingTab} onOpenPaymentVault={handleOpenPaymentVaultTab} />
         </section>
       )}
       <div className="vault-action-status pricing-status-line"><StatusPulse /><span>{message}</span></div>
@@ -12172,6 +12211,8 @@ function TaskFollowupEngine({ navigate, onBack }) {
   const [founderSummary, setFounderSummary] = useState('');
   const selectedTask = tasks.find((task) => task.id === selectedId) || tasks[0];
   const filters = ['All', 'COO', 'CFO', 'CTO', 'CMO', 'Founder Approval', 'Lead Intake', 'Pricing', 'Invoice', 'Documents', 'Shipments', 'Marketing', 'Technical', 'Overdue', 'Blocked', 'High Priority'];
+  const handleTaskSearch = React.useCallback((event) => setSearch(event.target.value), []);
+  const handleTaskFilterChange = React.useCallback((filter) => setActiveFilter(filter), []);
   const filteredTasks = tasks.filter((task) => {
     const haystack = `${task.title} ${task.owner_command} ${task.buyer} ${task.product} ${task.workflow_source} ${task.linked_record_id}`.toLowerCase();
     const matchesSearch = haystack.includes(search.toLowerCase());
@@ -12286,7 +12327,7 @@ function TaskFollowupEngine({ navigate, onBack }) {
       <TaskSummaryCards tasks={tasks} />
       <section className="task-engine-layout">
         <aside className="task-left-stack">
-          <TaskFilters filters={filters} activeFilter={activeFilter} setActiveFilter={setActiveFilter} search={search} setSearch={setSearch} />
+          <TaskFilters filters={filters} activeFilter={activeFilter} onFilter={handleTaskFilterChange} search={search} onSearch={handleTaskSearch} />
           <WorkflowSourceMap />
           <EscalationRulesPanel rules={taskEscalationRules} />
         </aside>
@@ -12353,8 +12394,8 @@ function TaskSummaryCards({ tasks }) {
   return <section className="task-summary-grid">{data.map(([label, value, status]) => <article key={label}><span>{label}</span><strong>{value}</strong><small>{status}</small></article>)}</section>;
 }
 
-const TaskFilters = React.memo(function TaskFilters({ filters, activeFilter, setActiveFilter, search, setSearch }) {
-  return <section className="task-panel"><div className="approval-section-header"><div><span>Task Filters</span><h2>Source and owner control</h2></div><Search size={18} /></div><input aria-label="Search tasks" className="task-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search task title, owner, buyer, product, workflow ID" /><div className="approval-filter-row">{filters.map((filter) => <button className={activeFilter === filter ? 'active' : ''} key={filter} onClick={() => setActiveFilter(filter)}>{filter}</button>)}</div></section>;
+const TaskFilters = React.memo(function TaskFilters({ filters, activeFilter, onFilter, search, onSearch }) {
+  return <section className="task-panel"><div className="approval-section-header"><div><span>Task Filters</span><h2>Source and owner control</h2></div><Search size={18} /></div><input aria-label="Search tasks" className="task-search" value={search} onChange={onSearch} placeholder="Search task title, owner, buyer, product, workflow ID" /><div className="approval-filter-row">{filters.map((filter) => <button className={activeFilter === filter ? 'active' : ''} key={filter} onClick={() => onFilter(filter)}>{filter}</button>)}</div></section>;
 });
 
 function TaskBoard({ tasks, selectedId, onSelect }) {
@@ -13597,6 +13638,7 @@ function CTOCommandPage({ navigate, onBack }) {
   const healthState = resolveSystemHealth(health, incidents);
   const secretSyncLabel = latestSecretSyncTime(savedSecrets);
   const syncLabel = liveConnected ? supabaseConnection.lastChecked || latestSyncTime(integrations, auditLog) : secretSyncLabel || supabaseConnection.lastChecked || (lastAutoSync ? 'Auto check active' : 'No recent sync');
+  const handleCtoTabChange = React.useCallback((tab) => setActiveTab(tab), []);
 
   function retryQueueItem(label) {
     setDashboard((current) => current ? { ...current, automationQueue: current.automationQueue.map((item) => item.workflow_name === label ? { ...item, queue_status: 'Retry Pending', retry_status: 'Retry prepared locally' } : item) } : current);
@@ -13727,7 +13769,7 @@ function CTOCommandPage({ navigate, onBack }) {
         <span>{liveConnected ? 'Supabase is live and CTO will use connected workflow data where available.' : supabaseConfigStatus.hasUrl || supabaseConfigStatus.hasAnonKey ? 'Supabase configuration detected, but CTO final live query is not passing yet.' : 'Add Supabase URL and anon key to .env, restart the app, then CTO will re-check the live connection.'}</span>
       </div>
       <CTOSummaryBar health={healthState} summary={summary} lastSync={syncLabel} liveConnected={liveConnected} />
-      <CTOTabBar activeTab={activeTab} onSelect={setActiveTab} />
+      <CTOTabBar activeTab={activeTab} onSelect={handleCtoTabChange} />
 
       <main className={`cto-command-layout ${activeTab !== 'Overview' ? 'cto-focused-layout' : ''}`}>
         {['Overview', 'Integrations'].includes(activeTab) && (
@@ -18716,11 +18758,13 @@ function BuyerCRMPage({ navigate, onBack, view = 'buyers', buyerId }) {
   const dueFollowups = followups.filter((item) => ['Follow-up Due', 'Risk Review'].includes(item.status)).length;
   const highValueBuyers = buyers.filter((buyer) => buyer.relationshipValue === 'High Value').length;
   const currentDateTime = new Date().toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' });
+  const handleBuyerFilterChange = React.useCallback((nextFilter) => setFilter(nextFilter), []);
+  const handleBuyerSearchChange = React.useCallback((value) => setSearch(value), []);
 
-  function openBuyer(id) {
+  const openBuyer = React.useCallback((id) => {
     setSelectedId(id);
     navigate(`/export-os/buyers/${id}`);
-  }
+  }, [navigate]);
 
   function createFollowup() {
     const followup = {
@@ -18776,7 +18820,7 @@ function BuyerCRMPage({ navigate, onBack, view = 'buyers', buyerId }) {
       <main className="buyer-layout">
         <section className="buyer-left-stack">
           <BuyerOwnershipPanel />
-          <BuyerDirectory buyers={visibleBuyers} selectedId={selectedBuyer.id} filter={filter} search={search} onFilter={setFilter} onSearch={setSearch} onOpen={openBuyer} />
+          <BuyerDirectory buyers={visibleBuyers} selectedId={selectedBuyer.id} filter={filter} search={search} onFilter={handleBuyerFilterChange} onSearch={handleBuyerSearchChange} onOpen={openBuyer} />
           <BuyerRiskProfile buyer={selectedBuyer} />
           <BuyerPreferencesPanel preferences={buyerPreferenceSeed} />
         </section>
@@ -20178,6 +20222,7 @@ function CMOCommandPage({ view = 'command', navigate, onBack }) {
   const scheduledCount = data.summary?.scheduledContent ?? 'Awaiting analytics';
   const approvalCount = data.summary?.pendingApprovals ?? 'Verification pending';
   const realRunStatus = getCmoRealRunStatus(data);
+  const handleCmoTabChange = React.useCallback((tab) => setActiveTab(tab), []);
 
   return (
     <ExportOSShell className="cmo-command-shell" loading={data.loading}>
@@ -20209,7 +20254,7 @@ function CMOCommandPage({ view = 'command', navigate, onBack }) {
       ) : (
         <>
           <section className="cmo-tabbar">
-            {tabs.map((tab) => <button key={tab} className={activeTab === tab ? 'active' : ''} onClick={() => setActiveTab(tab)}>{tab}</button>)}
+            {tabs.map((tab) => <button key={tab} className={activeTab === tab ? 'active' : ''} onClick={() => handleCmoTabChange(tab)}>{tab}</button>)}
           </section>
 
           <section className="cmo-controlbar">
@@ -21015,12 +21060,22 @@ function isStep6DevTestMode() {
   return Boolean(import.meta.env.DEV) || (typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname));
 }
 
+function getContentSortTime(item = {}) {
+  return Date.parse(item.updated_at || item.metrics_collected_at_utc || item.approved_at || item.approved_at_utc || item.generated_at || item.created_at || 0) || 0;
+}
+
 function getLatestFounderDecisionContent(archive = {}) {
   const items = Array.isArray(archive?.items) ? archive.items : [];
-  return items.find((item) => {
+  const sortedItems = [...items].sort((a, b) => getContentSortTime(b) - getContentSortTime(a));
+  return sortedItems.find((item) => {
     const status = String(item?.approval_status || item?.content_approvals?.[0]?.approval_status || '').toLowerCase();
-    return status.includes('pending') || status.includes('approved') || status.includes('rejected') || status.includes('review');
-  }) || items[0] || null;
+    const publishStatus = String(item?.publish_status || '').toLowerCase();
+    const itemMetadata = item?.metadata && typeof item.metadata === 'object' ? item.metadata : {};
+    return status.includes('approved') || publishStatus === 'queued' || publishStatus.includes('publishing') || publishStatus.includes('published') || itemMetadata.workflow_stage === 'analytics';
+  }) || sortedItems.find((item) => {
+    const status = String(item?.approval_status || item?.content_approvals?.[0]?.approval_status || '').toLowerCase();
+    return status.includes('pending') || status.includes('waiting') || status.includes('rejected') || status.includes('review') || status.includes('edit') || status.includes('hold');
+  }) || sortedItems[0] || null;
 }
 
 function getFounderDecisionState(content = null) {
@@ -21032,10 +21087,133 @@ function getFounderDecisionState(content = null) {
   return { key: 'waiting', label: 'WAITING', tone: 'pending' };
 }
 
-function FounderDecisionStatusPill({ state }) {
+function getCmoPublishState(content = null) {
+  const publishStatus = String(content?.publish_status || content?.status || '').toLowerCase();
+  if (publishStatus.includes('retry')) return { key: 'retry', label: 'RETRY SCHEDULED', step: 7, status: 'retry', stage: 'publishing' };
+  if (publishStatus.includes('fail')) return { key: 'failed', label: 'FAILED', step: 7, status: 'error', stage: 'publishing' };
+  if (publishStatus.includes('published') || content?.live_post_url || content?.post_url) return { key: 'published', label: 'PUBLISHED', step: 8, status: 'published', stage: 'analytics' };
+  if (publishStatus.includes('publishing')) return { key: 'publishing', label: 'PUBLISHING', step: 7, status: 'publishing', stage: 'publishing' };
+  if (publishStatus.includes('queued') || publishStatus.includes('ready_for_publish')) return { key: 'queued', label: 'QUEUED', step: 7, status: 'queued', stage: 'publishing' };
+  return { key: publishStatus || 'blocked', label: publishStatus ? formatContentMemoryLabel(publishStatus).toUpperCase() : 'BLOCKED', step: 6, status: 'pending', stage: 'approval' };
+}
+
+function getCmoWorkflowProgress(content = null) {
+  if (!content) return { currentStep: 1, workflowStage: 'waiting_for_content', publishState: getCmoPublishState(null), approvalState: getFounderDecisionState(null) };
+  const itemMetadata = content.metadata && typeof content.metadata === 'object' ? content.metadata : {};
+  const approvalState = getFounderDecisionState(content);
+  const publishState = getCmoPublishState(content);
+  if (itemMetadata.analytics_status === 'collected' || itemMetadata.workflow_stage === 'analytics') {
+    return {
+      currentStep: Number(content.current_step || itemMetadata.current_step || 8),
+      workflowStage: content.workflow_stage || itemMetadata.workflow_stage || 'analytics',
+      approvalState,
+      publishState
+    };
+  }
+  if (approvalState.key === 'approved') {
+    return {
+      currentStep: Math.max(Number(content.current_step || itemMetadata.current_step || publishState.step || 7), 7),
+      workflowStage: content.workflow_stage || itemMetadata.workflow_stage || publishState.stage || 'publishing',
+      approvalState,
+      publishState
+    };
+  }
+  return {
+    currentStep: Number(content.current_step || itemMetadata.current_step || 6),
+    workflowStage: content.workflow_stage || itemMetadata.workflow_stage || 'approval',
+    approvalState,
+    publishState
+  };
+}
+
+function applyCmoWorkflowProgression(steps = [], content = null) {
+  const progress = getCmoWorkflowProgress(content);
+  const latestMetrics = Array.isArray(content?.content_metrics) ? content.content_metrics[0] : null;
+  const latestMemory = Array.isArray(content?.ai_content_memory) ? content.ai_content_memory[0] : null;
+  const itemMetadata = content?.metadata && typeof content.metadata === 'object' ? content.metadata : {};
+  return steps.map((step) => {
+    const baseStatus = step.status || 'pending';
+    const completed = Boolean(content && step.step < progress.currentStep);
+    const active = Boolean(content && step.step === progress.currentStep);
+    const waiting = Boolean(content && step.step > progress.currentStep);
+    let status = baseStatus;
+    let healthMessage = step.healthMessage;
+    let time = step.time;
+    let outputs = step.outputs;
+    let healthDetails = step.healthDetails || {};
+
+    if (completed) {
+      status = baseStatus === 'error' && step.step > 5 ? 'error' : 'complete';
+      healthMessage = step.step === 6 ? 'Founder approval completed. Workflow advanced to publishing.' : step.healthMessage;
+    } else if (waiting) {
+      status = 'waiting';
+      healthMessage = step.step === 8 ? 'Analytics pending. Waiting for publishing result or simulated test collection.'
+        : step.step === 9 ? 'Waiting for analytics signals before optimization starts.'
+          : step.healthMessage || 'Waiting for previous workflow step.';
+    } else if (active && step.step === 6) {
+      status = progress.approvalState.key === 'approved' ? 'complete' : 'pending';
+      healthMessage = progress.approvalState.key === 'approved' ? 'Founder approval completed. Workflow advanced to publishing.' : step.healthMessage;
+    } else if (active && step.step === 7) {
+      status = progress.publishState.status;
+      time = progress.publishState.label;
+      healthMessage = progress.publishState.key === 'queued'
+        ? 'Approved content is queued for the protected publishing path. No public post has been triggered by Step 6.'
+        : progress.publishState.key === 'publishing'
+          ? 'Publishing is in progress through the protected provider path.'
+          : progress.publishState.key === 'failed'
+            ? 'Publishing failed. Review provider response before retrying.'
+            : progress.publishState.key === 'retry'
+              ? 'Publishing retry has been scheduled.'
+              : 'Publishing state is active.';
+      outputs = ['Queued', 'Publishing', 'Published', 'Failed', 'Retry scheduled'];
+    } else if (active && step.step === 8) {
+      status = itemMetadata.analytics_status === 'failed' ? 'error' : itemMetadata.analytics_status === 'collected' ? 'analytics' : 'waiting';
+      time = 'COLLECTING ANALYTICS';
+      healthMessage = itemMetadata.analytics_status === 'collected'
+        ? `Metrics collected. Engagement rate ${itemMetadata.latest_engagement_rate ?? latestMetrics?.engagement_rate ?? 'not reported'}%.`
+        : itemMetadata.analytics_status === 'failed'
+          ? itemMetadata.analytics_error || 'Analytics collection failed safely.'
+          : 'Analytics pending. Waiting for publish result or simulated test collection.';
+      outputs = ['Collecting analytics', 'Engagement sync', 'AI learning'];
+      healthDetails = {
+        ...healthDetails,
+        metrics: latestMetrics || {},
+        learning_summary: latestMemory?.performance_summary || '',
+        ai_reasoning: latestMemory?.ai_reasoning || '',
+        analytics_status: itemMetadata.analytics_status || 'pending',
+        metrics_collected_at_utc: itemMetadata.metrics_collected_at_utc || latestMetrics?.collected_at_utc || ''
+      };
+    } else if (active && step.step === 9) {
+      status = 'optimization';
+      time = 'AI OPTIMIZATION';
+      healthMessage = 'Optimization is using approved performance signals and audit history.';
+      outputs = ['AI optimization running', 'Hashtag optimization', 'Performance adaptation'];
+    }
+
+    return {
+      ...step,
+      status,
+      time,
+      outputs,
+      healthMessage,
+      healthDetails,
+      workflowProgress: {
+        current_step: progress.currentStep,
+        workflow_stage: progress.workflowStage,
+        isActive: active,
+        isCompleted: completed,
+        isWaiting: waiting,
+        approval_status: content?.approval_status || '',
+        publish_status: content?.publish_status || ''
+      }
+    };
+  });
+}
+
+function FounderDecisionStatusPill({ state, active = false }) {
   return (
     <span className={`founder-decision-status status-${state.tone}`}>
-      {state.key === 'waiting' ? <i /> : null}
+      {active ? <i /> : null}
       {state.label}
     </span>
   );
@@ -21058,10 +21236,13 @@ function FounderDecisionFlowCard({ step, content, onOpen, onKeyDown }) {
   const decisionState = getFounderDecisionState(content);
   const caption = content?.caption || content?.generated_text || content?.content_versions?.find((version) => version.version_type === 'generated')?.draft_text || '';
   const targets = normalizeContentArray(content?.platform ? [content.platform] : content?.platform_targets);
+  const active = step.workflowProgress?.isActive;
+  const completed = step.workflowProgress?.isCompleted;
+  const waiting = step.workflowProgress?.isWaiting;
 
   return (
     <motion.article
-      className={`cmo-flow-card founder-decision-card status-${decisionState.tone}`}
+      className={`cmo-flow-card founder-decision-card status-${completed ? 'complete' : decisionState.tone} ${active ? 'is-active-step' : ''} ${completed ? 'is-completed-step' : ''} ${waiting ? 'is-waiting-step' : ''}`}
       role="button"
       tabIndex={0}
       aria-label="Open Founder Decision command center"
@@ -21087,7 +21268,7 @@ function FounderDecisionFlowCard({ step, content, onOpen, onKeyDown }) {
         </div>
       </div>
       <div className="cmo-flow-side founder-decision-side">
-        <FounderDecisionStatusPill state={decisionState} />
+        <FounderDecisionStatusPill state={decisionState} active={active} />
         <small>{content?.updated_at ? formatContentMemoryDate(content.updated_at, content.timezone || DEFAULT_CMO_TIMEZONE) : 'Live approval state'}</small>
       </div>
     </motion.article>
@@ -21110,6 +21291,7 @@ function FounderDecisionEmptyState() {
 function FounderDecisionCommandCenter({ step, content, steps, controlState, processingAction, devMode, devAction, onCreateTestContent, onCleanupTestContent, onDecision, onClose }) {
   const Logo = cmoAutomationLogoMap[step.logoKey] || ShieldCheck;
   const decisionState = getFounderDecisionState(content);
+  const active = step.workflowProgress?.isActive;
   const hashtags = normalizeContentArray(content?.hashtags);
   const targets = normalizeContentArray(content?.platform_targets || (content?.platform ? [content.platform] : []));
   const caption = content?.caption || content?.generated_text || content?.content_versions?.find((version) => version.version_type === 'generated')?.draft_text || '';
@@ -21142,7 +21324,7 @@ function FounderDecisionCommandCenter({ step, content, steps, controlState, proc
             </div>
             <div className="cmo-step-detail-actions">
               {content?.metadata?.test_mode ? <span className="founder-dev-badge">DEV TEST CONTENT</span> : null}
-              <FounderDecisionStatusPill state={decisionState} />
+              <FounderDecisionStatusPill state={decisionState} active={active} />
               <button type="button" className="tactical-button ghost" onClick={onClose}>Close</button>
             </div>
           </header>
@@ -21173,8 +21355,8 @@ function FounderDecisionCommandCenter({ step, content, steps, controlState, proc
           </div>
 
           <div className="cmo-workflow-timeline founder-decision-mini-timeline">
-            {(steps || []).filter((item) => item.step <= 6).map((timelineStep) => (
-              <div key={timelineStep.id} className={`cmo-timeline-node status-${timelineStep.id === step.id ? decisionState.tone : timelineStep.status || 'pending'} ${timelineStep.id === step.id ? 'active' : ''}`}>
+            {(steps || []).map((timelineStep) => (
+              <div key={timelineStep.id} className={`cmo-timeline-node status-${timelineStep.status || 'pending'} ${timelineStep.workflowProgress?.isActive ? 'active' : ''}`}>
                 <span>{timelineStep.step}</span>
                 <small>{timelineStep.title}</small>
               </div>
@@ -21543,19 +21725,27 @@ function CMOAutomationFlow({ flow, contentMemoryArchive }) {
     setLiveContentArchive(contentMemoryArchive || { items: [] });
   }, [contentMemoryArchive]);
 
+  const refreshContentArchive = useCallback(async () => {
+    const response = await getContentMemoryArchive({ timezone: liveContentArchive?.timezone || DEFAULT_CMO_TIMEZONE });
+    if (!response.error) {
+      setLiveContentArchive(response.data || { items: [] });
+      return response.data;
+    }
+    return null;
+  }, [liveContentArchive?.timezone]);
+
   useEffect(() => {
     let active = true;
     const refreshContent = async () => {
-      const response = await getContentMemoryArchive({ timezone: liveContentArchive?.timezone || DEFAULT_CMO_TIMEZONE });
       if (!active) return;
-      if (!response.error) setLiveContentArchive(response.data || { items: [] });
+      await refreshContentArchive();
     };
-    const timer = setInterval(refreshContent, 12000);
+    const timer = setInterval(refreshContent, 5000);
     return () => {
       active = false;
       clearInterval(timer);
     };
-  }, [liveContentArchive?.timezone]);
+  }, [refreshContentArchive]);
 
   useEffect(() => {
     let active = true;
@@ -21621,7 +21811,8 @@ function CMOAutomationFlow({ flow, contentMemoryArchive }) {
     return () => { active = false; };
   }, []);
 
-  const displaySteps = steps.map((step) => {
+  const latestFounderContent = getLatestFounderDecisionContent(liveContentArchive);
+  const baseDisplaySteps = steps.map((step) => {
     if (step.id === 'time-trigger') {
       return {
         ...step,
@@ -21660,7 +21851,7 @@ function CMOAutomationFlow({ flow, contentMemoryArchive }) {
       outputs: Array.isArray(openAIStatus.outputs) && openAIStatus.outputs.length ? openAIStatus.outputs : step.outputs
     };
   });
-  const latestFounderContent = getLatestFounderDecisionContent(liveContentArchive);
+  const displaySteps = applyCmoWorkflowProgression(baseDisplaySteps, latestFounderContent);
   const selectedDisplayStep = selectedStep ? displaySteps.find((step) => step.id === selectedStep.id) || selectedStep : null;
   const updateArchiveWithContent = (content) => {
     if (!content?.id) return;
@@ -21669,6 +21860,7 @@ function CMOAutomationFlow({ flow, contentMemoryArchive }) {
       const filtered = items.filter((item) => item.id !== content.id);
       return { ...(current || {}), items: [content, ...filtered], loadedAt: getCmoNowUtc() };
     });
+    window.setTimeout(() => { refreshContentArchive(); }, 250);
   };
   const handleCreateStep6TestContent = async () => {
     setDevAction('create');
@@ -21708,6 +21900,9 @@ function CMOAutomationFlow({ flow, contentMemoryArchive }) {
         {displaySteps.map((step, index) => {
           const Logo = cmoAutomationLogoMap[step.logoKey] || Workflow;
           const statusLabel = String(step.status || 'pending').toUpperCase();
+          const activeStep = step.workflowProgress?.isActive;
+          const completedStep = step.workflowProgress?.isCompleted;
+          const waitingStep = step.workflowProgress?.isWaiting;
           if (step.id === 'founder-decision') {
             return (
               <Fragment key={step.id}>
@@ -21724,7 +21919,7 @@ function CMOAutomationFlow({ flow, contentMemoryArchive }) {
           return (
             <Fragment key={step.id}>
               <article
-                className={`cmo-flow-card status-${step.status || 'pending'}`}
+                className={`cmo-flow-card status-${step.status || 'pending'} ${activeStep ? 'is-active-step' : ''} ${completedStep ? 'is-completed-step' : ''} ${waitingStep ? 'is-waiting-step' : ''}`}
                 role="button"
                 tabIndex={0}
                 aria-label={`Open ${step.title} operational detail`}
@@ -21738,7 +21933,12 @@ function CMOAutomationFlow({ flow, contentMemoryArchive }) {
                     <strong>{step.title}</strong>
                     <p>{step.description}</p>
                     <small>{step.engine}</small>
-                    {Array.isArray(step.outputs) && step.outputs.length ? (
+                    {completedStep ? (
+                      <div className="cmo-flow-complete-summary">
+                        <CheckCircle2 size={14} />
+                        <span>Completed. Workflow progressed to Step {step.workflowProgress?.current_step}.</span>
+                      </div>
+                    ) : Array.isArray(step.outputs) && step.outputs.length ? (
                       <div className="cmo-flow-outputs">
                         {step.outputs.map((output) => <span key={output}>{output}</span>)}
                       </div>
@@ -21768,6 +21968,18 @@ function CMOAutomationFlow({ flow, contentMemoryArchive }) {
                         <span>Sharp: {(step.healthDetails?.providers?.sharp?.status || 'pending').toUpperCase()}</span>
                       </div>
                     ) : null}
+                    {step.id === 'delivery-tracking' ? (
+                      <div className="cmo-flow-outputs cmo-flow-runtime">
+                        <span>Status: {formatContentMemoryLabel(step.healthDetails?.analytics_status || 'pending')}</span>
+                        <span>Impressions: {step.healthDetails?.metrics?.impressions ?? 'Pending'}</span>
+                        <span>Clicks: {step.healthDetails?.metrics?.clicks ?? 'Pending'}</span>
+                        <span>Likes: {step.healthDetails?.metrics?.likes ?? 'Pending'}</span>
+                        <span>Comments: {step.healthDetails?.metrics?.comments ?? 'Pending'}</span>
+                        <span>Shares: {step.healthDetails?.metrics?.shares ?? 'Pending'}</span>
+                        <span>Engagement: {step.healthDetails?.metrics?.engagement_rate ?? 'Pending'}%</span>
+                        {step.healthDetails?.learning_summary ? <span>AI Learning: {truncateText(step.healthDetails.learning_summary, 90)}</span> : null}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
                 <div className="cmo-flow-side">
@@ -21775,9 +21987,10 @@ function CMOAutomationFlow({ flow, contentMemoryArchive }) {
                   <b className={`cmo-flow-status ${step.status || 'pending'}`}>{statusLabel}</b>
                   {step.lastSyncAt ? <small>{step.lastSyncAt}</small> : null}
                 </div>
-                {step.status === 'live' && step.healthMessage ? <p className="cmo-flow-live">{step.healthMessage}</p> : null}
+                {activeStep ? <span className="cmo-active-pulse" aria-hidden="true" /> : null}
+                {step.status === 'live' || step.status === 'complete' || step.status === 'queued' || step.status === 'publishing' || step.status === 'published' || step.status === 'analytics' || step.status === 'optimization' || step.status === 'retry' ? (step.healthMessage ? <p className="cmo-flow-live">{step.healthMessage}</p> : null) : null}
                 {step.status === 'error' && step.healthMessage ? <p className="cmo-flow-error">{step.healthMessage}</p> : null}
-                {step.status === 'pending' && step.healthMessage ? <p className="cmo-flow-pending">{step.healthMessage}</p> : null}
+                {(step.status === 'pending' || step.status === 'waiting') && step.healthMessage ? <p className="cmo-flow-pending">{step.healthMessage}</p> : null}
                 {step.id === 'ai-content-generation' ? <Step2ContentQualityPanel /> : null}
               </article>
               {index < displaySteps.length - 1 ? <div className="cmo-flow-down" aria-hidden="true">↓</div> : null}
