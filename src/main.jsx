@@ -23063,7 +23063,8 @@ function getLatestFounderDecisionContent(archive = {}) {
     const status = String(item?.approval_status || item?.content_approvals?.[0]?.approval_status || '').toLowerCase();
     const publishStatus = String(item?.publish_status || '').toLowerCase();
     const itemMetadata = item?.metadata && typeof item.metadata === 'object' ? item.metadata : {};
-    return status.includes('approved') || publishStatus === 'queued' || publishStatus.includes('publishing') || publishStatus.includes('published') || itemMetadata.workflow_stage === 'analytics' || itemMetadata.workflow_stage === 'optimization';
+    const simulatedPipeline = itemMetadata.simulated_pipeline === true && !isStep6DevTestMode();
+    return !simulatedPipeline && (status.includes('approved') || publishStatus.includes('publishing') || publishStatus.includes('published') || itemMetadata.analytics_status === 'collected' || itemMetadata.optimization_status === 'completed');
   }) || sortedItems.find((item) => {
     const status = String(item?.approval_status || item?.content_approvals?.[0]?.approval_status || '').toLowerCase();
     return status.includes('pending') || status.includes('waiting') || status.includes('rejected') || status.includes('review') || status.includes('edit') || status.includes('hold');
@@ -23094,7 +23095,24 @@ function getCmoWorkflowProgress(content = null) {
   const itemMetadata = content.metadata && typeof content.metadata === 'object' ? content.metadata : {};
   const approvalState = getFounderDecisionState(content);
   const publishState = getCmoPublishState(content);
-  if (itemMetadata.optimization_status === 'completed' || itemMetadata.workflow_stage === 'optimization') {
+  const simulatedPipeline = itemMetadata.simulated_pipeline === true;
+  const allowSimulatedProgress = !simulatedPipeline || isStep6DevTestMode();
+  const approved = approvalState.key === 'approved';
+  const dryRunPublishCompleted = itemMetadata.dry_run_publish_completed === true && allowSimulatedProgress;
+  const publishUnlocked = approved && (publishState.key === 'published' || dryRunPublishCompleted);
+  const analyticsCollected = publishUnlocked && itemMetadata.analytics_status === 'collected';
+  const optimizationCompleted = analyticsCollected && itemMetadata.optimization_status === 'completed';
+
+  if (!approved) {
+    return {
+      currentStep: 6,
+      workflowStage: 'approval',
+      approvalState,
+      publishState,
+      blockedReason: 'blocked_missing_approval'
+    };
+  }
+  if (optimizationCompleted) {
     return {
       currentStep: Number(content.current_step || itemMetadata.current_step || 9),
       workflowStage: content.workflow_stage || itemMetadata.workflow_stage || 'optimization',
@@ -23102,7 +23120,7 @@ function getCmoWorkflowProgress(content = null) {
       publishState
     };
   }
-  if (itemMetadata.analytics_status === 'collected' || itemMetadata.workflow_stage === 'analytics') {
+  if (analyticsCollected) {
     return {
       currentStep: Number(content.current_step || itemMetadata.current_step || 8),
       workflowStage: content.workflow_stage || itemMetadata.workflow_stage || 'analytics',
@@ -23110,19 +23128,21 @@ function getCmoWorkflowProgress(content = null) {
       publishState
     };
   }
-  if (approvalState.key === 'approved') {
+  if (publishUnlocked) {
     return {
-      currentStep: Math.max(Number(content.current_step || itemMetadata.current_step || publishState.step || 7), 7),
-      workflowStage: content.workflow_stage || itemMetadata.workflow_stage || publishState.stage || 'publishing',
+      currentStep: 8,
+      workflowStage: 'analytics',
       approvalState,
-      publishState
+      publishState,
+      blockedReason: 'blocked_missing_analytics'
     };
   }
   return {
-    currentStep: Number(content.current_step || itemMetadata.current_step || 6),
-    workflowStage: content.workflow_stage || itemMetadata.workflow_stage || 'approval',
+    currentStep: 7,
+    workflowStage: 'publishing',
     approvalState,
-    publishState
+    publishState,
+    blockedReason: 'blocked_missing_publish'
   };
 }
 
@@ -23147,12 +23167,16 @@ function applyCmoWorkflowProgression(steps = [], content = null) {
       healthMessage = step.step === 6 ? 'Founder approval completed. Workflow advanced to publishing.' : step.healthMessage;
     } else if (waiting) {
       status = 'waiting';
-      healthMessage = step.step === 8 ? 'Analytics pending. Waiting for publishing result or simulated test collection.'
-        : step.step === 9 ? 'Waiting for analytics signals before optimization starts.'
-          : step.healthMessage || 'Waiting for previous workflow step.';
+      healthMessage = step.step === 7 && progress.blockedReason === 'blocked_missing_approval'
+        ? 'Waiting for approval. Slack/founder approval is required before publishing unlocks.'
+        : step.step === 8
+          ? 'Analytics pending. Waiting for a published post or explicit dry-run publish completion.'
+          : step.step === 9
+            ? 'Waiting for analytics signals before optimization starts.'
+            : step.healthMessage || 'Waiting for previous workflow step.';
     } else if (active && step.step === 6) {
       status = progress.approvalState.key === 'approved' ? 'complete' : 'pending';
-      healthMessage = progress.approvalState.key === 'approved' ? 'Founder approval completed. Workflow advanced to publishing.' : step.healthMessage;
+      healthMessage = progress.approvalState.key === 'approved' ? 'Founder approval completed. Workflow advanced to publishing.' : 'WAITING FOR APPROVAL. Slack/founder approval must complete before Step 7 unlocks.';
     } else if (active && step.step === 7) {
       status = progress.publishState.status;
       time = progress.publishState.label;
@@ -23181,6 +23205,7 @@ function applyCmoWorkflowProgression(steps = [], content = null) {
         learning_summary: latestMemory?.performance_summary || '',
         ai_reasoning: latestMemory?.ai_reasoning || '',
         analytics_status: itemMetadata.analytics_status || 'pending',
+        guard_reason: itemMetadata.analytics_status === 'collected' ? '' : 'blocked_missing_analytics',
         metrics_collected_at_utc: itemMetadata.metrics_collected_at_utc || latestMetrics?.collected_at_utc || ''
       };
     } else if (active && step.step === 9) {
@@ -23201,6 +23226,7 @@ function applyCmoWorkflowProgression(steps = [], content = null) {
         recommended_posting_time: itemMetadata.recommended_posting_time || latestMemory?.recommended_posting_time || '',
         audience_learning: itemMetadata.audience_learning || latestMemory?.audience_learning || '',
         platform_learning: itemMetadata.platform_learning || latestMemory?.platform_learning || '',
+        guard_reason: itemMetadata.optimization_status === 'completed' ? '' : 'blocked_missing_analytics',
         optimization_completed_at_utc: itemMetadata.optimization_completed_at_utc || ''
       };
     }
