@@ -559,37 +559,37 @@ const cmoAutomationFlowDefinitions = [
   {
     id: 'meta-publish-engine',
     step: 7,
-    title: 'Meta Publish Engine',
+    title: 'Publishing State',
     time: 'Publish queue',
     engine: 'Instagram Graph API, Facebook Pages API, WhatsApp Cloud API',
-    description: 'Publishes approved content through connected Meta platform APIs.',
+    description: 'Tracks approved content as it moves from queued state into the protected publishing path.',
     logoKey: 'meta',
     integrationKeys: ['meta', 'instagram', 'facebook', 'whatsapp'],
-    outputs: ['Instagram Graph API', 'Facebook Pages API', 'WhatsApp Cloud API'],
+    outputs: ['Queued', 'Publishing', 'Published', 'Failed', 'Retry scheduled'],
     missingMessage: 'Missing Meta publishing config: Meta access token, Instagram business account, Facebook page, WhatsApp phone number ID, or webhook status is not live.'
   },
   {
     id: 'delivery-tracking',
     step: 8,
-    title: 'Delivery Tracking',
-    time: 'Webhook events',
-    engine: 'Webhook + publish response tracker',
-    description: 'Tracks publish response, WhatsApp webhook event, and platform post IDs.',
+    title: 'Analytics State',
+    time: 'Engagement sync',
+    engine: 'Publish response, platform engagement sync, and learning signals',
+    description: 'Collects post-delivery signals after publishing has succeeded.',
     logoKey: 'tracking',
     integrationKeys: ['delivery-tracking', 'webhook-events', 'meta-webhook', 'whatsapp-webhook'],
-    outputs: ['Published', 'Failed', 'Delivered', 'Read'],
+    outputs: ['Collecting analytics', 'Engagement sync', 'AI learning'],
     missingMessage: 'Missing delivery/webhook health: publish response or platform webhook tracking is not live.'
   },
   {
     id: 'audit-analytics',
     step: 9,
-    title: 'Audit & Analytics',
-    time: 'Audit write',
-    engine: 'Supabase audit_logs',
-    description: 'Saves timestamps, provider responses, errors, and dashboard metrics.',
+    title: 'Optimization State',
+    time: 'AI learning',
+    engine: 'Supabase audit_logs and AI optimization memory',
+    description: 'Saves the audit trail and adapts future content from approved performance signals.',
     logoKey: 'supabase',
     integrationKeys: ['supabase', 'audit_logs', 'audit-analytics'],
-    outputs: ['Step timestamp', 'Provider response', 'Error message', 'Dashboard metrics'],
+    outputs: ['AI optimization running', 'Hashtag optimization', 'Performance adaptation'],
     missingMessage: 'Missing Supabase audit_logs health: audit insert/read test or Supabase integration status is not live.'
   }
 ];
@@ -1797,24 +1797,34 @@ export async function updateFounderContentDecision(contentHistoryId, action, opt
   const note = options.note || decision.note;
   const existing = await client
     .from('content_history')
-    .select('id,metadata')
+    .select('*')
     .eq('id', id)
     .maybeSingle();
   if (existing.error && existing.error.code !== 'PGRST116') {
     return serviceErrorResponse({ updated: false }, existing.error);
   }
   const existingMetadata = existing.data?.metadata && typeof existing.data.metadata === 'object' ? existing.data.metadata : {};
+  const existingHasCurrentStep = Object.prototype.hasOwnProperty.call(existing.data || {}, 'current_step');
+  const existingHasWorkflowStage = Object.prototype.hasOwnProperty.call(existing.data || {}, 'workflow_stage');
+  const existingHasStatus = Object.prototype.hasOwnProperty.call(existing.data || {}, 'status');
+  const nextStep = decision.action === 'approve' ? 7 : 6;
+  const workflowStage = decision.action === 'approve' ? 'publishing' : decision.action === 'needs_edit' ? 'content_edit' : 'approval_hold';
   const baseHistoryPatch = {
     approval_status: decision.approvalStatus,
     publish_status: decision.publishStatus,
     updated_at: decidedAt,
     metadata: {
       ...existingMetadata,
+      current_step: nextStep,
+      workflow_stage: workflowStage,
       founder_decision: decision.action,
       founder_decision_at: decidedAt,
       no_public_publish_from_step_6_ui: true
     }
   };
+  if (existingHasCurrentStep) baseHistoryPatch.current_step = nextStep;
+  if (existingHasWorkflowStage) baseHistoryPatch.workflow_stage = workflowStage;
+  if (existingHasStatus) baseHistoryPatch.status = workflowStage;
 
   const historyPatch = decision.action === 'approve'
     ? {
