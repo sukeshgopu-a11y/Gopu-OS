@@ -1533,6 +1533,34 @@ h1 { margin: 0; font-size: clamp(1.6rem, 4vw, 3rem); line-height: var(--leading-
 .status-meter strong { font-family: var(--font-mono);
   font-variant-numeric: tabular-nums; text-align: right; }
 .table-row small { display: block; margin-top: 3px; color: var(--muted); }
+
+/* -- Virtual list -- */
+.virtual-list {
+  height: 420px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+}
+
+.virtual-list-row {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--text-sm);
+  color: var(--fg);
+  gap: var(--space-3);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.virtual-list-row:hover {
+  background: var(--surface-2);
+}
+
+.virtual-list-row.selected {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
 .state-chip {
   display: inline-flex;
   padding: 5px 8px;

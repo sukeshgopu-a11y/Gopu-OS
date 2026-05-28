@@ -1558,13 +1558,198 @@ const pages = {
   }
 };
 
+function useRipple() {
+  React.useEffect(() => {
+    function handleClick(event) {
+      const target = event.target instanceof Element ? event.target : null;
+      const btn = target?.closest?.('.btn');
+      if (!btn) return;
+      const rect = btn.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height) * 2;
+      const x = event.clientX - rect.left - size / 2;
+      const y = event.clientY - rect.top - size / 2;
+      const ripple = document.createElement('span');
+      ripple.className = 'ripple';
+      ripple.style.cssText = `width:${size}px;height:${size}px;left:${x}px;top:${y}px`;
+      btn.appendChild(ripple);
+      ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
+    }
+
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, []);
+}
+
+const TOUR_STEPS = [
+  {
+    selector: '[data-tour="sidebar"]',
+    title: 'Navigation Sidebar',
+    desc: 'Switch between Commands, Approvals, Analytics, Shipments, Leads, and Settings from here.',
+    placement: 'right',
+  },
+  {
+    selector: '[data-tour="cmd-palette-trigger"]',
+    title: 'Command Palette',
+    desc: 'Press Cmd+K or Ctrl+K to open the command palette, the fastest way to navigate or run an action.',
+    placement: 'bottom',
+  },
+  {
+    selector: '[data-tour="quick-actions"]',
+    title: 'Quick Actions',
+    desc: 'One-click shortcuts for your most common tasks: new command, approvals, export report.',
+    placement: 'bottom',
+  },
+  {
+    selector: '[data-tour="analytics-tab"]',
+    title: 'Analytics Dashboard',
+    desc: 'Track KPIs, revenue trends, and shipment status in real time across all divisions.',
+    placement: 'right',
+  },
+  {
+    selector: '[data-tour="settings-trigger"]',
+    title: 'Settings & Preferences',
+    desc: 'Customise your theme, accent colour, notifications, and timezone from settings.',
+    placement: 'left',
+  },
+];
+
+function getSpotlightRect(selector) {
+  if (!selector) return null;
+  const el = document.querySelector(selector);
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return { top: r.top - 6, left: r.left - 6, width: r.width + 12, height: r.height + 12 };
+}
+
+function cardPosition(rect, placement) {
+  if (!rect) return { top: '50%', left: '50%', transform: 'translate(-50%,-50%)' };
+  const gap = 18;
+  const width = 300;
+  const maxLeft = Math.max(16, window.innerWidth - width - 16);
+  const maxTop = Math.max(16, window.innerHeight - 220);
+  let top = rect.top;
+  let left = rect.left;
+
+  if (placement === 'right') left = rect.left + rect.width + gap;
+  else if (placement === 'left') left = rect.left - width - gap;
+  else if (placement === 'bottom') top = rect.top + rect.height + gap;
+  else top = rect.top - 140 - gap;
+
+  return {
+    top: Math.min(Math.max(16, top), maxTop),
+    left: Math.min(Math.max(16, left), maxLeft),
+  };
+}
+
+function OnboardingTour({ onDone }) {
+  const [welcome, setWelcome] = React.useState(true);
+  const [step, setStep] = React.useState(0);
+  const [rect, setRect] = React.useState(null);
+
+  React.useEffect(() => {
+    if (welcome) return undefined;
+
+    function updateRect() {
+      setRect(getSpotlightRect(TOUR_STEPS[step]?.selector));
+    }
+
+    updateRect();
+    window.addEventListener('resize', updateRect);
+    window.addEventListener('scroll', updateRect, true);
+    return () => {
+      window.removeEventListener('resize', updateRect);
+      window.removeEventListener('scroll', updateRect, true);
+    };
+  }, [step, welcome]);
+
+  function finish() {
+    try { localStorage.setItem('gopuos_tour_done', 'true'); } catch {}
+    onDone();
+  }
+
+  function next() {
+    if (step < TOUR_STEPS.length - 1) setStep((current) => current + 1);
+    else finish();
+  }
+
+  function back() {
+    if (step > 0) setStep((current) => current - 1);
+  }
+
+  if (welcome) {
+    return (
+      <div className="tour-welcome" role="dialog" aria-modal="true" aria-label="Welcome to Gopu OS">
+        <div className="tour-welcome-card">
+          <div className="tour-logo">Gopu OS</div>
+          <h2>Welcome aboard</h2>
+          <p>
+            Your executive command centre for global trade operations.<br />
+            Let's take a quick 30-second tour so you feel right at home.
+          </p>
+          <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'center' }}>
+            <button className="btn btn-primary" onClick={() => setWelcome(false)}>
+              Start Tour
+            </button>
+            <button className="btn btn-ghost" onClick={finish}>
+              Skip for now
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const currentStep = TOUR_STEPS[step];
+  const cardPos = cardPosition(rect, currentStep.placement);
+  const isLast = step === TOUR_STEPS.length - 1;
+
+  return (
+    <div className="tour-overlay" role="dialog" aria-modal="true" aria-label={`Tour step ${step + 1} of ${TOUR_STEPS.length}`}>
+      <div className="tour-backdrop" onClick={finish} aria-hidden="true" />
+      {rect && (
+        <div
+          className="tour-spotlight"
+          style={{ top: rect.top, left: rect.left, width: rect.width, height: rect.height }}
+          aria-hidden="true"
+        />
+      )}
+      <div className="tour-card" style={cardPos}>
+        <div className="tour-dots" aria-hidden="true">
+          {TOUR_STEPS.map((_, index) => (
+            <div key={index} className={`tour-dot${index === step ? ' active' : ''}`} />
+          ))}
+        </div>
+        <h3>{currentStep.title}</h3>
+        <p>{currentStep.desc}</p>
+        <div className="tour-actions">
+          {step > 0 && (
+            <button className="btn btn-ghost btn-sm" onClick={back}>Back</button>
+          )}
+          <button className="btn btn-primary btn-sm" onClick={next} autoFocus>
+            {isLast ? 'Done' : 'Next'}
+          </button>
+          <button className="btn-skip" onClick={finish}>Skip tour</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
+  useRipple();
   const [route, setRoute] = useState(() => window.location.pathname);
   const [authState, setAuthState] = useState({ ready: backendStatus.mode !== 'Connected', session: null });
   const [activePage, setActivePage] = useState('dashboard');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeCommand, setActiveCommand] = useState('repricing');
   const [showSearch, setShowSearch] = useState(false);
+  const [showTour, setShowTour] = useState(() => {
+    try {
+      return typeof window !== 'undefined' && localStorage.getItem('gopuos_tour_done') !== 'true';
+    } catch {
+      return false;
+    }
+  });
   const current = pages[activePage];
   const isProtectedRoute = route === '/plant-os' || route === '/export-os' || route.startsWith('/export-os/');
   const handleSessionTimeout = React.useCallback(async () => {
@@ -1896,14 +2081,19 @@ function App() {
     return <OSGateway onSelectOS={(osId) => navigate(`/login/${osId}`)} />;
   }
 
-  return withSessionWarning(<ExecutiveCommandDeck navigate={navigate} showSearch={showSearch} setShowSearch={setShowSearch} session={authState.session} onLogout={async () => {
-    await signOut();
-    window.sessionStorage.removeItem('selectedOS');
-    window.sessionStorage.removeItem('executiveSessionState');
-    window.sessionStorage.removeItem('founderSessionPin');
-    window.sessionStorage.removeItem('founderSecurityPinSet');
-    navigate('/login/export');
-  }} />);
+  return withSessionWarning(
+    <>
+      <ExecutiveCommandDeck navigate={navigate} showSearch={showSearch} setShowSearch={setShowSearch} session={authState.session} onLogout={async () => {
+        await signOut();
+        window.sessionStorage.removeItem('selectedOS');
+        window.sessionStorage.removeItem('executiveSessionState');
+        window.sessionStorage.removeItem('founderSessionPin');
+        window.sessionStorage.removeItem('founderSecurityPinSet');
+        navigate('/login/export');
+      }} />
+      {showTour && <OnboardingTour onDone={() => setShowTour(false)} />}
+    </>
+  );
 }
 
 function AuthRouteLoading() {
@@ -2335,7 +2525,7 @@ function Header({ current, setDrawerOpen }) {
         <span>{current.status}</span>
         <strong>{current.title}</strong>
       </div>
-      <div className="search-shell">
+      <div className="search-shell" role="search">
         <Search size={16} />
         <input aria-label="Command search" placeholder="Search orders, lanes, CO records..." />
       </div>
@@ -2992,14 +3182,15 @@ function ShipmentTrackerPage({ navigate, onBack, shipmentId }) {
     }
   }
 
-  async function submitShipment(event) {
-    event.preventDefault();
-    const verification = await verifyShipmentCompany(demoTenantId, form.buyer_id, buyers);
+  async function submitShipment(eventOrPayload) {
+    const payload = eventOrPayload?.preventDefault ? form : eventOrPayload || form;
+    eventOrPayload?.preventDefault?.();
+    const verification = await verifyShipmentCompany(demoTenantId, payload.buyer_id, buyers);
     if (!verification.ok || !verification.data) {
       setNotice('Company not verified. Add buyer first.');
       return;
     }
-    const result = await createShipment(demoTenantId, form, shipments, buyers);
+    const result = await createShipment(demoTenantId, payload, shipments, buyers);
     if (!result.ok) {
       setNotice(result.error?.message || 'Shipment could not be created.');
       return;
@@ -3007,6 +3198,7 @@ function ShipmentTrackerPage({ navigate, onBack, shipmentId }) {
     setShipments((current) => [result.data, ...current]);
     setSelectedId(result.data.id);
     setNotice(`Shipment created: ${result.data.shipment_reference}`);
+    announceToSR('Shipment created');
     const shipmentStatus = getShipmentStatus(result.data);
     await sendSlackNotification({
       type: 'New Shipment Created',
@@ -3070,7 +3262,7 @@ function ShipmentTrackerPage({ navigate, onBack, shipmentId }) {
 
       <main className="shipment-layout">
         <section className="shipment-left-stack">
-          <ShipmentCreatePanel form={form} buyers={buyers} verifiedBuyer={verifiedBuyer} referencePreview={referencePreview} onChange={updateForm} onSubmit={submitShipment} />
+          <ShipmentWizard buyers={buyers} onComplete={submitShipment} onCancel={() => setNotice('Shipment creation cancelled.')} />
           <ShipmentFilterPanel filter={filter} onFilter={setFilter} />
         </section>
         <section className="shipment-card-grid">
@@ -3217,6 +3409,10 @@ function ShipmentDetailModal({ shipment, onClose, onChangeStage }) {
           <div><span>Shipment Detail</span><h2 id="shipment-modal-title">{shipment.shipment_reference}</h2><p>{getNextShipmentAction(shipment)}</p></div>
           <button className="ghost-button" onClick={onClose}>Close</button>
         </header>
+        <ShipmentProgressTracker
+          currentStage={shipment.current_stage}
+          shipment={shipment}
+        />
         <div className="shipment-detail-grid">
           <section>
             <div className="approval-section-header"><div><span>Buyer details</span><h3>{shipment.buyer_company || shipment.buyer?.company_name || 'Company not verified'}</h3></div><Building2 size={17} /></div>
@@ -4699,7 +4895,7 @@ function InvoiceDocument({ invoice }) {
           </div>
         </div>
       )}
-      <footer className="invoice-doc-footer">
+      <footer className="invoice-doc-footer" role="contentinfo">
         <p className="invoice-doc-notes">{invoice.terms || invoice.payment_terms || 'Payment due within 30 days. Please reference invoice number in all communications.'}</p>
         <div className="invoice-doc-seal">
           <div style={{ width: 80, height: 80, border: '2px solid var(--border-cyan)', borderRadius: '50%', display: 'grid', placeItems: 'center', color: 'var(--cyan)' }}>
@@ -5011,7 +5207,7 @@ function ExecutiveKpiTicker({ rates = [], forexStatus }) {
 
 function HeroCommandPanel({ navigate }) {
   return (
-    <section className="hero-command-panel">
+    <section className="hero-command-panel" role="banner">
       <div className="deck-hero-copy">
         <span>GOPU Export OS</span>
         <h1 id="deck-title">Executive operating dashboard</h1>
@@ -6180,6 +6376,8 @@ function DirectorCommandCenter({ navigate, onBack, onOpenTasks }) {
       approval_request: result?.data || item.approval_request
     });
     setMessage(`${action} recorded for ${item.title}. Source workflow sync prepared.`);
+    if (action === 'Approve') announceToSR('Request approved successfully');
+    if (action === 'Reject') announceToSR('Request rejected', 'assertive');
     setNote('');
   }
 
@@ -7208,8 +7406,14 @@ function FounderApprovalWall({ onBack, onOpenTasks }) {
       if (result?.ok && result.data?.id) {
         replaceRequest(result.data);
         setApprovalStatusMessage(`${action.replace(' Selected', '')} recorded. Originating workflow sync event emitted.`);
-        if (action === 'Approve Selected') show('Approved successfully');
-        if (action === 'Reject Selected') show('Rejected', 'warning');
+        if (action === 'Approve Selected') {
+          show('Approved successfully');
+          announceToSR('Request approved successfully');
+        }
+        if (action === 'Reject Selected') {
+          show('Rejected', 'warning');
+          announceToSR('Request rejected', 'assertive');
+        }
         if (action === 'Escalate to Executive') show('Escalated to Director', 'warning');
       } else if (result?.ok) {
         setApprovalStatusMessage('Founder note saved to approval comments.');
@@ -16845,6 +17049,8 @@ function NotificationCenter({ navigate, onBack }) {
     if (action === 'Reject') await rejectRequest(demoTenantId, notification.approval, note);
     if (action === 'Request Revision') await requestRevision(demoTenantId, notification.approval, note);
     setNotice(`${action}: ${notification.title}`);
+    if (action === 'Approve') announceToSR('Request approved successfully');
+    if (action === 'Reject') announceToSR('Request rejected', 'assertive');
     await loadData();
   }
 
@@ -16994,6 +17200,8 @@ function FounderMobileCommandMode({ navigate, onBack, initialView = 'Home' }) {
     if (action === 'Reject') response = await rejectRequest(demoTenantId, approval, note);
     if (action === 'Request Revision') response = await requestRevision(demoTenantId, approval, note);
     setNotice(`${approval.title} -> ${response?.data?.status || action}`);
+    if (action === 'Approve') announceToSR('Request approved successfully');
+    if (action === 'Reject') announceToSR('Request rejected', 'assertive');
     const refreshed = await getFounderMobileCommandData(demoTenantId);
     setData(refreshed.data);
   }
