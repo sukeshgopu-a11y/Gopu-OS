@@ -1886,7 +1886,7 @@ function App() {
     return <OSGateway onSelectOS={(osId) => navigate(`/login/${osId}`)} />;
   }
 
-  return withSessionWarning(<ExecutiveCommandDeck navigate={navigate} showSearch={showSearch} setShowSearch={setShowSearch} onLogout={async () => {
+  return withSessionWarning(<ExecutiveCommandDeck navigate={navigate} showSearch={showSearch} setShowSearch={setShowSearch} session={authState.session} onLogout={async () => {
     await signOut();
     window.sessionStorage.removeItem('selectedOS');
     window.sessionStorage.removeItem('executiveSessionState');
@@ -3887,12 +3887,211 @@ function HBarChart({ rows = [], colorFn }) {
   );
 }
 
+function NotificationCentre({ open, onClose, notifications = [] }) {
+  const ref = React.useRef(null);
+  useFocusTrap(ref, open);
+  const groups = React.useMemo(() => {
+    const critical = notifications.filter((n) => n.severity === 'critical' || n.type === 'error');
+    const warnings = notifications.filter((n) => n.severity === 'warning' || n.type === 'warning');
+    const info = notifications.filter((n) => !critical.includes(n) && !warnings.includes(n));
+    return [
+      { key: 'critical', label: 'Critical', items: critical, cls: 'error' },
+      { key: 'warnings', label: 'Warnings', items: warnings, cls: 'warning' },
+      { key: 'info', label: 'Updates', items: info, cls: 'info' },
+    ].filter((g) => g.items.length > 0);
+  }, [notifications]);
+
+  return (
+    <>
+      <div
+        className={`notif-backdrop ${open ? 'visible' : ''}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <aside
+        ref={ref}
+        className={`notif-panel ${open ? 'open' : ''}`}
+        aria-label="Notification centre"
+        aria-hidden={!open}
+      >
+        <header className="notif-header">
+          <div>
+            <span className="notif-eyebrow">Live Feed</span>
+            <h2>Notifications</h2>
+          </div>
+          <button className="icon-button" onClick={onClose} aria-label="Close notifications">
+            <ArrowLeft size={16} />
+          </button>
+        </header>
+
+        {notifications.length === 0 ? (
+          <EmptyState
+            icon={Bell}
+            title="All clear"
+            description="No active alerts or notifications."
+          />
+        ) : (
+          <div className="notif-scroll">
+            {groups.map((group) => (
+              <section key={group.key}>
+                <div className={`notification-group-header ${group.cls}`}>
+                  <span>{group.label}</span>
+                  <span className="notif-count">{group.items.length}</span>
+                </div>
+                {group.items.map((n, i) => (
+                  <div key={i} className={`notif-item notif-${group.cls}`}>
+                    <div className="notif-item-body">
+                      <strong>{n.title || n.message}</strong>
+                      {n.detail && <p>{n.detail}</p>}
+                    </div>
+                    <time className="notification-timestamp">
+                      {n.time || n.created_at
+                        ? new Date(n.time || n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : 'Now'}
+                    </time>
+                  </div>
+                ))}
+              </section>
+            ))}
+          </div>
+        )}
+      </aside>
+    </>
+  );
+}
+
+function SettingsPanel({ open, onClose, prefs, onPref }) {
+  const ref = React.useRef(null);
+  useFocusTrap(ref, open);
+  return (
+    <>
+      <div className={`notif-backdrop ${open ? 'visible' : ''}`} onClick={onClose} aria-hidden="true" />
+      <aside
+        ref={ref}
+        className={`notif-panel settings-panel ${open ? 'open' : ''}`}
+        aria-label="Settings"
+        aria-hidden={!open}
+      >
+        <header className="notif-header">
+          <div>
+            <span className="notif-eyebrow">Preferences</span>
+            <h2>Settings</h2>
+          </div>
+          <button className="icon-button" onClick={onClose} aria-label="Close settings">
+            <ArrowLeft size={16} />
+          </button>
+        </header>
+        <div className="settings-body">
+          <section className="settings-section">
+            <h3 className="settings-section-title">Display</h3>
+            <SettingToggle
+              label="Compact mode"
+              description="Reduce padding for denser information view"
+              value={prefs.compact}
+              onChange={(v) => onPref('compact', v)}
+            />
+            <SettingToggle
+              label="Reduced motion"
+              description="Disable animations and transitions"
+              value={prefs.reducedMotion}
+              onChange={(v) => onPref('reducedMotion', v)}
+            />
+            <SettingToggle
+              label="Show live clock"
+              description="Display current time in the header"
+              value={prefs.showClock}
+              onChange={(v) => onPref('showClock', v)}
+            />
+          </section>
+
+          <section className="settings-section">
+            <h3 className="settings-section-title">Notifications</h3>
+            <SettingToggle
+              label="Critical alerts"
+              description="Show error and blocked workflow alerts"
+              value={prefs.alertsCritical}
+              onChange={(v) => onPref('alertsCritical', v)}
+            />
+            <SettingToggle
+              label="Approval reminders"
+              description="Notify when approvals are pending over 2 hours"
+              value={prefs.alertsApprovals}
+              onChange={(v) => onPref('alertsApprovals', v)}
+            />
+          </section>
+
+          <section className="settings-section">
+            <h3 className="settings-section-title">Data</h3>
+            <SettingToggle
+              label="Auto-refresh dashboard"
+              description="Reload metrics every 5 minutes"
+              value={prefs.autoRefresh}
+              onChange={(v) => onPref('autoRefresh', v)}
+            />
+          </section>
+        </div>
+      </aside>
+    </>
+  );
+}
+
+function SettingToggle({ label, description, value, onChange }) {
+  const id = React.useId();
+  return (
+    <label className="setting-row" htmlFor={id}>
+      <div className="setting-copy">
+        <span className="setting-label">{label}</span>
+        <span className="setting-desc">{description}</span>
+      </div>
+      <button
+        id={id}
+        role="switch"
+        aria-checked={value}
+        className={`toggle-switch ${value ? 'on' : ''}`}
+        onClick={() => onChange(!value)}
+      >
+        <span className="toggle-thumb" />
+      </button>
+    </label>
+  );
+}
+
+function UserChip({ session, onSettings }) {
+  const email = session?.user?.email || 'Founder';
+  const initials = email.slice(0, 2).toUpperCase();
+  return (
+    <button className="user-chip" onClick={onSettings} aria-label="Open settings">
+      <span className="user-avatar" aria-hidden="true">{initials}</span>
+      <span className="user-email">{email.split('@')[0]}</span>
+      <Settings size={13} aria-hidden="true" />
+    </button>
+  );
+}
+
+const ShellControlsContext = React.createContext(null);
+
 function ExportOSShell({ children, className = '', liveDataConnected = backendStatus.mode === 'Connected', statusMessage, loading = false }) {
   const isCtoShell = className.includes('cto-shell');
   const backendMessage = statusMessage || (isCtoShell && liveDataConnected ? 'Supabase live connected' : isCtoShell && !liveDataConnected ? 'No live data connected' : backendStatus.message);
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const [notifOpen, setNotifOpen] = React.useState(false);
+  const [prefs, setPrefs] = React.useState({
+    compact: false,
+    reducedMotion: false,
+    showClock: true,
+    alertsCritical: true,
+    alertsApprovals: true,
+    autoRefresh: false,
+  });
+  const handlePref = (key, val) => setPrefs((p) => ({ ...p, [key]: val }));
+  const shellControls = React.useMemo(() => ({
+    prefs,
+    openNotifications: () => setNotifOpen(true),
+    openSettings: () => setSettingsOpen(true)
+  }), [prefs]);
   return (
     <motion.div
-      className={`export-os-shell ${className}`}
+      className={`export-os-shell ${prefs.compact ? 'compact-mode' : ''} ${className}`}
       id="main-content"
       role="main"
       aria-label="Main content"
@@ -3909,7 +4108,20 @@ function ExportOSShell({ children, className = '', liveDataConnected = backendSt
         <Database size={14} />
         <span>{backendMessage}</span>
       </div>
-      {children}
+      <ShellControlsContext.Provider value={shellControls}>
+        {children}
+      </ShellControlsContext.Provider>
+      <NotificationCentre
+        open={notifOpen}
+        onClose={() => setNotifOpen(false)}
+        notifications={[]}
+      />
+      <SettingsPanel
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        prefs={prefs}
+        onPref={handlePref}
+      />
       <ScrollToTop />
     </motion.div>
   );
@@ -4002,14 +4214,14 @@ const operationalStatusGroups = [
   }
 ];
 
-function ExecutiveCommandDeck({ navigate, onLogout, showSearch, setShowSearch }) {
+function ExecutiveCommandDeck({ navigate, onLogout, showSearch, setShowSearch, session }) {
   const { rates, status: forexStatus } = useLiveForexRates();
   const { items: newsItems, status: newsStatus } = useLiveExportNews();
 
   return (
     <ExportOSShell className="executive-home-shell">
       <ForexTicker items={rates} status={forexStatus} />
-      <CommandDeckHeader navigate={navigate} onLogout={onLogout} showSearch={showSearch} setShowSearch={setShowSearch} />
+      <CommandDeckHeader navigate={navigate} onLogout={onLogout} showSearch={showSearch} setShowSearch={setShowSearch} session={session} />
       <ExecutiveKpiTicker rates={rates} forexStatus={forexStatus} />
       <section className="deck-hero executive-command-zone" aria-labelledby="deck-title">
         <HeroCommandPanel navigate={navigate} />
@@ -4105,11 +4317,12 @@ const executiveHealthRows = [
   { executive: 'CIO', status: 'Opportunity Detected', summary: 'Country pending and GCC importer demand signals are active.', route: '/export-os/cio', state: 'success' }
 ];
 
-function CommandDeckHeader({ navigate, onLogout, showSearch = false, setShowSearch }) {
+function CommandDeckHeader({ navigate, onLogout, showSearch = false, setShowSearch, session }) {
   const [now, setNow] = useState(() => new Date());
   const [activePanel, setActivePanel] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [notificationFilter, setNotificationFilter] = useState('All');
+  const shellControls = React.useContext(ShellControlsContext);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000);
@@ -4165,7 +4378,7 @@ function CommandDeckHeader({ navigate, onLogout, showSearch = false, setShowSear
           <CalendarClock size={16} /><span>{now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span>
         </button>
         <Tooltip text="Notifications">
-          <button className="icon-button top-icon-button notification-button" aria-label="Notifications" onClick={() => togglePanel('notifications')} aria-expanded={activePanel === 'notifications'}>
+          <button className="icon-button top-icon-button notification-button" aria-label="Notifications" onClick={() => shellControls?.openNotifications?.()} aria-expanded={false}>
             <Bell size={18} /><span>{unreadCount}</span>
           </button>
         </Tooltip>
@@ -4176,6 +4389,7 @@ function CommandDeckHeader({ navigate, onLogout, showSearch = false, setShowSear
           <button className="icon-button top-icon-button director-command-icon" aria-label="Director AI command console" onClick={() => openRoute('/export-os/director-console')}><Fingerprint size={18} /></button>
         </Tooltip>
         <button className="ghost-button deck-logout" onClick={onLogout} title="Securely end current executive session" aria-label="Securely end current executive session">Logout</button>
+        <UserChip session={session} onSettings={() => shellControls?.openSettings?.()} />
       </div>
       <AnimatePresence>
         {activePanel && (
