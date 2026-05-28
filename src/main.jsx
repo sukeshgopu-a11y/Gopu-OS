@@ -4768,6 +4768,214 @@ function useDebounce(value, delay = 300) {
   return debounced;
 }
 
+function useFilterState(storageKey, defaults = {}) {
+  const [filters, setFilters] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      return saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
+    } catch {
+      return defaults;
+    }
+  });
+
+  function updateFilter(key, value) {
+    setFilters((prev) => {
+      const next = { ...prev, [key]: value };
+      try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }
+
+  function clearAll() {
+    setFilters(defaults);
+    try { localStorage.removeItem(storageKey); } catch {}
+  }
+
+  const activeCount = Object.entries(filters).filter(([key, value]) => {
+    const defaultValue = defaults[key];
+    if (Array.isArray(value)) return value.length > 0;
+    return value !== defaultValue && value !== '' && value !== null && value !== undefined;
+  }).length;
+
+  return { filters, updateFilter, clearAll, activeCount };
+}
+
+function FilterBar({
+  storageKey = 'gopuos_filters',
+  searchPlaceholder = 'Search...',
+  statusOptions = [],
+  divisionOptions = [],
+  priorityOptions = [],
+  onFilterChange,
+}) {
+  const defaults = { search: '', status: [], division: [], priority: [], dateFrom: '', dateTo: '' };
+  const { filters, updateFilter, clearAll, activeCount } = useFilterState(storageKey, defaults);
+  const [presetsOpen, setPresetsOpen] = React.useState(false);
+  const [presets, setPresets] = React.useState(() => {
+    try { return JSON.parse(localStorage.getItem(`${storageKey}_presets`) || '[]'); } catch { return []; }
+  });
+  const [presetName, setPresetName] = React.useState('');
+  const debouncedSearch = useDebounce(filters.search, 250);
+
+  React.useEffect(() => {
+    onFilterChange?.({ ...filters, search: debouncedSearch });
+  }, [filters.status, filters.division, filters.priority, filters.dateFrom, filters.dateTo, debouncedSearch]);
+
+  function toggleChip(key, value) {
+    const current = filters[key] || [];
+    const next = current.includes(value)
+      ? current.filter((item) => item !== value)
+      : [...current, value];
+    updateFilter(key, next);
+  }
+
+  function savePreset() {
+    if (!presetName.trim()) return;
+    const next = [...presets, { name: presetName.trim(), filters }];
+    setPresets(next);
+    try { localStorage.setItem(`${storageKey}_presets`, JSON.stringify(next)); } catch {}
+    setPresetName('');
+    setPresetsOpen(false);
+  }
+
+  function applyPreset(preset) {
+    Object.entries(preset.filters).forEach(([key, value]) => updateFilter(key, value));
+    setPresetsOpen(false);
+  }
+
+  function deletePreset(index) {
+    const next = presets.filter((_, itemIndex) => itemIndex !== index);
+    setPresets(next);
+    try { localStorage.setItem(`${storageKey}_presets`, JSON.stringify(next)); } catch {}
+  }
+
+  function ChipGroup({ label, options, filterKey }) {
+    if (!options.length) return null;
+    return (
+      <div className="filter-chip-group">
+        <span className="filter-chip-label">{label}</span>
+        <div className="filter-chips">
+          {options.map((option) => {
+            const active = (filters[filterKey] || []).includes(option.value);
+            return (
+              <button
+                key={option.value}
+                className={`filter-chip ${active ? 'active' : ''}`}
+                onClick={() => toggleChip(filterKey, option.value)}
+                aria-pressed={active}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="filter-bar" role="search" aria-label="Filter controls">
+      <div className="filter-bar-row">
+        <div className="filter-search-wrap">
+          <Search size={15} aria-hidden="true" />
+          <input
+            className="filter-search-input"
+            type="search"
+            placeholder={searchPlaceholder}
+            value={filters.search}
+            onChange={(event) => updateFilter('search', event.target.value)}
+            aria-label={searchPlaceholder}
+          />
+        </div>
+
+        <div className="filter-date-range">
+          <label className="filter-date-label" htmlFor={`${storageKey}-date-from`}>From</label>
+          <input
+            id={`${storageKey}-date-from`}
+            className="filter-date-input"
+            type="date"
+            value={filters.dateFrom}
+            onChange={(event) => updateFilter('dateFrom', event.target.value)}
+            aria-label="Filter from date"
+          />
+          <span className="filter-date-sep">-</span>
+          <input
+            className="filter-date-input"
+            type="date"
+            value={filters.dateTo}
+            onChange={(event) => updateFilter('dateTo', event.target.value)}
+            aria-label="Filter to date"
+          />
+        </div>
+
+        <div className="filter-bar-actions">
+          <div className="filter-presets-wrap">
+            <button
+              className="btn btn-ghost btn-sm filter-preset-btn"
+              onClick={() => setPresetsOpen((current) => !current)}
+              aria-expanded={presetsOpen}
+              aria-haspopup="true"
+            >
+              <Bookmark size={14} />
+              Presets
+              {presets.length > 0 && <span className="filter-preset-count">{presets.length}</span>}
+            </button>
+            {presetsOpen && (
+              <div className="filter-presets-panel" role="dialog" aria-label="Filter presets">
+                {presets.length > 0 && (
+                  <ul className="filter-presets-list">
+                    {presets.map((preset, index) => (
+                      <li key={`${preset.name}-${index}`} className="filter-preset-item">
+                        <button className="filter-preset-apply" onClick={() => applyPreset(preset)}>{preset.name}</button>
+                        <button
+                          className="filter-preset-delete"
+                          onClick={() => deletePreset(index)}
+                          aria-label={`Delete preset ${preset.name}`}
+                        >
+                          <X size={12} />
+                        </button>
+                      </li>
+                    ))}
+                    <li className="filter-presets-divider" />
+                  </ul>
+                )}
+                <div className="filter-preset-save">
+                  <input
+                    className="filter-preset-name-input"
+                    type="text"
+                    placeholder="Preset name..."
+                    value={presetName}
+                    onChange={(event) => setPresetName(event.target.value)}
+                    onKeyDown={(event) => event.key === 'Enter' && savePreset()}
+                    aria-label="New preset name"
+                  />
+                  <button className="btn btn-primary btn-sm" onClick={savePreset}>Save</button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {activeCount > 0 && (
+            <button className="btn btn-ghost btn-sm filter-clear-btn" onClick={clearAll}>
+              <X size={14} />
+              Clear
+              <span className="filter-active-badge">{activeCount}</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {(statusOptions.length > 0 || divisionOptions.length > 0 || priorityOptions.length > 0) && (
+        <div className="filter-bar-chips-row">
+          <ChipGroup label="Status" options={statusOptions} filterKey="status" />
+          <ChipGroup label="Division" options={divisionOptions} filterKey="division" />
+          <ChipGroup label="Priority" options={priorityOptions} filterKey="priority" />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function usePrevious(value) {
   const ref = React.useRef();
 
@@ -7504,6 +7712,7 @@ function normalizeFounderQueueRequest(request) {
 
 function FounderApprovalWall({ onBack, onOpenTasks }) {
   const [activeFilter, setActiveFilter] = useState('All');
+  const [activeFilters, setActiveFilters] = useState(null);
   const [requests, setRequests] = useState(() => approvalWallRequests.map(normalizeFounderQueueRequest));
   const [selectedId, setSelectedId] = useState(approvalWallRequests[0]?.id);
   const [founderNote, setFounderNote] = useState('');
@@ -7540,10 +7749,63 @@ function FounderApprovalWall({ onBack, onOpenTasks }) {
   }, []);
 
   const filteredRequests = requests.filter((request) => {
-    if (activeFilter === 'All') return true;
-    if (['Pending Approval', 'Needs Review', 'Approved', 'Rejected'].includes(activeFilter)) return request.status === activeFilter;
-    if (activeFilter === 'High Risk') return ['High', 'Critical'].includes(request.risk_level);
-    return request.category === activeFilter || request.department === activeFilter;
+    const matchesLegacyFilter = (() => {
+      if (activeFilter === 'All') return true;
+      if (['Pending Approval', 'Needs Review', 'Approved', 'Rejected'].includes(activeFilter)) return request.status === activeFilter;
+      if (activeFilter === 'High Risk') return ['High', 'Critical'].includes(request.risk_level);
+      return request.category === activeFilter || request.department === activeFilter;
+    })();
+    if (!matchesLegacyFilter) return false;
+    if (!activeFilters) return true;
+
+    const searchable = [
+      request.title,
+      request.summary,
+      request.status,
+      request.department,
+      request.category,
+      request.request_type,
+      request.related_record,
+      request.related_workflow_id,
+      request.buyer_name,
+      request.requested_by_label,
+      request.executive_owner,
+      request.source_module,
+      request.reason,
+      request.priority,
+      request.risk_level,
+      request.created_at,
+      request.requested_time
+    ].filter(Boolean).join(' ').toLowerCase();
+    const search = activeFilters.search?.trim().toLowerCase();
+    if (search && !searchable.includes(search)) return false;
+
+    const statusMap = {
+      pending: ['pending approval', 'pending'],
+      approved: ['approved'],
+      rejected: ['rejected'],
+      review: ['needs review', 'in review', 'review']
+    };
+    if (activeFilters.status?.length) {
+      const statusText = `${request.status || ''} ${request.approval_status || ''}`.toLowerCase();
+      if (!activeFilters.status.some((status) => statusMap[status]?.some((match) => statusText.includes(match)))) return false;
+    }
+
+    if (activeFilters.division?.length) {
+      const divisionText = `${request.department || ''} ${request.executive_owner || ''} ${request.requested_by_label || ''} ${request.category || ''} ${request.source_module || ''}`.toLowerCase();
+      if (!activeFilters.division.some((division) => divisionText.includes(division))) return false;
+    }
+
+    if (activeFilters.priority?.length) {
+      const priorityText = `${request.priority || ''} ${request.risk_level || ''}`.toLowerCase();
+      if (!activeFilters.priority.some((priority) => priorityText.includes(priority))) return false;
+    }
+
+    const requestDate = String(request.created_at || request.requested_time || '').slice(0, 10);
+    if (activeFilters.dateFrom && requestDate && requestDate < activeFilters.dateFrom) return false;
+    if (activeFilters.dateTo && requestDate && requestDate > activeFilters.dateTo) return false;
+
+    return true;
   });
 
   const replaceRequest = React.useCallback((updatedRequest) => {
@@ -7650,6 +7912,7 @@ function FounderApprovalWall({ onBack, onOpenTasks }) {
           filters={approvalFilters}
           activeFilter={activeFilter}
           setActiveFilter={handleApprovalFilterChange}
+          onFilterChange={(filters) => setActiveFilters(filters)}
           selectedId={selectedRequest?.id}
           onSelect={handleApprovalSelect}
         />
@@ -7713,7 +7976,7 @@ function ApprovalWallHeader({ onBack, onOpenTasks, pendingCount, highRiskCount }
   );
 }
 
-function ApprovalQueueList({ requests, filters, activeFilter, setActiveFilter, selectedId, onSelect }) {
+function ApprovalQueueList({ requests, filters, activeFilter, setActiveFilter, onFilterChange, selectedId, onSelect }) {
   const [page, setPage] = React.useState(1);
   const PER_PAGE = 20;
   const approvalRows = React.useMemo(() => requests.map((request) => ({
@@ -7744,6 +8007,30 @@ function ApprovalQueueList({ requests, filters, activeFilter, setActiveFilter, s
         </div>
         <small>{requests.length} visible</small>
       </div>
+      <FilterBar
+        storageKey="gopuos_command_filters"
+        searchPlaceholder="Search commands, buyers, shipments..."
+        statusOptions={[
+          { value: 'pending', label: 'Pending' },
+          { value: 'approved', label: 'Approved' },
+          { value: 'rejected', label: 'Rejected' },
+          { value: 'review', label: 'In Review' },
+        ]}
+        divisionOptions={[
+          { value: 'coo', label: 'COO' },
+          { value: 'cfo', label: 'CFO' },
+          { value: 'cto', label: 'CTO' },
+          { value: 'cmo', label: 'CMO' },
+          { value: 'cio', label: 'CIO' },
+        ]}
+        priorityOptions={[
+          { value: 'critical', label: 'Critical' },
+          { value: 'high', label: 'High' },
+          { value: 'medium', label: 'Medium' },
+          { value: 'low', label: 'Low' },
+        ]}
+        onFilterChange={onFilterChange}
+      />
       <div className="approval-filter-row">
         {filters.map((filter) => (
           <button className={activeFilter === filter ? 'active' : ''} key={filter} onClick={() => setActiveFilter(filter)}>
