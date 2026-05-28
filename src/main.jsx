@@ -1554,6 +1554,36 @@ function App() {
   const [showSearch, setShowSearch] = useState(false);
   const current = pages[activePage];
   const isProtectedRoute = route === '/plant-os' || route === '/export-os' || route.startsWith('/export-os/');
+  const handleSessionTimeout = React.useCallback(async () => {
+    if (!isProtectedRoute || !authState.session) return;
+    await signOut();
+    navigate('/login/export');
+  }, [authState.session, isProtectedRoute]);
+  const { showWarning, extend } = useSessionTimeout(handleSessionTimeout, 25 * 60 * 1000);
+  const sessionWarning = showWarning && isProtectedRoute && authState.session ? (
+    <SessionTimeoutWarning
+      onExtend={extend}
+      onLogout={handleSessionTimeout}
+      minutesLeft={5}
+    />
+  ) : null;
+  const withSessionWarning = (node) => (
+    <>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={route}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+          style={{ minHeight: 0 }}
+        >
+          {node}
+        </motion.div>
+      </AnimatePresence>
+      {sessionWarning}
+    </>
+  );
 
   React.useEffect(() => {
     function handleKey(e) {
@@ -1619,7 +1649,7 @@ function App() {
   }
 
   if (isProtectedRoute && backendStatus.mode === 'Connected' && !authState.ready) {
-    return <AuthRouteLoading />;
+    return withSessionWarning(<AuthRouteLoading />);
   }
 
   if (isProtectedRoute && (!authState.session || backendStatus.mode !== 'Connected')) {
@@ -1644,32 +1674,32 @@ function App() {
   }
 
   if (route === '/plant-os') {
-    return <PlantDashboard onBack={() => navigate('/')} />;
+    return withSessionWarning(<PlantDashboard onBack={() => navigate('/')} />);
   }
 
   if (route === '/export-os/company-master-data') {
-    return <CompanyMasterDataVault onBack={() => navigate('/export-os')} />;
+    return withSessionWarning(<CompanyMasterDataVault onBack={() => navigate('/export-os')} />);
   }
 
   if (route === '/export-os/trust-center' || route === '/export-os/company-profile' || route === '/export-os/global-presence' || route === '/export-os/certifications' || route === '/export-os/capabilities') {
     const view = route === '/export-os/company-profile' ? 'profile' : route === '/export-os/global-presence' ? 'presence' : route === '/export-os/certifications' ? 'certifications' : route === '/export-os/capabilities' ? 'capabilities' : 'overview';
-    return <TrustCenterDashboard navigate={navigate} onBack={() => navigate('/export-os')} view={view} />;
+    return withSessionWarning(<TrustCenterDashboard navigate={navigate} onBack={() => navigate('/export-os')} view={view} />);
   }
 
   if (route === '/export-os/approval-wall') {
-    return <FounderApprovalWall onBack={() => navigate('/export-os')} onOpenTasks={() => navigate('/export-os/tasks')} />;
+    return withSessionWarning(<FounderApprovalWall onBack={() => navigate('/export-os')} onOpenTasks={() => navigate('/export-os/tasks')} />);
   }
 
   if (route === '/export-os/director' || route === '/export-os/director-console' || route === '/export-os/director-queue' || route === '/export-os/director-command-center') {
-    return <DirectorCommandCenter navigate={navigate} onBack={() => navigate('/export-os')} onOpenTasks={() => navigate('/export-os/tasks')} />;
+    return withSessionWarning(<DirectorCommandCenter navigate={navigate} onBack={() => navigate('/export-os')} onOpenTasks={() => navigate('/export-os/tasks')} />);
   }
 
   if (route === '/export-os/operating-spine' || route === '/export-os/system-architecture') {
-    return <OperatingSpinePage navigate={navigate} onBack={() => navigate('/export-os')} />;
+    return withSessionWarning(<OperatingSpinePage navigate={navigate} onBack={() => navigate('/export-os')} />);
   }
 
   if (route === '/export-os/pricing-engine') {
-    return <PricingEnginePage onBack={() => navigate('/export-os')} onOpenApprovalWall={() => navigate('/export-os/director')} onOpenTasks={() => navigate('/export-os/tasks')} />;
+    return withSessionWarning(<PricingEnginePage onBack={() => navigate('/export-os')} onOpenApprovalWall={() => navigate('/export-os/director')} onOpenTasks={() => navigate('/export-os/tasks')} />);
   }
 
   if (route === '/export-os/document-factory' || route === '/export-os/documents') {
@@ -1856,14 +1886,14 @@ function App() {
     return <OSGateway onSelectOS={(osId) => navigate(`/login/${osId}`)} />;
   }
 
-  return <ExecutiveCommandDeck navigate={navigate} showSearch={showSearch} setShowSearch={setShowSearch} onLogout={async () => {
+  return withSessionWarning(<ExecutiveCommandDeck navigate={navigate} showSearch={showSearch} setShowSearch={setShowSearch} onLogout={async () => {
     await signOut();
     window.sessionStorage.removeItem('selectedOS');
     window.sessionStorage.removeItem('executiveSessionState');
     window.sessionStorage.removeItem('founderSessionPin');
     window.sessionStorage.removeItem('founderSecurityPinSet');
     navigate('/login/export');
-  }} />;
+  }} />);
 }
 
 function AuthRouteLoading() {
@@ -1989,6 +2019,8 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
   const [values, setValues] = useState({ identity: '', password: '', pin: '' });
   const [errors, setErrors] = useState({});
   const [authMessage, setAuthMessage] = useState(backendStatus.mode === 'Connected' ? 'Live Auth Connected' : 'Integration Pending');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const hasLoginError = Object.values(errors).some(Boolean) || /failed|blocked|pending/i.test(authMessage);
 
   useEffect(() => {
     let disposed = false;
@@ -2012,6 +2044,7 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
 
   async function submitLogin(event) {
     event.preventDefault();
+    if (isSubmitting) return;
     const nextErrors = {};
     const identity = normalizeLoginEmail(values.identity);
     if (!identity) nextErrors.identity = 'Email is required.';
@@ -2021,7 +2054,9 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
 
     if (Object.keys(nextErrors).length === 0 && backendStatus.mode === 'Connected') {
       setAuthMessage('Verifying live Supabase session...');
+      setIsSubmitting(true);
       const { error } = await signInWithPassword(identity, values.password);
+      setIsSubmitting(false);
       if (error) {
         setAuthMessage('Login failed');
         setErrors({ password: error.message || 'Supabase authentication failed.' });
@@ -2036,6 +2071,10 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
 
     if (Object.keys(nextErrors).length === 0) {
       setAuthMessage('Integration Pending - configure Supabase anon key to enable login');
+    } else if (nextErrors.identity) {
+      setAuthMessage('Live GOPU login requires the Supabase Auth user for this project.');
+    } else {
+      setAuthMessage('Complete the required login fields.');
     }
   }
 
@@ -2051,6 +2090,11 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
           <div className="login-form-heading">
             <span>{config.badge}</span>
             <h1 id="login-title">{config.title}</h1>
+            <p>Use the live GOPU Supabase account. Demo `.example` emails are blocked.</p>
+          </div>
+          <div className={`login-auth-status ${hasLoginError ? 'status-error' : 'status-live'}`} role="status" aria-live="polite">
+            <span>{authMessage}</span>
+            <small>{supabaseConfigStatus.projectRef ? `Project: ${supabaseConfigStatus.projectRef}` : 'Supabase project not configured'}</small>
           </div>
           <form className="login-form" onSubmit={submitLogin} noValidate>
             <SecureField
@@ -2070,8 +2114,8 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
               error={errors.password}
               onChange={(value) => updateField('password', value)}
             />
-            <button className="tactical-button login-submit" type="submit">
-              Login
+            <button className="tactical-button login-submit" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Verifying...' : 'Login'}
               <ChevronRight size={16} />
             </button>
           </form>
@@ -3027,7 +3071,7 @@ function ShipmentFilterPanel({ filter, onFilter }) {
   return <section className="shipment-panel"><div className="approval-section-header"><div><span>Filters</span><h2>Status view</h2></div><SlidersHorizontal size={18} /></div><div className="shipment-filter-row">{shipmentFilterOptions.map((item) => <button key={item} className={filter === item ? 'active' : ''} onClick={() => onFilter(item)}>{item}</button>)}</div></section>;
 }
 
-function ShipmentTrackerCard({ shipment, onOpen }) {
+const ShipmentTrackerCard = React.memo(function ShipmentTrackerCard({ shipment, onOpen }) {
   const status = getShipmentStatus(shipment);
   return (
     <button className={`shipment-card status-${status}`} onClick={() => onOpen(shipment)}>
@@ -3046,7 +3090,7 @@ function ShipmentTrackerCard({ shipment, onOpen }) {
       <footer><span>Next action</span><strong>{getNextShipmentAction(shipment)}</strong></footer>
     </button>
   );
-}
+});
 
 function ShipmentDetailModal({ shipment, onClose, onChangeStage }) {
   const modalRef = React.useRef(null);
@@ -3311,7 +3355,7 @@ function EmptyState({ icon: Icon, title, description, action }) {
   );
 }
 
-function StatusBadge({ status, size = 'md', label, state }) {
+const StatusBadge = React.memo(function StatusBadge({ status, size = 'md', label, state }) {
   const displayStatus = status || label || 'Draft';
   const map = {
     'Active':           { color: '#3ddc84', bg: 'rgba(61,220,132,0.1)',  border: 'rgba(61,220,132,0.3)'  },
@@ -3360,9 +3404,9 @@ function StatusBadge({ status, size = 'md', label, state }) {
       {displayStatus}
     </span>
   );
-}
+});
 
-function TrendIndicator({ value, suffix = '%', invert = false }) {
+const TrendIndicator = React.memo(function TrendIndicator({ value, suffix = '%', invert = false }) {
   if (value === null || value === undefined) return null;
   const numericValue = typeof value === 'number' ? value : Number(String(value).replace(/[^0-9.-]/g, ''));
   if (Number.isNaN(numericValue)) return <span className="trend-indicator neutral">{value}</span>;
@@ -3376,7 +3420,7 @@ function TrendIndicator({ value, suffix = '%', invert = false }) {
       {arrow} {Math.abs(numericValue)}{displaySuffix}
     </span>
   );
-}
+});
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -3525,6 +3569,121 @@ function Tooltip({ text, children }) {
   );
 }
 
+function TopLoadingBar({ loading }) {
+  const [width, setWidth] = React.useState(0);
+  const [visible, setVisible] = React.useState(false);
+  React.useEffect(() => {
+    if (loading) {
+      setVisible(true);
+      setWidth(0);
+      const t1 = setTimeout(() => setWidth(40), 50);
+      const t2 = setTimeout(() => setWidth(70), 400);
+      const t3 = setTimeout(() => setWidth(90), 900);
+      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    } else {
+      setWidth(100);
+      const t = setTimeout(() => { setVisible(false); setWidth(0); }, 400);
+      return () => clearTimeout(t);
+    }
+  }, [loading]);
+  if (!visible) return null;
+  return (
+    <div
+      className="top-loading-bar"
+      role="progressbar"
+      aria-label="Loading"
+      aria-valuenow={width}
+      style={{ width: `${width}%`, opacity: width === 100 ? 0 : 1 }}
+    />
+  );
+}
+
+function SessionTimeoutWarning({ onExtend, onLogout, minutesLeft = 5 }) {
+  return (
+    <div className="confirm-overlay" role="alertdialog" aria-modal="true"
+      aria-labelledby="timeout-title" aria-describedby="timeout-msg">
+      <div className="confirm-dialog" style={{ borderColor: 'rgba(255,90,90,0.3)' }}>
+        <TimerReset size={28} style={{ color: 'var(--warning)' }} aria-hidden="true" />
+        <h2 id="timeout-title">Session expiring soon</h2>
+        <p id="timeout-msg">
+          Your session will expire in <strong>{minutesLeft} minutes</strong> due to inactivity.
+          Stay signed in or you will be logged out automatically.
+        </p>
+        <div className="confirm-actions">
+          <button className="ghost-button" onClick={onLogout}>Sign out now</button>
+          <button className="tactical-button" onClick={onExtend}>Stay signed in</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function useSessionTimeout(onTimeout, timeoutMs = 25 * 60 * 1000, warningMs = 5 * 60 * 1000) {
+  const [showWarning, setShowWarning] = React.useState(false);
+  const warningTimer = React.useRef(null);
+  const logoutTimer = React.useRef(null);
+  const reset = React.useCallback(() => {
+    setShowWarning(false);
+    clearTimeout(warningTimer.current);
+    clearTimeout(logoutTimer.current);
+    warningTimer.current = setTimeout(() => setShowWarning(true), timeoutMs - warningMs);
+    logoutTimer.current = setTimeout(() => onTimeout(), timeoutMs);
+  }, [onTimeout, timeoutMs, warningMs]);
+  React.useEffect(() => {
+    const events = ['mousedown', 'keydown', 'touchstart', 'scroll'];
+    events.forEach((e) => window.addEventListener(e, reset, { passive: true }));
+    reset();
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, reset));
+      clearTimeout(warningTimer.current);
+      clearTimeout(logoutTimer.current);
+    };
+  }, [reset]);
+  return { showWarning, extend: reset };
+}
+
+function Pagination({ total, perPage = 20, page, onPage }) {
+  const totalPages = Math.ceil(total / perPage);
+  if (totalPages <= 1) return null;
+  const pages = Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+    if (totalPages <= 7) return i + 1;
+    if (page <= 4) return i + 1;
+    if (page >= totalPages - 3) return totalPages - 6 + i;
+    return page - 3 + i;
+  });
+  return (
+    <nav className="pagination" aria-label="Pagination">
+      <button
+        className="page-btn"
+        onClick={() => onPage(page - 1)}
+        disabled={page === 1}
+        aria-label="Previous page"
+      >
+        ‹
+      </button>
+      {pages.map((p) => (
+        <button
+          key={p}
+          className={`page-btn ${p === page ? 'active' : ''}`}
+          onClick={() => onPage(p)}
+          aria-label={`Page ${p}`}
+          aria-current={p === page ? 'page' : undefined}
+        >
+          {p}
+        </button>
+      ))}
+      <button
+        className="page-btn"
+        onClick={() => onPage(page + 1)}
+        disabled={page === totalPages}
+        aria-label="Next page"
+      >
+        ›
+      </button>
+    </nav>
+  );
+}
+
 function useFocusTrap(ref, isActive) {
   React.useEffect(() => {
     if (!isActive || !ref.current) return;
@@ -3601,7 +3760,7 @@ function MetricSkeletonGrid() {
   );
 }
 
-function ExportOSShell({ children, className = '', liveDataConnected = backendStatus.mode === 'Connected', statusMessage }) {
+function ExportOSShell({ children, className = '', liveDataConnected = backendStatus.mode === 'Connected', statusMessage, loading = false }) {
   const isCtoShell = className.includes('cto-shell');
   const backendMessage = statusMessage || (isCtoShell && liveDataConnected ? 'Supabase live connected' : isCtoShell && !liveDataConnected ? 'No live data connected' : backendStatus.message);
   return (
@@ -3614,6 +3773,7 @@ function ExportOSShell({ children, className = '', liveDataConnected = backendSt
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.52, ease: [0.16, 1, 0.3, 1] }}
     >
+      <TopLoadingBar loading={loading} />
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <ConnectionBanner />
       <div className="background-grid" />
@@ -6093,6 +6253,12 @@ function ApprovalWallHeader({ onBack, onOpenTasks, pendingCount, highRiskCount }
 }
 
 function ApprovalQueueList({ requests, filters, activeFilter, setActiveFilter, selectedId, onSelect }) {
+  const [page, setPage] = React.useState(1);
+  const PER_PAGE = 20;
+  const paged = requests.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  React.useEffect(() => {
+    setPage(1);
+  }, [activeFilter, requests.length]);
   return (
     <section className="approval-panel approval-queue-panel">
       <div className="approval-section-header">
@@ -6112,15 +6278,16 @@ function ApprovalQueueList({ requests, filters, activeFilter, setActiveFilter, s
       <div className="approval-queue-list">
         {requests.length === 0
           ? <EmptyState icon={CheckCircle2} title="All clear" description="No pending approvals at this time." />
-          : requests.map((request) => (
+          : paged.map((request) => (
             <ApprovalQueueCard key={request.id} request={request} selected={selectedId === request.id} onSelect={() => onSelect(request.id)} />
           ))}
       </div>
+      <Pagination total={requests.length} perPage={PER_PAGE} page={page} onPage={setPage} />
     </section>
   );
 }
 
-function ApprovalQueueCard({ request, selected, onSelect }) {
+const ApprovalQueueCard = React.memo(function ApprovalCard({ request, selected, onSelect }) {
   return (
     <button className={`approval-queue-card ${selected ? 'selected' : ''}`} onClick={onSelect}>
       <div>
@@ -6143,7 +6310,7 @@ function ApprovalQueueCard({ request, selected, onSelect }) {
       </footer>
     </button>
   );
-}
+});
 
 function ApprovalDetailPanel({ request, onAction }) {
   if (!request) return null;
@@ -10704,9 +10871,9 @@ function TaskSummaryCards({ tasks }) {
   return <section className="task-summary-grid">{data.map(([label, value, status]) => <article key={label}><span>{label}</span><strong>{value}</strong><small>{status}</small></article>)}</section>;
 }
 
-function TaskFilters({ filters, activeFilter, setActiveFilter, search, setSearch }) {
+const TaskFilters = React.memo(function TaskFilters({ filters, activeFilter, setActiveFilter, search, setSearch }) {
   return <section className="task-panel"><div className="approval-section-header"><div><span>Task Filters</span><h2>Source and owner control</h2></div><Search size={18} /></div><input aria-label="Search tasks" className="task-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search task title, owner, buyer, product, workflow ID" /><div className="approval-filter-row">{filters.map((filter) => <button className={activeFilter === filter ? 'active' : ''} key={filter} onClick={() => setActiveFilter(filter)}>{filter}</button>)}</div></section>;
-}
+});
 
 function TaskBoard({ tasks, selectedId, onSelect }) {
   const columns = ['New', 'In Progress', 'Waiting Review', 'Blocked', 'Escalated', 'Done'];
@@ -16601,10 +16768,16 @@ function ImporterDatabaseTab({ importers, selectedImporter, onOpen, onSelect }) 
 }
 
 function ImporterTable({ importers, onOpen, onSelect }) {
+  const [page, setPage] = React.useState(1);
+  const PER_PAGE = 20;
+  const paged = importers.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  React.useEffect(() => {
+    setPage(1);
+  }, [importers.length]);
   return (
     <div className="cio-clean-table cio-importer-table">
       <div className="cio-table-head">{['Company', 'Country', 'Importer Type', 'Products', 'Email', 'Phone', 'LinkedIn', 'Confidence', 'Status', 'Action'].map((item) => <span key={item}>{item}</span>)}</div>
-      {importers.map((importer) => (
+      {paged.map((importer) => (
         <div key={importer.id}>
           <button type="button" className="cio-company-link" onMouseEnter={() => onSelect(importer.id)} onFocus={() => onSelect(importer.id)} onClick={() => onOpen(importer.id)}>{importer.company_name}</button>
           <span>{importer.country}</span>
@@ -16618,6 +16791,7 @@ function ImporterTable({ importers, onOpen, onSelect }) {
           <button type="button" className="ghost-button" onClick={() => onOpen(importer.id)}>Open</button>
         </div>
       ))}
+      <Pagination total={importers.length} perPage={PER_PAGE} page={page} onPage={setPage} />
     </div>
   );
 }
@@ -18512,7 +18686,7 @@ function CMOCommandPage({ view = 'command', navigate, onBack }) {
   const realRunStatus = getCmoRealRunStatus(data);
 
   return (
-    <ExportOSShell className="cmo-command-shell">
+    <ExportOSShell className="cmo-command-shell" loading={data.loading}>
       <header className="deck-header cmo-header cmo-clean-header">
         <div className="deck-header-copy">
           <span>GOPU Export OS</span>
