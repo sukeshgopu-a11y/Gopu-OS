@@ -9,6 +9,7 @@ import {
   Archive,
   BarChart3,
   Bell,
+  Bookmark,
   Bot,
   Boxes,
   BrainCircuit,
@@ -55,8 +56,153 @@ import {
   UploadCloud,
   UsersRound,
   Workflow,
+  X,
   Zap
 } from 'lucide-react';
+
+// ── GOPU Brand Identity ───────────────────────────────────────────────────
+
+function GopuLogoMark({ size = 40, className = '' }) {
+  return (
+    <svg
+      width={size} height={size}
+      viewBox="0 0 48 48"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`gopu-logomark ${className}`}
+      aria-hidden="true"
+    >
+      <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 2.5" opacity="0.35" />
+      <path
+        d="M36 24c0 6.627-5.373 12-12 12S12 30.627 12 24 17.373 12 24 12c4.418 0 8.291 2.392 10.392 5.971"
+        stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"
+      />
+      <path d="M30 24h6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <circle cx="24" cy="24" r="2.2" fill="currentColor" />
+      <circle cx="38" cy="18" r="1.4" fill="currentColor" opacity="0.6" />
+      <circle cx="10" cy="30" r="1.4" fill="currentColor" opacity="0.6" />
+      <circle cx="24" cy="6" r="1.4" fill="currentColor" opacity="0.45" />
+      <path d="M24 22 L38 18" stroke="currentColor" strokeWidth="0.8" strokeDasharray="2 2" opacity="0.4" />
+      <path d="M24 26 L10 30" stroke="currentColor" strokeWidth="0.8" strokeDasharray="2 2" opacity="0.4" />
+    </svg>
+  );
+}
+
+function GopuWordmark({ size = 'md' }) {
+  const scale = size === 'sm' ? 0.75 : size === 'lg' ? 1.4 : 1;
+  return (
+    <div className="gopu-wordmark" style={{ '--wm-scale': scale }}>
+      <GopuLogoMark size={Math.round(32 * scale)} />
+      <div className="gopu-wordmark-text">
+        <span className="gopu-wordmark-name">GOPU OS</span>
+        <span className="gopu-wordmark-sub">Export Command</span>
+      </div>
+    </div>
+  );
+}
+
+function ExportOSIcon() {
+  return (
+    <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="26" cy="26" r="18" stroke="currentColor" strokeWidth="1.6" />
+      <ellipse cx="26" cy="26" rx="8" ry="18" stroke="currentColor" strokeWidth="1.2" opacity="0.5" />
+      <ellipse cx="26" cy="26" rx="18" ry="6" stroke="currentColor" strokeWidth="1.2" opacity="0.5" />
+      <path d="M10 26 Q18 14 36 22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2" />
+      <path d="M33 19 L36 22 L32 24" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="26" cy="26" r="2.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+function PlantOSIcon() {
+  return (
+    <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="8" y="28" width="36" height="16" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="12" y="20" width="8" height="8" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="24" y="20" width="8" height="8" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="13" y="12" width="3" height="8" rx="1" fill="currentColor" opacity="0.5" />
+      <rect x="25" y="14" width="3" height="6" rx="1" fill="currentColor" opacity="0.5" />
+      <path d="M39 18 C39 10 45 8 45 8 C45 8 45 16 39 18Z" fill="currentColor" opacity="0.6" />
+      <path d="M39 18 C39 12 33 10 33 10 C33 10 35 18 39 18Z" fill="currentColor" opacity="0.4" />
+      <line x1="39" y1="18" x2="39" y2="28" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
+function DirectorIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M14 3 L25 9 L25 19 L14 25 L3 19 L3 9 Z" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M14 3 L14 25 M3 9 L25 19 M25 9 L3 19" stroke="currentColor" strokeWidth="0.8" opacity="0.35" />
+      <circle cx="14" cy="14" r="3.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+function COOIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="3" y="10" width="7" height="15" rx="1.2" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="10.5" y="6" width="7" height="19" rx="1.2" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="18" y="13" width="7" height="12" rx="1.2" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M4 7 Q10 3 14 3 Q20 3 24 7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeDasharray="2 1.5" />
+    </svg>
+  );
+}
+
+function CTOIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="4" y="4" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M9 25 L19 25 M14 18 L14 25" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M9 10 L11 12 L9 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M13 14 L16 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CFOIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="14" cy="14" r="11" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M14 6 L14 22 M10 9 Q14 7.5 18 9 M10 19 Q14 20.5 18 19" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M9 14 L19 14" stroke="currentColor" strokeWidth="1.2" opacity="0.4" />
+    </svg>
+  );
+}
+
+function CMOIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M4 20 Q8 10 14 12 Q20 14 24 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="14" cy="12" r="2.2" fill="currentColor" />
+      <circle cx="7" cy="18" r="1.6" fill="currentColor" opacity="0.6" />
+      <circle cx="22" cy="8" r="1.6" fill="currentColor" opacity="0.6" />
+      <path d="M7 24 L10 22 L14 20 L18 22 L21 24" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" opacity="0.55" />
+    </svg>
+  );
+}
+
+function CIOIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="14" cy="14" r="4.5" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M14 5 L14 8 M14 20 L14 23 M5 14 L8 14 M20 14 L23 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M7.5 7.5 L9.8 9.8 M18.2 18.2 L20.5 20.5 M7.5 20.5 L9.8 18.2 M18.2 9.8 L20.5 7.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" opacity="0.6" />
+    </svg>
+  );
+}
+
+function LearningIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M5 10 L14 6 L23 10 L14 14 Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M8 12.5 L8 19 Q14 22 20 19 L20 12.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M23 10 L23 17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="23" cy="19" r="1.8" fill="currentColor" />
+    </svg>
+  );
+}
 import { backendStatus, supabaseConfigStatus, getCurrentSession, onAuthStateChange, sendPasswordReset, signInWithPassword, signOut } from './lib/supabaseClient';
 import { ctoLabels } from '../GOPU_OS/cto/labels.js';
 import {
@@ -339,7 +485,7 @@ const executiveCommandDeck = [
     key_modules: ['Decision Queue', 'Branch Control', 'Approvals', 'Escalations', 'Executive Sync'],
     route: '/export-os/director',
     last_checked_at: new Date().toISOString(),
-    icon: Command,
+    icon: DirectorIcon,
     tone: 'cyan'
   },
   {
@@ -353,7 +499,7 @@ const executiveCommandDeck = [
     key_modules: ['Orders & Pipeline', 'Documentation', 'Logistics', 'Quality & Claims', 'SOP Improvement'],
     route: '/export-os/executives/coo',
     last_checked_at: new Date().toISOString(),
-    icon: Workflow,
+    icon: COOIcon,
     tone: 'cyan'
   },
   {
@@ -367,7 +513,7 @@ const executiveCommandDeck = [
     key_modules: ['Product & UX', 'Backend & Data', 'Dev Coordination', 'Automation', 'Security'],
     route: '/export-os/executives/cto',
     last_checked_at: new Date().toISOString(),
-    icon: Network,
+    icon: CTOIcon,
     tone: 'blue'
   },
   {
@@ -381,7 +527,7 @@ const executiveCommandDeck = [
     key_modules: ['Management Reports', 'Cash & Collections', 'Pricing & Margin', 'Cost Control', 'FX & Risk'],
     route: '/export-os/executives/cfo',
     last_checked_at: new Date().toISOString(),
-    icon: CircleDollarSign,
+    icon: CFOIcon,
     tone: 'amber'
   },
   {
@@ -395,7 +541,7 @@ const executiveCommandDeck = [
     key_modules: ['Market Research', 'Content & Brand', 'Campaigns', 'CRM Follow-up', 'Customer Insights'],
     route: '/export-os/executives/cmo',
     last_checked_at: new Date().toISOString(),
-    icon: TrendingUp,
+    icon: CMOIcon,
     tone: 'cyan'
   },
   {
@@ -409,7 +555,7 @@ const executiveCommandDeck = [
     key_modules: ['Importer Database', 'Trade Signals', 'Buyer Outreach', 'Opportunity Scoring', 'CRM Handoff'],
     route: '/export-os/executives/cio',
     last_checked_at: new Date().toISOString(),
-    icon: GopuBrandMark,
+    icon: CIOIcon,
     tone: 'blue'
   },
   {
@@ -423,7 +569,7 @@ const executiveCommandDeck = [
     key_modules: ['Research Runs', 'Findings Stream', 'Vector Memory', 'Intelligence Report'],
     route: '/export-os/learning-centre',
     last_checked_at: new Date().toISOString(),
-    icon: BrainCircuit,
+    icon: LearningIcon,
     tone: 'blue'
   }
 ];
@@ -2102,6 +2248,9 @@ function AuthRouteLoading() {
       <div className="gateway-grid" />
       <section className="login-shell" aria-labelledby="auth-loading-title">
         <div className="login-brand-panel">
+          <div className="login-logo-wrap">
+            <GopuLogoMark size={52} />
+          </div>
           <span className="selected-os-badge">GOPU Export OS</span>
           <h1 id="auth-loading-title">Checking secure session</h1>
           <p>Supabase authentication is verifying the current browser session.</p>
@@ -2165,7 +2314,7 @@ function OSGateway({ onSelectOS }) {
                   title="GOPU Export OS"
                   subtitle="Global Trade Command System"
                   description="Manage buyers, pricing, quotations, CO workflow, shipments, documents, and export intelligence."
-                  icon={GlobeCommandIcon}
+                  icon={ExportOSIcon}
                   selected={selectedCard === 'export'}
                   onSelect={selectOS}
                 />
@@ -2174,7 +2323,7 @@ function OSGateway({ onSelectOS }) {
                   title="Spice Plant OS"
                   subtitle="Factory & Processing Intelligence"
                   description="Manage raw intake, batch processing, quality checks, packing, warehouse movement, and dispatch operations."
-                  icon={PlantCommandIcon}
+                  icon={PlantOSIcon}
                   selected={selectedCard === 'plant'}
                   onSelect={selectOS}
                 />
@@ -2288,6 +2437,9 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
       <section className="login-shell" aria-labelledby="login-title">
         <div className="login-form-panel">
           <div className="login-form-heading">
+            <div className="login-logo-wrap">
+              <GopuLogoMark size={52} />
+            </div>
             <span>{config.badge}</span>
             <h1 id="login-title">{config.title}</h1>
             <p>Use the live GOPU Supabase account. Demo `.example` emails are blocked.</p>
@@ -2364,20 +2516,19 @@ function FounderGreeting({ greeting, introComplete, onContinue }) {
       aria-label="Founder greeting"
     >
       <div className="assistant-core" aria-hidden="true">
-        <motion.div
-          className="orb-halo"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}
-        />
-        <motion.div
-          className="robot-head"
-          animate={{ y: [0, -6, 0] }}
-          transition={{ duration: 3.2, repeat: Infinity, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <div className="robot-eye left" />
-          <div className="robot-eye right" />
-          <div className="robot-scan" />
-        </motion.div>
+        <div className="gateway-orb">
+          <div className="gateway-orb-ring ring-1" aria-hidden="true" />
+          <div className="gateway-orb-ring ring-2" aria-hidden="true" />
+          <div className="gateway-orb-ring ring-3" aria-hidden="true" />
+          <div className="gateway-globe-mark">
+            <GopuLogoMark size={64} />
+          </div>
+          <div className="gateway-node n1" aria-hidden="true" />
+          <div className="gateway-node n2" aria-hidden="true" />
+          <div className="gateway-node n3" aria-hidden="true" />
+          <div className="gateway-trace t1" aria-hidden="true" />
+          <div className="gateway-trace t2" aria-hidden="true" />
+        </div>
       </div>
       <div className="greeting-copy">
         <span>GOPU FOUNDER GATEWAY</span>
@@ -2430,24 +2581,6 @@ function OSSelectionCard({ id, title, subtitle, description, icon: Icon, selecte
   );
 }
 
-function GlobeCommandIcon() {
-  return (
-    <div className="stacked-icon">
-      <Network size={28} />
-      <RadioTower size={18} />
-    </div>
-  );
-}
-
-function PlantCommandIcon() {
-  return (
-    <div className="stacked-icon">
-      <Factory size={28} />
-      <Sprout size={18} />
-    </div>
-  );
-}
-
 function Sidebar({ activePage, setActivePage, drawerOpen, setDrawerOpen }) {
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
 
@@ -2456,11 +2589,7 @@ function Sidebar({ activePage, setActivePage, drawerOpen, setDrawerOpen }) {
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <aside className={`sidebar ${drawerOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`} aria-label="Primary navigation" data-tour="sidebar">
         <div className="brand-block">
-          <div className="brand-mark"><Network size={22} /></div>
-          <div>
-            <strong>GOPU OS</strong>
-            <span>EXPORT COMMAND</span>
-          </div>
+          <GopuWordmark size="sm" />
         </div>
         <nav className="nav-list stagger-list">
           {navItems.map((item) => {
@@ -3633,7 +3762,7 @@ function SlackNotificationActivityPanel() {
   );
 }
 
-function Breadcrumb({ items }) {
+const Breadcrumb = React.memo(function Breadcrumb({ items }) {
   return (
     <nav aria-label="Breadcrumb" className="breadcrumb">
       {items.map((item, index) => (
@@ -3648,9 +3777,9 @@ function Breadcrumb({ items }) {
       ))}
     </nav>
   );
-}
+});
 
-function EmptyState({ icon: Icon, title, description, action }) {
+const EmptyState = React.memo(function EmptyState({ icon: Icon, title, description, action }) {
   return (
     <div className="empty-state" role="status">
       {Icon && <Icon size={36} aria-hidden="true" />}
@@ -3659,7 +3788,7 @@ function EmptyState({ icon: Icon, title, description, action }) {
       {action && <button className="ghost-button" onClick={action.onClick}>{action.label}</button>}
     </div>
   );
-}
+});
 
 const StatusBadge = React.memo(function StatusBadge({ status, size = 'md', label, state }) {
   const displayStatus = status || label || 'Draft';
@@ -3948,7 +4077,7 @@ function useSessionTimeout(onTimeout, timeoutMs = 25 * 60 * 1000, warningMs = 5 
   return { showWarning, extend: reset };
 }
 
-function Pagination({ total, perPage = 20, page, onPage }) {
+const Pagination = React.memo(function Pagination({ total, perPage = 20, page, onPage }) {
   const totalPages = Math.ceil(total / perPage);
   if (totalPages <= 1) return null;
   const pages = Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
@@ -3988,7 +4117,7 @@ function Pagination({ total, perPage = 20, page, onPage }) {
       </button>
     </nav>
   );
-}
+});
 
 function useFocusTrap(ref, isActive) {
   React.useEffect(() => {
@@ -4821,7 +4950,7 @@ function BulkActionBar({ count, actions, onClear, onExport }) {
   );
 }
 
-function InvoiceDocument({ invoice }) {
+const InvoiceDocument = React.memo(function InvoiceDocument({ invoice }) {
   if (!invoice) return null;
   const items = invoice.line_items || invoice.items || [];
   const subtotal = items.reduce((s, i) => {
@@ -4923,7 +5052,7 @@ function InvoiceDocument({ invoice }) {
       </footer>
     </div>
   );
-}
+});
 
 const ShellControlsContext = React.createContext(null);
 
@@ -5327,7 +5456,7 @@ function CommandDeckHeader({ navigate, onLogout, showSearch = false, setShowSear
   return (
     <header className="deck-header">
       <div className="deck-header-copy" data-tour="sidebar">
-        <span>GOPU Export OS</span>
+        <GopuWordmark size="sm" />
         <h1>Executive Command Deck</h1>
         <p>Founder operating control for director decisions, executive branches, workflows, and live risk signals.</p>
       </div>
@@ -26644,7 +26773,7 @@ function ApprovalRequestsPanel({ requests, onOpenApprovalWall }) {
   );
 }
 
-function ActivityTimeline({ events = [], entries = [] }) {
+const ActivityTimeline = React.memo(function ActivityTimeline({ events = [], entries = [] }) {
   const rows = events.length ? events : entries;
   if (!rows.length) {
     return <EmptyState icon={Activity} title="No recent activity" description="Events will appear here as the OS processes operations." />;
@@ -26683,7 +26812,7 @@ function ActivityTimeline({ events = [], entries = [] }) {
       ))}
     </ol>
   );
-}
+});
 
 function Stepper({ steps, current, onChange }) {
   return (
@@ -26926,7 +27055,7 @@ const SHIPMENT_STAGE_LIST = [
   'Delivered',
 ];
 
-function ShipmentProgressTracker({ currentStage, shipment }) {
+const ShipmentProgressTracker = React.memo(function ShipmentProgressTracker({ currentStage, shipment }) {
   const currentIdx = SHIPMENT_STAGE_LIST.findIndex(
     (s) => s.toLowerCase() === (currentStage || '').toLowerCase()
   );
@@ -26969,7 +27098,7 @@ function ShipmentProgressTracker({ currentStage, shipment }) {
       )}
     </div>
   );
-}
+});
 
 function COOIntelligenceLayer({ memory, selectedMode, setSelectedMode, promptValue, setPromptValue, onAction }) {
   return (
