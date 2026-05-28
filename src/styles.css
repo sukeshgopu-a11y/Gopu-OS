@@ -26862,6 +26862,168 @@ select {
   min-width: 48px;
 }
 
+.cmd-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: start center;
+  padding-top: min(12vh, 80px);
+  animation: panelIn 150ms var(--ease) both;
+}
+
+.cmd-palette {
+  width: min(580px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-cyan);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)),
+    rgba(5, 7, 10, 0.96);
+  box-shadow: 0 32px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(46,242,255,0.06);
+  backdrop-filter: blur(var(--blur-lg));
+  max-height: 70vh;
+  overflow: hidden;
+}
+
+.cmd-search-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  padding: var(--space-4, 16px) var(--space-5, 20px);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.cmd-search-icon { color: var(--dim); flex-shrink: 0; }
+.cmd-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: var(--font-ui, inherit);
+  font-size: var(--text-md, 1rem);
+  font-weight: var(--weight-medium, 500);
+  caret-color: var(--cyan);
+}
+.cmd-input::placeholder { color: var(--dim); }
+.cmd-esc-hint {
+  font-size: var(--text-2xs, 0.68rem);
+  font-family: var(--font-mono, monospace);
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  color: var(--dim);
+  background: rgba(255,255,255,0.04);
+  border-radius: var(--radius-sm, 4px);
+  flex-shrink: 0;
+}
+
+.cmd-results {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-2, 8px) 0;
+}
+.cmd-empty {
+  padding: var(--space-8, 32px) var(--space-5, 20px);
+  text-align: center;
+  color: var(--dim);
+  font-size: var(--text-sm, 0.875rem);
+}
+
+.cmd-group { padding-bottom: var(--space-2, 8px); }
+.cmd-group-label {
+  padding: var(--space-2, 8px) var(--space-5, 20px);
+  font-size: var(--text-2xs, 0.68rem);
+  font-weight: var(--weight-extrabold, 800);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest, 0.08em);
+  color: var(--dim);
+}
+
+.cmd-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  padding: var(--space-3, 12px) var(--space-5, 20px);
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: var(--font-ui, inherit);
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: var(--weight-medium, 500);
+  text-align: left;
+  cursor: pointer;
+  transition: background 100ms, color 100ms;
+}
+.cmd-item.active,
+.cmd-item:hover {
+  background: rgba(46,242,255,0.07);
+  color: var(--text);
+}
+.cmd-item.active { background: rgba(46,242,255,0.1); }
+.cmd-item-icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  background: var(--panel-1);
+  color: var(--cyan);
+  border-radius: var(--radius-sm, 4px);
+}
+.cmd-item-label { flex: 1; }
+.cmd-item-hint {
+  font-size: var(--text-2xs, 0.68rem);
+  font-family: var(--font-mono, monospace);
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  color: var(--dim);
+  background: transparent;
+  border-radius: var(--radius-sm, 4px);
+  opacity: 0;
+  transition: opacity 100ms;
+}
+.cmd-item.active .cmd-item-hint { opacity: 1; }
+
+.cmd-footer {
+  display: flex;
+  gap: var(--space-5, 20px);
+  padding: var(--space-3, 12px) var(--space-5, 20px);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.cmd-footer span {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  font-size: var(--text-2xs, 0.68rem);
+  color: var(--dim);
+}
+.cmd-footer kbd {
+  font-family: var(--font-mono, monospace);
+  font-size: var(--text-2xs, 0.68rem);
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  border-radius: var(--radius-sm, 4px);
+  color: var(--muted);
+}
+
+@media (max-width: 760px) {
+  .cmd-overlay { padding-top: 0; align-items: end; }
+  .cmd-palette {
+    width: 100vw;
+    max-height: 80vh;
+    border-radius: var(--radius-lg, 10px) var(--radius-lg, 10px) 0 0;
+  }
+  .cmd-footer { display: none; }
+}
+
 .notif-backdrop {
   display: none;
   position: fixed;

@@ -1587,10 +1587,6 @@ function App() {
 
   React.useEffect(() => {
     function handleKey(e) {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setShowSearch((prev) => !prev);
-      }
       if (e.key === 'Escape') {
         setShowSearch(false);
       }
@@ -4068,6 +4064,172 @@ function UserChip({ session, onSettings }) {
   );
 }
 
+const COMMAND_ITEMS = [
+  { id: 'nav-dashboard', label: 'Go to Dashboard', category: 'Navigate', icon: 'Gauge', page: 'dashboard' },
+  { id: 'nav-shipments', label: 'Go to Shipments', category: 'Navigate', icon: 'Route', page: 'shipments' },
+  { id: 'nav-approvals', label: 'Go to Approvals', category: 'Navigate', icon: 'ShieldCheck', page: 'approvals' },
+  { id: 'nav-tasks', label: 'Go to Tasks', category: 'Navigate', icon: 'ClipboardList', page: 'tasks' },
+  { id: 'nav-cfo', label: 'Open CFO Finance', category: 'Navigate', icon: 'CircleDollarSign', page: 'cfo' },
+  { id: 'nav-coo', label: 'Open COO Operations', category: 'Navigate', icon: 'Workflow', page: 'coo' },
+  { id: 'nav-cmo', label: 'Open CMO Marketing', category: 'Navigate', icon: 'TrendingUp', page: 'cmo' },
+  { id: 'nav-cto', label: 'Open CTO Command', category: 'Navigate', icon: 'Database', page: 'cto' },
+  { id: 'nav-director', label: 'Open Director Console', category: 'Navigate', icon: 'Target', page: 'director' },
+  { id: 'nav-invoices', label: 'Go to Invoices', category: 'Navigate', icon: 'FileText', page: 'invoices' },
+  { id: 'nav-leads', label: 'Go to Leads / CIO', category: 'Navigate', icon: 'UsersRound', page: 'leads' },
+  { id: 'nav-vault', label: 'Go to Payment Vault', category: 'Navigate', icon: 'LockKeyhole', page: 'payment-vault' },
+  { id: 'nav-security', label: 'Go to Security', category: 'Navigate', icon: 'Fingerprint', page: 'security' },
+  { id: 'nav-learning', label: 'Go to Learning Centre', category: 'Navigate', icon: 'BrainCircuit', page: 'learning' },
+  { id: 'action-shipment', label: 'Create New Shipment', category: 'Actions', icon: 'PackageCheck', page: 'shipments' },
+  { id: 'action-invoice', label: 'Create New Invoice', category: 'Actions', icon: 'FileBarChart', page: 'invoices' },
+  { id: 'action-approvals', label: 'Review Pending Approvals', category: 'Actions', icon: 'CheckCircle2', page: 'approvals' },
+  { id: 'action-briefing', label: 'Run Daily Briefing', category: 'Actions', icon: 'Zap', page: 'dashboard' },
+  { id: 'action-settings', label: 'Open Settings', category: 'Settings', icon: 'Settings', action: 'settings' },
+  { id: 'action-signout', label: 'Sign Out', category: 'Settings', icon: 'LockKeyhole', action: 'signout' },
+];
+
+const ICON_MAP = {
+  Gauge, Route, ShieldCheck, ClipboardList, CircleDollarSign,
+  Workflow, TrendingUp, Database, Target, FileText, UsersRound,
+  LockKeyhole, Fingerprint, BrainCircuit, PackageCheck,
+  FileBarChart, CheckCircle2, Zap, Settings,
+};
+
+function CommandPalette({ open, onClose, onNavigate, onAction }) {
+  const [query, setQuery] = React.useState('');
+  const [cursor, setCursor] = React.useState(0);
+  const inputRef = React.useRef(null);
+  const listRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (open) {
+      setQuery('');
+      setCursor(0);
+      setTimeout(() => inputRef.current?.focus(), 30);
+    }
+  }, [open]);
+
+  const filtered = React.useMemo(() => {
+    if (!query.trim()) return COMMAND_ITEMS;
+    const q = query.toLowerCase();
+    return COMMAND_ITEMS.filter(
+      (item) =>
+        item.label.toLowerCase().includes(q) ||
+        item.category.toLowerCase().includes(q)
+    );
+  }, [query]);
+
+  const grouped = React.useMemo(() => {
+    const map = {};
+    filtered.forEach((item) => {
+      if (!map[item.category]) map[item.category] = [];
+      map[item.category].push(item);
+    });
+    return Object.entries(map);
+  }, [filtered]);
+
+  const flat = filtered;
+
+  function handleKey(e) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setCursor((c) => Math.min(c + 1, flat.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setCursor((c) => Math.max(c - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const item = flat[cursor];
+      if (item) runItem(item);
+    } else if (e.key === 'Escape') {
+      onClose();
+    }
+  }
+
+  function runItem(item) {
+    onClose();
+    if (item.action === 'settings') { onAction('settings'); return; }
+    if (item.action === 'signout') { onAction('signout'); return; }
+    if (item.page) onNavigate(item.page);
+  }
+
+  React.useEffect(() => {
+    const el = listRef.current?.querySelector('.cmd-item.active');
+    el?.scrollIntoView({ block: 'nearest' });
+  }, [cursor]);
+
+  if (!open) return null;
+
+  return (
+    <div className="cmd-overlay" role="presentation" onClick={onClose}>
+      <div
+        className="cmd-palette"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="cmd-search-row">
+          <Search size={16} className="cmd-search-icon" aria-hidden="true" />
+          <input
+            ref={inputRef}
+            className="cmd-input"
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setCursor(0); }}
+            onKeyDown={handleKey}
+            placeholder="Search pages, actions, settings…"
+            aria-label="Command search"
+            aria-autocomplete="list"
+            aria-controls="cmd-list"
+            autoComplete="off"
+            spellCheck={false}
+          />
+          <kbd className="cmd-esc-hint">ESC</kbd>
+        </div>
+
+        <div id="cmd-list" ref={listRef} className="cmd-results" role="listbox">
+          {grouped.length === 0 && (
+            <div className="cmd-empty">No results for "{query}"</div>
+          )}
+          {grouped.map(([category, items]) => (
+            <div key={category} className="cmd-group">
+              <div className="cmd-group-label" role="presentation">{category}</div>
+              {items.map((item) => {
+                const idx = flat.indexOf(item);
+                const Icon = ICON_MAP[item.icon];
+                return (
+                  <button
+                    key={item.id}
+                    className={`cmd-item ${idx === cursor ? 'active' : ''}`}
+                    role="option"
+                    aria-selected={idx === cursor}
+                    onMouseEnter={() => setCursor(idx)}
+                    onClick={() => runItem(item)}
+                  >
+                    <span className="cmd-item-icon">
+                      {Icon && <Icon size={15} aria-hidden="true" />}
+                    </span>
+                    <span className="cmd-item-label">
+                      {highlightMatch(item.label, query)}
+                    </span>
+                    <kbd className="cmd-item-hint">↵</kbd>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        <footer className="cmd-footer">
+          <span><kbd>↑↓</kbd> navigate</span>
+          <span><kbd>↵</kbd> select</span>
+          <span><kbd>ESC</kbd> close</span>
+          <span><kbd>⌘K</kbd> toggle</span>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
 const ShellControlsContext = React.createContext(null);
 
 function ExportOSShell({ children, className = '', liveDataConnected = backendStatus.mode === 'Connected', statusMessage, loading = false }) {
@@ -4075,6 +4237,7 @@ function ExportOSShell({ children, className = '', liveDataConnected = backendSt
   const backendMessage = statusMessage || (isCtoShell && liveDataConnected ? 'Supabase live connected' : isCtoShell && !liveDataConnected ? 'No live data connected' : backendStatus.message);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [notifOpen, setNotifOpen] = React.useState(false);
+  const [showSearch, setShowSearch] = React.useState(false);
   const [prefs, setPrefs] = React.useState({
     compact: false,
     reducedMotion: false,
@@ -4087,8 +4250,66 @@ function ExportOSShell({ children, className = '', liveDataConnected = backendSt
   const shellControls = React.useMemo(() => ({
     prefs,
     openNotifications: () => setNotifOpen(true),
-    openSettings: () => setSettingsOpen(true)
+    openSettings: () => setSettingsOpen(true),
+    openCommandPalette: () => setShowSearch(true)
   }), [prefs]);
+
+  React.useEffect(() => {
+    function handleKey(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowSearch((prev) => !prev);
+      }
+    }
+    function openPalette() {
+      setShowSearch(true);
+    }
+    window.addEventListener('keydown', handleKey);
+    window.addEventListener('gopu:open-command-palette', openPalette);
+    return () => {
+      window.removeEventListener('keydown', handleKey);
+      window.removeEventListener('gopu:open-command-palette', openPalette);
+    };
+  }, []);
+
+  function navigateCommandPage(page) {
+    const routes = {
+      dashboard: '/export-os',
+      shipments: '/export-os/shipments',
+      approvals: '/export-os/director',
+      tasks: '/export-os/tasks',
+      cfo: '/export-os/executives/cfo',
+      coo: '/export-os/executives/coo',
+      cmo: '/export-os/executives/cmo',
+      cto: '/export-os/executives/cto',
+      director: '/export-os/director-console',
+      invoices: '/export-os/invoices',
+      leads: '/export-os/importers',
+      'payment-vault': '/export-os/payment-vault',
+      security: '/export-os/security',
+      learning: '/export-os/learning-centre'
+    };
+    const path = routes[page] || '/export-os';
+    window.history.pushState({}, '', path);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  }
+
+  async function runCommandAction(action) {
+    if (action === 'settings') {
+      setSettingsOpen(true);
+      return;
+    }
+    if (action === 'signout') {
+      await signOut();
+      window.sessionStorage.removeItem('selectedOS');
+      window.sessionStorage.removeItem('executiveSessionState');
+      window.sessionStorage.removeItem('founderSessionPin');
+      window.sessionStorage.removeItem('founderSecurityPinSet');
+      window.history.pushState({}, '', '/login/export');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+  }
+
   return (
     <motion.div
       className={`export-os-shell ${prefs.compact ? 'compact-mode' : ''} ${className}`}
@@ -4121,6 +4342,15 @@ function ExportOSShell({ children, className = '', liveDataConnected = backendSt
         onClose={() => setSettingsOpen(false)}
         prefs={prefs}
         onPref={handlePref}
+      />
+      <CommandPalette
+        open={showSearch}
+        onClose={() => setShowSearch(false)}
+        onNavigate={(page) => { navigateCommandPage(page); setShowSearch(false); }}
+        onAction={(action) => {
+          setShowSearch(false);
+          runCommandAction(action);
+        }}
       />
       <ScrollToTop />
     </motion.div>
@@ -4383,7 +4613,7 @@ function CommandDeckHeader({ navigate, onLogout, showSearch = false, setShowSear
           </button>
         </Tooltip>
         <Tooltip text="Global operational command search">
-          <button className="icon-button top-icon-button" aria-label="Global operational command search" onClick={() => togglePanel('search')} aria-expanded={activePanel === 'search'}><Search size={18} /></button>
+          <button className="icon-button top-icon-button" aria-label="Global operational command search" onClick={() => shellControls?.openCommandPalette?.()} aria-expanded={false}><Search size={18} /></button>
         </Tooltip>
         <Tooltip text="Director AI command console">
           <button className="icon-button top-icon-button director-command-icon" aria-label="Director AI command console" onClick={() => openRoute('/export-os/director-console')}><Fingerprint size={18} /></button>
