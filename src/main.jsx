@@ -2454,7 +2454,7 @@ function Sidebar({ activePage, setActivePage, drawerOpen, setDrawerOpen }) {
   return (
     <>
       <a href="#main-content" className="skip-link">Skip to main content</a>
-      <aside className={`sidebar ${drawerOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`} aria-label="Primary navigation">
+      <aside className={`sidebar ${drawerOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`} aria-label="Primary navigation" data-tour="sidebar">
         <div className="brand-block">
           <div className="brand-mark"><Network size={22} /></div>
           <div>
@@ -4415,7 +4415,7 @@ function UserChip({ session, onSettings }) {
   const email = session?.user?.email || 'Founder';
   const initials = email.slice(0, 2).toUpperCase();
   return (
-    <button className="user-chip" onClick={onSettings} aria-label="Open settings">
+    <button className="user-chip" onClick={onSettings} aria-label="Open settings" data-tour="settings-trigger">
       <span className="user-avatar" aria-hidden="true">{initials}</span>
       <span className="user-email">{email.split('@')[0]}</span>
       <Settings size={13} aria-hidden="true" />
@@ -4455,6 +4455,7 @@ const ICON_MAP = {
 
 function CommandPalette({ open, onClose, onNavigate, onAction }) {
   const [query, setQuery] = React.useState('');
+  const debouncedQuery = useDebounce(query, 250);
   const [cursor, setCursor] = React.useState(0);
   const inputRef = React.useRef(null);
   const listRef = React.useRef(null);
@@ -4468,14 +4469,15 @@ function CommandPalette({ open, onClose, onNavigate, onAction }) {
   }, [open]);
 
   const filtered = React.useMemo(() => {
-    if (!query.trim()) return COMMAND_ITEMS;
-    const q = query.toLowerCase();
+    if (!debouncedQuery.trim()) return COMMAND_ITEMS;
+    const q = debouncedQuery.toLowerCase();
     return COMMAND_ITEMS.filter(
       (item) =>
-        item.label.toLowerCase().includes(q) ||
-        item.category.toLowerCase().includes(q)
+        item.label?.toLowerCase().includes(q) ||
+        item.category?.toLowerCase().includes(q) ||
+        item.page?.toLowerCase().includes(q)
     );
-  }, [query]);
+  }, [debouncedQuery]);
 
   const grouped = React.useMemo(() => {
     const map = {};
@@ -5193,7 +5195,7 @@ function ExecutiveKpiTicker({ rates = [], forexStatus }) {
   ];
 
   return (
-    <section className="executive-kpi-ticker" aria-label="Live executive KPI ticker">
+    <section className="executive-kpi-ticker" aria-label="Live executive KPI ticker" data-tour="analytics-tab">
       {kpis.map(([label, value, status]) => (
         <article key={label}>
           <span>{label}</span>
@@ -5309,7 +5311,7 @@ function CommandDeckHeader({ navigate, onLogout, showSearch = false, setShowSear
 
   return (
     <header className="deck-header">
-      <div className="deck-header-copy">
+      <div className="deck-header-copy" data-tour="sidebar">
         <span>GOPU Export OS</span>
         <h1>Executive Command Deck</h1>
         <p>Founder operating control for director decisions, executive branches, workflows, and live risk signals.</p>
@@ -5330,7 +5332,7 @@ function CommandDeckHeader({ navigate, onLogout, showSearch = false, setShowSear
           </button>
         </Tooltip>
         <Tooltip text="Global operational command search">
-          <button className="icon-button top-icon-button" aria-label="Global operational command search" onClick={() => shellControls?.openCommandPalette?.()} aria-expanded={false}><Search size={18} /></button>
+          <button className="icon-button top-icon-button" aria-label="Global operational command search" onClick={() => shellControls?.openCommandPalette?.()} aria-expanded={false} data-tour="cmd-palette-trigger"><Search size={18} /></button>
         </Tooltip>
         <Tooltip text="Director AI command console">
           <button className="icon-button top-icon-button director-command-icon" aria-label="Director AI command console" onClick={() => openRoute('/export-os/director-console')}><Fingerprint size={18} /></button>
@@ -5428,7 +5430,7 @@ function ExecutiveSharedControlPanel({ navigate }) {
           </button>
         ))}
       </div>
-      <div className="shared-action-row">
+      <div className="shared-action-row" data-tour="quick-actions">
         <button onClick={() => navigate('/export-os/director')}>Open Director Queue</button>
         <button onClick={() => navigate('/export-os/notification-center')}>Alerts</button>
       </div>
@@ -5636,7 +5638,8 @@ function TopNotificationPanel({ notifications, filter, setFilter, navigate }) {
 
 function GlobalCommandSearch({ query, setQuery, records, navigate }) {
   const suggestions = ['Show delayed shipments', 'Find Country pending buyers', 'Open pending invoices', 'Any high-risk workflows?', 'Show OpenAI renewal', 'What is pending today?'];
-  const normalized = query.trim().toLowerCase();
+  const debouncedQuery = useDebounce(query, 250);
+  const normalized = debouncedQuery.trim().toLowerCase();
   const results = (normalized
     ? records.filter((record) => `${record.title} ${record.type} ${record.owner} ${record.status} ${record.priority} ${record.keywords}`.toLowerCase().includes(normalized) || normalized.split(/\s+/).some((part) => record.keywords.toLowerCase().includes(part)))
     : records.slice(0, 6)
