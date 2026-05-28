@@ -5858,6 +5858,205 @@ const operationalStatusGroups = [
   }
 ];
 
+function MiniSparkline({ data = [], color = 'var(--accent)', height = 36, width = 80 }) {
+  if (!data.length) return null;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const gradientId = `sg-${color.replace(/[^a-z0-9]/gi, '')}-${width}-${height}-${data.length}`;
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1 || 1)) * width;
+    const y = height - ((v - min) / range) * (height - 4) - 2;
+    return `${x},${y}`;
+  }).join(' ');
+  const lastX = width;
+  const lastY = height - ((data[data.length - 1] - min) / range) * (height - 4) - 2;
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true" className="mini-sparkline">
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon
+        points={`0,${height} ${pts} ${lastX},${lastY} ${lastX},${height}`}
+        fill={`url(#${gradientId})`}
+      />
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={lastX} cy={lastY} r="2.5" fill={color} />
+    </svg>
+  );
+}
+
+function RichKpiCard({ label, value, unit = '', change, trend, sparkData, color, onClick }) {
+  const isPositive = change >= 0;
+  const trendColor = trend === 'up-good'
+    ? (isPositive ? 'var(--success, #22c55e)' : 'var(--danger, #ff4d6d)')
+    : trend === 'down-good'
+      ? (isPositive ? 'var(--danger, #ff4d6d)' : 'var(--success, #22c55e)')
+      : 'var(--dim)';
+
+  return (
+    <button
+      className={`rich-kpi-card ${onClick ? 'clickable' : ''}`}
+      onClick={onClick}
+      aria-label={`${label}: ${value}${unit}, ${isPositive ? '+' : ''}${change}% change`}
+      type="button"
+    >
+      <div className="rich-kpi-top">
+        <span className="rich-kpi-label">{label}</span>
+        {change !== undefined && (
+          <span className="rich-kpi-change" style={{ color: trendColor }}>
+            {isPositive ? '▲' : '▼'} {Math.abs(change)}%
+          </span>
+        )}
+      </div>
+      <div className="rich-kpi-value">
+        <strong>{value}</strong>
+        {unit && <span className="rich-kpi-unit">{unit}</span>}
+      </div>
+      {sparkData && (
+        <MiniSparkline data={sparkData} color={color || 'var(--accent)'} />
+      )}
+    </button>
+  );
+}
+
+function TodaysPriorities({ navigate, items }) {
+  const priorities = items || [
+    {
+      id: 'p1',
+      label: 'Invoice release blocked',
+      detail: 'LUT ARN missing - CFO action required',
+      owner: 'CFO',
+      urgency: 'critical',
+      route: '/export-os/executives/cfo',
+    },
+    {
+      id: 'p2',
+      label: 'Shipment dispatch delay',
+      detail: 'Supplier confirmation pending - COO follow-up',
+      owner: 'COO',
+      urgency: 'high',
+      route: '/export-os/executives/coo',
+    },
+    {
+      id: 'p3',
+      label: 'Low-margin quote waiting',
+      detail: 'Director approval needed before buyer release',
+      owner: 'Director',
+      urgency: 'high',
+      route: '/export-os/director',
+    },
+  ];
+
+  const urgencyColor = { critical: '#ff4d6d', high: '#f59e0b', medium: '#60a5fa' };
+
+  return (
+    <div className="priorities-panel">
+      <div className="priorities-header">
+        <span className="priorities-eyebrow">Today's Priorities</span>
+        <span className="priorities-count">{priorities.length} actions</span>
+      </div>
+      <ol className="priorities-list">
+        {priorities.map((item, i) => (
+          <li key={item.id} className="priority-item">
+            <div className="priority-rank" style={{ color: urgencyColor[item.urgency] || 'var(--dim)' }}>
+              {i + 1}
+            </div>
+            <div className="priority-body">
+              <strong className="priority-label">{item.label}</strong>
+              <span className="priority-detail">{item.detail}</span>
+            </div>
+            <div className="priority-meta">
+              <span className="priority-owner">{item.owner}</span>
+              <button
+                className="priority-action"
+                onClick={() => navigate(item.route)}
+                aria-label={`Open ${item.label}`}
+                type="button"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function QuickLaunch({ navigate }) {
+  const tiles = [
+    { label: 'Director Console', icon: DirectorIcon, route: '/export-os/director', color: '#a78bfa' },
+    { label: 'Pricing Engine', icon: CFOIcon, route: '/export-os/pricing-engine', color: '#22c55e' },
+    { label: 'Shipments', icon: COOIcon, route: '/export-os/executives/coo', color: '#2ef2ff' },
+    { label: 'Invoices', icon: CTOIcon, route: '/export-os/invoices', color: '#f59e0b' },
+    { label: 'Buyers', icon: CMOIcon, route: '/export-os/buyers', color: '#f472b6' },
+    { label: 'Analytics', icon: CIOIcon, route: '/export-os/analytics', color: '#60a5fa' },
+  ];
+
+  return (
+    <div className="quick-launch-panel">
+      <span className="quick-launch-eyebrow">Quick Launch</span>
+      <div className="quick-launch-grid">
+        {tiles.map(tile => {
+          const Icon = tile.icon;
+          return (
+            <button
+              key={tile.label}
+              className="quick-launch-tile"
+              onClick={() => navigate(tile.route)}
+              style={{ '--tile-color': tile.color }}
+              aria-label={`Open ${tile.label}`}
+              type="button"
+            >
+              <div className="quick-launch-icon">
+                <Icon />
+              </div>
+              <span className="quick-launch-label">{tile.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function DashboardActivityFeed() {
+  const events = [
+    { id: 1, time: '2m ago', actor: 'CFO', action: 'reviewed', subject: 'Q3 margin report', icon: '📋', tone: 'blue' },
+    { id: 2, time: '11m ago', actor: 'COO', action: 'escalated', subject: 'GCC shipment delay', icon: '⚠️', tone: 'amber' },
+    { id: 3, time: '28m ago', actor: 'System', action: 'generated', subject: 'Morning briefing draft', icon: '⚡', tone: 'cyan' },
+    { id: 4, time: '1h ago', actor: 'CTO', action: 'resolved', subject: 'Automation retry queue', icon: '✅', tone: 'green' },
+    { id: 5, time: '2h ago', actor: 'Director', action: 'approved', subject: 'New buyer quotation release', icon: '✓', tone: 'green' },
+    { id: 6, time: '3h ago', actor: 'CMO', action: 'drafted', subject: 'GCC importer outreach email', icon: '✉', tone: 'blue' },
+  ];
+
+  return (
+    <div className="activity-feed-panel">
+      <div className="activity-feed-header">
+        <span className="activity-feed-eyebrow">Live Activity</span>
+        <span className="activity-feed-dot" aria-label="Live" />
+      </div>
+      <ol className="activity-feed-list" aria-live="polite" aria-label="Recent system activity">
+        {events.map(ev => (
+          <li key={ev.id} className={`activity-feed-item tone-${ev.tone}`}>
+            <span className="activity-feed-emoji" aria-hidden="true">{ev.icon}</span>
+            <div className="activity-feed-body">
+              <span className="activity-feed-text">
+                <strong>{ev.actor}</strong> {ev.action} <em>{ev.subject}</em>
+              </span>
+              <time className="activity-feed-time">{ev.time}</time>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 function ExecutiveCommandDeck({ navigate, onLogout, showSearch, setShowSearch, setShowShortcuts, session }) {
   const { rates, status: forexStatus } = useLiveForexRates();
   const { items: newsItems, status: newsStatus } = useLiveExportNews();
@@ -5866,12 +6065,71 @@ function ExecutiveCommandDeck({ navigate, onLogout, showSearch, setShowSearch, s
     <ExportOSShell className="executive-home-shell">
       <ForexTicker items={rates} status={forexStatus} />
       <CommandDeckHeader navigate={navigate} onLogout={onLogout} showSearch={showSearch} setShowSearch={setShowSearch} setShowShortcuts={setShowShortcuts} session={session} />
-      <ExecutiveKpiTicker rates={rates} forexStatus={forexStatus} />
-      <section className="deck-hero executive-command-zone" aria-labelledby="deck-title">
-        <HeroCommandPanel navigate={navigate} />
-        <DirectorOperatingMap navigate={navigate} />
-        <OperationalStatusSystem groups={operationalStatusGroups} navigate={navigate} />
+      <section className="rich-kpi-row" aria-label="Executive KPI overview">
+        <RichKpiCard
+          label="Active Workflows"
+          value="12"
+          change={8}
+          trend="up-good"
+          sparkData={[6, 7, 8, 7, 9, 10, 11, 10, 12]}
+          color="#2ef2ff"
+        />
+        <RichKpiCard
+          label="Critical Blockers"
+          value="3"
+          change={-25}
+          trend="down-good"
+          sparkData={[5, 6, 4, 5, 4, 3, 4, 3, 3]}
+          color="#ff4d6d"
+        />
+        <RichKpiCard
+          label="Director Queue"
+          value="5"
+          unit="pending"
+          change={2}
+          trend="down-good"
+          sparkData={[2, 3, 4, 3, 4, 5, 4, 5, 5]}
+          color="#f59e0b"
+        />
+        <RichKpiCard
+          label="Shipment Readiness"
+          value="78"
+          unit="%"
+          change={4}
+          trend="up-good"
+          sparkData={[68, 70, 72, 70, 74, 73, 76, 75, 78]}
+          color="#22c55e"
+        />
+        <RichKpiCard
+          label="Payment Watch"
+          value="2"
+          change={0}
+          trend="neutral"
+          sparkData={[1, 2, 1, 2, 2, 2, 2, 2, 2]}
+          color="#60a5fa"
+        />
+        <RichKpiCard
+          label="Market Signals"
+          value="4"
+          change={33}
+          trend="up-good"
+          sparkData={[1, 2, 2, 3, 2, 3, 3, 4, 4]}
+          color="#a78bfa"
+          onClick={() => navigate('/export-os/cio')}
+        />
       </section>
+      <section className="deck-main-grid" aria-label="Executive command overview">
+        <div className="deck-main-left">
+          <HeroCommandPanel navigate={navigate} />
+          <TodaysPriorities navigate={navigate} />
+        </div>
+        <div className="deck-main-right">
+          <QuickLaunch navigate={navigate} />
+          <DashboardActivityFeed />
+        </div>
+      </section>
+      <DirectorOperatingMap navigate={navigate} />
+      <OperationalStatusSystem groups={operationalStatusGroups} navigate={navigate} />
       <ExecutiveLeadershipLayout commands={executiveCommandDeck} navigate={navigate} />
       <FounderOperationalOverview navigate={navigate} newsItems={newsItems} newsStatus={newsStatus} />
     </ExportOSShell>
