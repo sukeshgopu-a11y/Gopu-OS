@@ -105,6 +105,7 @@ async function createApprovedQueuedContent(client, tenantId) {
       publish_attempt_count: 0,
       metadata: {
         test_mode: true,
+        simulated_pipeline: true,
         run_id: runId,
         current_step: 7,
         workflow_stage: "publishing",
@@ -127,6 +128,8 @@ async function verifyDryRunResult(client, contentId) {
   if (error) throw new Error(`content_history dry-run verification failed: ${error.message}`);
   if (!data?.id) throw new Error("Dry-run content row missing.");
   if (data.metadata?.test_mode !== true) throw new Error("Dry-run content row lost metadata.test_mode=true.");
+  if (data.metadata?.simulated_pipeline !== true) throw new Error("Dry-run content row is not marked metadata.simulated_pipeline=true.");
+  if (data.metadata?.dry_run_publish_completed !== true) throw new Error("Dry-run publish completion flag was not stored.");
   if (data.publish_status !== "queued") throw new Error(`Dry-run must leave publish_status queued, got ${data.publish_status}.`);
   if (Number(data.publish_attempt_count || 0) !== 1) throw new Error(`Dry-run should record exactly one attempt, got ${data.publish_attempt_count}.`);
   if (data.live_post_url || data.post_url) throw new Error("Dry-run must not store a live post URL.");

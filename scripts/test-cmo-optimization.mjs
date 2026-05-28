@@ -92,7 +92,7 @@ async function verifyOptimizationSchema(client, tenantId) {
     caption: "DEV TEST optimization schema probe",
     approval_status: "approved",
     publish_status: "queued",
-    metadata: { test_mode: true, run_id: probeRunId, no_public_publish: true }
+    metadata: { test_mode: true, simulated_pipeline: true, run_id: probeRunId, dry_run_publish_completed: true, no_public_publish: true }
   }).select("id").maybeSingle();
   if (history.error) throw new Error(`schema probe content_history insert failed: ${history.error.message}`);
   try {
@@ -108,7 +108,7 @@ async function verifyOptimizationSchema(client, tenantId) {
       recommended_posting_time: "08:00 AM IST",
       audience_learning: "schema probe",
       platform_learning: "schema probe",
-      quality_review: { test_mode: true, schema_probe: true }
+      quality_review: { test_mode: true, simulated_pipeline: true, schema_probe: true }
     }).select("id").maybeSingle();
     if (memory.error) throw new Error(`ai_content_memory Step 9 schema is not ready: ${memory.error.message}`);
     await client.from("ai_content_memory").delete().eq("id", memory.data.id);
@@ -135,10 +135,12 @@ async function createOptimizableContent(client, tenantId) {
     approved_at_utc: nowIso(),
     metadata: {
       test_mode: true,
+      simulated_pipeline: true,
       run_id: runId,
       current_step: 8,
       workflow_stage: "analytics",
       analytics_status: "collected",
+      dry_run_publish_completed: true,
       latest_engagement_rate: 8.75,
       metrics_collected_at_utc: nowIso(),
       no_public_publish: true
@@ -161,7 +163,7 @@ async function createOptimizableContent(client, tenantId) {
     shares: 8,
     engagement_rate: 8.75,
     source: "simulated_test",
-    metadata: { test_mode: true, run_id: runId, no_social_api_call: true },
+    metadata: { test_mode: true, simulated_pipeline: true, run_id: runId, no_social_api_call: true },
     collected_at_utc: nowIso()
   }).select("id").maybeSingle();
   if (metrics.error) throw new Error(`content_metrics insert failed: ${metrics.error.message}`);
@@ -173,7 +175,7 @@ async function createOptimizableContent(client, tenantId) {
     performance_summary: "Step 8 simulated performance summary.",
     campaign_impact: "Step 8 campaign impact.",
     ai_reasoning: "Step 8 learning should feed Step 9 optimization.",
-    quality_review: { test_mode: true, run_id: runId }
+    quality_review: { test_mode: true, simulated_pipeline: true, run_id: runId }
   }).select("id").maybeSingle();
   if (memory.error) throw new Error(`ai_content_memory seed insert failed: ${memory.error.message}`);
 
@@ -185,6 +187,7 @@ async function verifyOptimizationResult(client, contentId) {
   if (history.error) throw new Error(`content_history read failed: ${history.error.message}`);
   const meta = history.data.metadata || {};
   if (meta.test_mode !== true) throw new Error("Optimization test row lost metadata.test_mode=true.");
+  if (meta.simulated_pipeline !== true) throw new Error("Optimization test row is not metadata.simulated_pipeline=true.");
   if (Number(meta.current_step) !== 9) throw new Error("content_history current_step was not 9.");
   if (meta.workflow_stage !== "optimization") throw new Error("content_history workflow_stage was not optimization.");
   if (meta.optimization_status !== "completed") throw new Error("content_history optimization_status was not completed.");

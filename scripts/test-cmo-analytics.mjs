@@ -92,7 +92,7 @@ async function verifyContentMetricsSchema(client, tenantId) {
     caption: "DEV TEST schema probe",
     approval_status: "approved",
     publish_status: "queued",
-    metadata: { test_mode: true, run_id: probeRunId, no_public_publish: true }
+    metadata: { test_mode: true, simulated_pipeline: true, run_id: probeRunId, dry_run_publish_completed: true, no_public_publish: true }
   }).select("id").maybeSingle();
   if (history.error) throw new Error(`schema probe content_history insert failed: ${history.error.message}`);
   try {
@@ -111,7 +111,7 @@ async function verifyContentMetricsSchema(client, tenantId) {
       shares: 0,
       engagement_rate: 0,
       source: "schema_probe",
-      metadata: { test_mode: true, schema_probe: true },
+      metadata: { test_mode: true, simulated_pipeline: true, schema_probe: true },
       collected_at_utc: nowIso()
     }).select("id").maybeSingle();
     if (metrics.error) throw new Error(`content_metrics schema is not ready: ${metrics.error.message}`);
@@ -137,7 +137,7 @@ async function createAnalyticsTestContent(client, tenantId) {
     publish_status: "queued",
     approved_at: nowIso(),
     approved_at_utc: nowIso(),
-    metadata: { test_mode: true, run_id: runId, current_step: 8, workflow_stage: "analytics", no_public_publish: true }
+    metadata: { test_mode: true, simulated_pipeline: true, run_id: runId, current_step: 8, workflow_stage: "analytics", dry_run_publish_completed: true, no_public_publish: true }
   }).select("id,tenant_id,run_id,platform,approval_status,publish_status,metadata").maybeSingle();
   if (error) throw new Error(`content_history insert failed: ${error.message}`);
   if (data.metadata?.test_mode !== true) throw new Error("Created content row is not metadata.test_mode=true.");
@@ -148,6 +148,7 @@ async function verifyAnalyticsResult(client, contentId) {
   const history = await client.from("content_history").select("id,run_id,metadata").eq("id", contentId).maybeSingle();
   if (history.error) throw new Error(`content_history read failed: ${history.error.message}`);
   if (history.data.metadata?.test_mode !== true) throw new Error("Analytics test row lost metadata.test_mode=true.");
+  if (history.data.metadata?.simulated_pipeline !== true) throw new Error("Analytics test row is not metadata.simulated_pipeline=true.");
   if (history.data.metadata?.analytics_status !== "collected") throw new Error("content_history metadata.analytics_status was not collected.");
   if (history.data.metadata?.workflow_stage !== "analytics") throw new Error("content_history workflow_stage was not analytics.");
   if (Number(history.data.metadata?.current_step) !== 8) throw new Error("content_history current_step was not 8.");

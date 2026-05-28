@@ -103,6 +103,7 @@ async function writeAudit(client, tenantId, contentHistoryId, actionType, descri
       metadata: {
         run_id: runId,
         test_mode: true,
+        simulated_pipeline: true,
         no_public_publish: true,
         ...metadata
       }
@@ -155,6 +156,7 @@ async function verifyNoProductionMix(client, contentHistoryId) {
 async function step1CreateContentHistory(client, tenantId) {
   const metadata = {
     test_mode: true,
+    simulated_pipeline: true,
     is_test: true,
     step: "cmo_workflow_1_6",
     cleanup_key: runId,
@@ -198,7 +200,7 @@ async function step2UpdateCaption(client, history) {
       generated_text: caption,
       hashtags,
       image_prompt: imagePrompt,
-      metadata: { ...history.metadata, test_mode: true, step2_caption_saved: true }
+      metadata: { ...history.metadata, test_mode: true, simulated_pipeline: true, step2_caption_saved: true }
     })
     .eq("id", history.id)
     .select("id,tenant_id,run_id,caption,generated_text,image_prompt,metadata")
@@ -232,7 +234,7 @@ async function step3LinkPoster(client, history) {
     .update({
       poster_url: posterUrl,
       image_url: posterUrl,
-      metadata: { ...history.metadata, test_mode: true, step3_poster_saved: true }
+      metadata: { ...history.metadata, test_mode: true, simulated_pipeline: true, step3_poster_saved: true }
     })
     .eq("id", history.id)
     .select("id,tenant_id,run_id,poster_url,image_url,metadata")
@@ -270,7 +272,7 @@ async function step4CreateApproval(client, history) {
       approval_status: "waiting",
       status: "Waiting",
       slack_approval_id: `test-${runId}`,
-      slack_message_reference: { test_mode: true, run_id: runId, channel: "test-only" },
+      slack_message_reference: { test_mode: true, simulated_pipeline: true, run_id: runId, channel: "test-only" },
       notes: "Test-only Slack approval row.",
       timezone: "Asia/Kolkata",
       country: "India"
@@ -302,7 +304,7 @@ async function step6ApproveQueues(client, history) {
       publish_status: "queued",
       approved_at: approvedAt,
       approved_at_utc: approvedAt,
-      metadata: { ...row.metadata, test_mode: true, step6_approved: true, no_public_publish: true }
+      metadata: { ...row.metadata, test_mode: true, simulated_pipeline: true, step6_approved: true, no_public_publish: true }
     })
     .eq("id", history.id)
     .select("id,tenant_id,run_id,approval_status,publish_status,metadata")
