@@ -429,6 +429,7 @@ import {
   getLearningCentreReport,
   getLearningCentreSetup,
   getLearningCentreStatus,
+  runSafeLearningCentreTest,
   startLearningCentreRun,
   stopLearningCentreRun
 } from './services/learningCentreService.js';
@@ -3734,7 +3735,7 @@ function Dashboard() {
 }
 
 function LearningCentrePage({ navigate, onBack, reportMode = false }) {
-  const [status, setStatus] = useState({ run: null, cards: null });
+  const [status, setStatus] = useState({ run: null, cards: null, debug: null });
   const [findings, setFindings] = useState([]);
   const [report, setReport] = useState(null);
   const [notice, setNotice] = useState('');
@@ -3757,7 +3758,7 @@ function LearningCentrePage({ navigate, onBack, reportMode = false }) {
         const setup = normalizeLearningCentreSetupError(setupResult);
         if (setup) setSetupRequired(setup);
       }
-      if (statusResult.ok) setStatus({ run: statusResult.data.run, cards: statusResult.data.cards });
+      if (statusResult.ok) setStatus({ run: statusResult.data.run, cards: statusResult.data.cards, debug: statusResult.data.debug || null });
       if (!statusResult.ok) {
         const setup = normalizeLearningCentreSetupError(statusResult);
         if (setup) setSetupRequired(setup);
@@ -3799,8 +3800,28 @@ function LearningCentrePage({ navigate, onBack, reportMode = false }) {
     setNotice(response.ok ? 'Stop requested. Current worker job will drain gracefully.' : response.error || response.data?.message || 'Stop failed.');
   }
 
+  async function runSafeTest() {
+    setNotice('Running safe public-source research test...');
+    const response = await runSafeLearningCentreTest();
+    const setup = !response.ok ? normalizeLearningCentreSetupError(response) : null;
+    if (setup) setSetupRequired(setup);
+    if (response.ok) {
+      setNotice(`Safe research test stored ${response.data.inserted?.length || 0} findings. No posting or fake analytics generated.`);
+      setFindings(response.data.inserted || []);
+      setStatus((current) => ({
+        ...current,
+        run: response.data.run || current.run,
+        debug: response.data.debug || current.debug
+      }));
+      return;
+    }
+    setNotice(setup?.message || response.error || response.data?.message || 'Safe research test failed.');
+  }
+
   const cards = status.cards || {};
   const run = status.run || {};
+  const debug = status.debug || {};
+  const latestErrors = debug.ingestion_errors || [];
   const health = cards.system_health || 'green';
   const learningCentreBackendReady = backendStatus.mode === 'Connected' && !setupRequired;
   const learningCentreStatusMessage = setupRequired
@@ -3852,6 +3873,7 @@ function LearningCentrePage({ navigate, onBack, reportMode = false }) {
         </div>
         <div className="cmo-action-row">
           <button className="tactical-button" onClick={startRun} disabled={run.status === 'running'}>{run.status === 'running' ? '12-hour run active' : 'Start 12-hour run'}</button>
+          <button className="ghost-button" onClick={runSafeTest} disabled={run.status === 'running'}>Run Safe Research Test</button>
           <button className="ghost-button" onClick={stopRun} disabled={run.status !== 'running'} title="Emergency stop only. Normal runs continue for 12 hours.">Emergency stop</button>
           <span>Current phase: {run.current_phase || 'idle'}</span>
         </div>
@@ -3879,6 +3901,36 @@ function LearningCentrePage({ navigate, onBack, reportMode = false }) {
           <small>Apply: {setupRequired.migration}</small>
         </section>
       )}
+
+      <section className="cmo-panel learning-debug-panel" aria-labelledby="learning-debug-title">
+        <div className="approval-section-header">
+          <div><span>Diagnostics</span><h2 id="learning-debug-title">Learning Centre debug</h2></div>
+          <Activity size={18} />
+        </div>
+        <div className="learning-debug-grid">
+          <div><span>Worker status</span><strong>{debug.worker_status || 'unknown'}</strong></div>
+          <div><span>Last ingestion run</span><strong>{debug.last_ingestion_run?.created_at ? formatDisplayDate(debug.last_ingestion_run.created_at) : 'None recorded'}</strong></div>
+          <div><span>Rows recorded</span><strong>{formatLearningRowsRecorded(debug.rows_recorded)}</strong></div>
+          <div><span>Latest source URL</span><strong>{debug.latest_source_url ? <a href={debug.latest_source_url} target="_blank" rel="noreferrer">Open latest source</a> : 'None recorded'}</strong></div>
+          <div><span>Latest platform</span><strong>{debug.latest_platform || 'None recorded'}</strong></div>
+          <div><span>Next scheduled run</span><strong>{debug.next_scheduled_run || 'Not scheduled'}</strong></div>
+        </div>
+        <div className="learning-debug-errors">
+          <span>Ingestion errors</span>
+          {latestErrors.length ? latestErrors.map((error, index) => (
+            <p key={`${error.created_at || 'error'}-${index}`}>{formatDisplayDate(error.created_at)} - {error.step || error.level || 'error'}: {error.message}</p>
+          )) : <p>No ingestion errors recorded.</p>}
+        </div>
+        {!!debug.table_status?.length && (
+          <div className="learning-debug-table-status">
+            {debug.table_status.map((item) => (
+              <span key={item.table} className={item.exists ? 'ok' : 'missing'}>
+                {item.table}: {item.exists ? `${item.rows} rows` : item.error || 'missing'}
+              </span>
+            ))}
+          </div>
+        )}
+      </section>
 
       <section className="cmo-panel">
         <div className="approval-section-header">
@@ -3963,6 +4015,13 @@ function formatRuntimeRemaining(seconds) {
   return `${hours}h ${minutes}m`;
 }
 
+function formatLearningRowsRecorded(rows = {}) {
+  if (!rows || typeof rows !== 'object') return 'None';
+  const entries = Object.entries(rows).filter(([, value]) => Number(value || 0) > 0);
+  if (!entries.length) return '0 rows';
+  return entries.map(([table, value]) => `${table}: ${value}`).join(' / ');
+}
+
 function truncateText(value = '', max = 120) {
   const text = String(value || '');
   return text.length > max ? `${text.slice(0, max)}...` : text;
@@ -3985,7 +4044,7 @@ function normalizeLearningCentreSetupError(response) {
     return {
       status: 'server_env_missing',
       message: 'Supabase server env is missing. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to the server/deployment environment.',
-      migration: response?.data?.migration || 'supabase/migrations/20260527162207_learning_centre_research_ingestion.sql',
+      migration: response?.data?.migration || 'supabase/migrations/20260528131644_cmo_learning_centre_research_schema.sql',
       migration_applied: Boolean(response?.data?.migration_applied),
       missing_tables: response?.data?.missing_tables || [],
       redis_configured: Boolean(response?.data?.redis_configured),
@@ -3996,7 +4055,7 @@ function normalizeLearningCentreSetupError(response) {
     return {
       status: 'database_setup_required',
       message: 'Learning Centre tables missing. Apply Supabase SQL migration.',
-      migration: response?.data?.migration || 'supabase/migrations/20260527162207_learning_centre_research_ingestion.sql',
+      migration: response?.data?.migration || 'supabase/migrations/20260528131644_cmo_learning_centre_research_schema.sql',
       migration_applied: Boolean(response?.data?.migration_applied),
       missing_tables: response?.data?.missing_tables || [],
       redis_configured: Boolean(response?.data?.redis_configured),

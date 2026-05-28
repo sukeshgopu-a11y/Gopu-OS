@@ -11408,6 +11408,74 @@ input[type="range"] {
   overflow-wrap: anywhere;
 }
 
+.learning-debug-panel {
+  border-color: rgba(46, 242, 255, 0.22);
+}
+
+.learning-debug-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.learning-debug-grid > div,
+.learning-debug-errors,
+.learning-debug-table-status {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 12px;
+}
+
+.learning-debug-grid span,
+.learning-debug-errors > span,
+.learning-debug-table-status span {
+  display: block;
+  color: var(--dim);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.learning-debug-grid strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--text);
+  font-size: 0.86rem;
+  overflow-wrap: anywhere;
+}
+
+.learning-debug-errors {
+  margin-top: 12px;
+}
+
+.learning-debug-errors p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.learning-debug-table-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.learning-debug-table-status span {
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+}
+
+.learning-debug-table-status span.ok {
+  color: var(--success, #3ddc84);
+}
+
+.learning-debug-table-status span.missing {
+  color: var(--danger, #ff4d6d);
+}
+
 @media (max-width: 760px) {
   .learning-run-window,
   .learning-current-activity,
@@ -12393,6 +12461,158 @@ input[type="range"] {
   margin-top: 4px;
   color: #ffd37a;
   line-height: 1.4;
+}
+
+.cmo-learning-dashboard {
+  gap: 18px;
+}
+
+.cmo-learning-hero {
+  align-items: center;
+}
+
+.cmo-learning-status-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.cmo-learning-growth-plan {
+  display: grid;
+  gap: 16px;
+}
+
+.cmo-learning-growth-plan p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.cmo-learning-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.cmo-learning-plan-grid > div,
+.cmo-learning-finding-card {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.cmo-learning-plan-grid > div {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.cmo-learning-plan-grid strong,
+.cmo-learning-finding-card strong {
+  color: var(--text);
+}
+
+.cmo-learning-plan-grid span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.cmo-learning-findings-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.cmo-learning-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cmo-learning-filter-row button {
+  border: 1px solid var(--border);
+  background: var(--panel-1);
+  color: var(--muted);
+  padding: 8px 10px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.cmo-learning-filter-row button.active,
+.cmo-learning-filter-row button:hover {
+  border-color: rgba(46, 242, 255, 0.42);
+  color: var(--cyan);
+  background: rgba(46, 242, 255, 0.08);
+}
+
+.cmo-learning-finding-list {
+  display: grid;
+  gap: 14px;
+}
+
+.cmo-learning-finding-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.cmo-learning-finding-head,
+.cmo-learning-source-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.cmo-learning-finding-head > div {
+  display: grid;
+  gap: 4px;
+}
+
+.cmo-learning-finding-head span,
+.cmo-learning-source-row span,
+.cmo-learning-detail-grid span {
+  color: var(--dim);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cmo-learning-finding-head small {
+  color: var(--muted);
+}
+
+.cmo-learning-source-row a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--cyan);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.cmo-learning-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cmo-learning-detail-grid section {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.cmo-learning-detail-grid p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.55;
 }
 
 .ai-growth-panel {

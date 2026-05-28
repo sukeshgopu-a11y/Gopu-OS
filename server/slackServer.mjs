@@ -10,6 +10,7 @@ import { getCreativeEngineStatus } from '../lib/creativeStatus.mjs';
 import {
   handleLearningCentreFindings,
   handleLearningCentreReport,
+  handleLearningCentreSafeTest,
   handleLearningCentreSetup,
   handleLearningCentreStart,
   handleLearningCentreStatus,
@@ -841,6 +842,10 @@ const server = http.createServer((request, response) => {
   }
   if (request.method === 'POST' && routePath === '/api/learning-centre/start') {
     handleLearningCentreStart(request, (statusCode, payload) => sendJson(response, statusCode, payload, request.headers.origin || ''));
+    return;
+  }
+  if (request.method === 'POST' && routePath === '/api/learning-centre/safe-test') {
+    handleLearningCentreSafeTest(request, (statusCode, payload) => sendJson(response, statusCode, payload, request.headers.origin || ''));
     return;
   }
   if (request.method === 'POST' && routePath === '/api/learning-centre/stop') {

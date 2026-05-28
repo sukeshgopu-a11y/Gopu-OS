@@ -33,6 +33,10 @@ export function startLearningCentreRun() {
   return learningCentreFetch('/api/learning-centre/start', { method: 'POST' });
 }
 
+export function runSafeLearningCentreTest() {
+  return learningCentreFetch('/api/learning-centre/safe-test', { method: 'POST' });
+}
+
 export function stopLearningCentreRun() {
   return learningCentreFetch('/api/learning-centre/stop', { method: 'POST' });
 }
