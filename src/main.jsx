@@ -177,6 +177,8 @@ import {
   generateCMOReport,
   generateFounderMarketingSummary,
   createMarketingCampaignDraft,
+  cleanupLatestStep6TestContentPackage,
+  createStep6TestContentPackage,
   getAIBudgetAnalysis,
   getAICampaignForecasts,
   getAICmoOperatingSystem,
@@ -3276,6 +3278,34 @@ function SlackNotificationActivityPanel() {
   );
 }
 
+function Breadcrumb({ items }) {
+  return (
+    <nav aria-label="Breadcrumb" className="breadcrumb">
+      {items.map((item, index) => (
+        <Fragment key={index}>
+          {index > 0 && <span className="breadcrumb-sep" aria-hidden="true">/</span>}
+          {item.onClick ? (
+            <button onClick={item.onClick}>{item.label}</button>
+          ) : (
+            <span className={index === items.length - 1 ? 'breadcrumb-current' : ''}>{item.label}</span>
+          )}
+        </Fragment>
+      ))}
+    </nav>
+  );
+}
+
+function EmptyState({ icon: Icon, title, description, action }) {
+  return (
+    <div className="empty-state" role="status">
+      {Icon && <Icon size={36} aria-hidden="true" />}
+      <strong>{title}</strong>
+      {description && <p>{description}</p>}
+      {action && <button className="ghost-button" onClick={action.onClick}>{action.label}</button>}
+    </div>
+  );
+}
+
 function ExportOSShell({ children, className = '', liveDataConnected = backendStatus.mode === 'Connected', statusMessage }) {
   const isCtoShell = className.includes('cto-shell');
   const backendMessage = statusMessage || (isCtoShell && liveDataConnected ? 'Supabase live connected' : isCtoShell && !liveDataConnected ? 'No live data connected' : backendStatus.message);
@@ -3847,7 +3877,7 @@ function GlobalCommandSearch({ query, setQuery, records, navigate }) {
       </div>
       <label className="global-command-search-box">
         <Search size={18} />
-        <input value={query} onChange={(event) => setQuery(event.target.value)} autoFocus placeholder="Show delayed shipments, find Country pending buyers, open pending invoices..." />
+        <input aria-label="AI command query" value={query} onChange={(event) => setQuery(event.target.value)} autoFocus placeholder="Show delayed shipments, find Country pending buyers, open pending invoices..." />
       </label>
       <div className="search-suggestion-row">
         {suggestions.map((item) => <button key={item} onClick={() => setQuery(item)}>{item}</button>)}
@@ -4876,7 +4906,7 @@ function DirectorReviewDrawer({ item, note, setNote, onClose, onApprove, onClari
         </section>
         <section className="director-review-section">
           <span>Decision note</span>
-          <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add short decision note..." />
+          <textarea aria-label="Decision note" value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add short decision note..." />
         </section>
         <footer className="director-review-actions">
           <button className="tactical-button" onClick={onOpenWorkflow}>Open workflow</button>
@@ -5355,7 +5385,7 @@ function DirectorCommandConsole({ value, setValue, onRun, response, history, nav
     <section className="director-panel director-command-console">
       <div className="approval-section-header"><div><span>Director Command Input</span><h2>Ask GOPU OS anything operational</h2></div><Bot size={18} /></div>
       <div className="director-input-row">
-        <textarea value={value} onChange={(event) => setValue(event.target.value)} onKeyDown={(event) => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') onRun(); }} placeholder="What is pending this month?  •  Show delayed shipments.  •  Any Country pending opportunities?  •  What is blocking invoices?" />
+        <textarea aria-label="Command prompt" value={value} onChange={(event) => setValue(event.target.value)} onKeyDown={(event) => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') onRun(); }} placeholder="What is pending this month?  •  Show delayed shipments.  •  Any Country pending opportunities?  •  What is blocking invoices?" />
         <button className="tactical-button" onClick={() => onRun()}>Ask Director</button>
       </div>
       <div className="director-suggestion-row">
@@ -5818,6 +5848,7 @@ function FounderNotesPanel({ value, setValue }) {
         <FileText size={18} />
       </div>
       <textarea
+        aria-label="Approval comment"
         value={value}
         onChange={(event) => setValue(event.target.value)}
         placeholder="Add decision comments, approval conditions, revision requests, or escalation notes."
@@ -10304,7 +10335,7 @@ function TaskSummaryCards({ tasks }) {
 }
 
 function TaskFilters({ filters, activeFilter, setActiveFilter, search, setSearch }) {
-  return <section className="task-panel"><div className="approval-section-header"><div><span>Task Filters</span><h2>Source and owner control</h2></div><Search size={18} /></div><input className="task-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search task title, owner, buyer, product, workflow ID" /><div className="approval-filter-row">{filters.map((filter) => <button className={activeFilter === filter ? 'active' : ''} key={filter} onClick={() => setActiveFilter(filter)}>{filter}</button>)}</div></section>;
+  return <section className="task-panel"><div className="approval-section-header"><div><span>Task Filters</span><h2>Source and owner control</h2></div><Search size={18} /></div><input aria-label="Search tasks" className="task-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search task title, owner, buyer, product, workflow ID" /><div className="approval-filter-row">{filters.map((filter) => <button className={activeFilter === filter ? 'active' : ''} key={filter} onClick={() => setActiveFilter(filter)}>{filter}</button>)}</div></section>;
 }
 
 function TaskBoard({ tasks, selectedId, onSelect }) {
@@ -12593,7 +12624,7 @@ function CTODetailDrawer({ detail, onClose }) {
               <h3>Save Connection Values</h3>
               <label>
                 <span>{provider.keyLabel}</span>
-                <input type="password" value={form.apiKey} onChange={(event) => setForm((current) => ({ ...current, apiKey: event.target.value }))} placeholder="Paste API key or token" />
+                <input aria-label="API key" type="password" value={form.apiKey} onChange={(event) => setForm((current) => ({ ...current, apiKey: event.target.value }))} placeholder="Paste API key or token" />
               </label>
               <label>
                 <span>Secondary value</span>
@@ -16078,7 +16109,7 @@ function CIOFilterBar({ filters, updateFilter, data }) {
     <section className="cio-filter-shell" aria-label="CIO search and filters">
       <label className="cio-search-field">
         <Search size={16} />
-        <input value={filters.search} onChange={(event) => updateFilter('search', event.target.value)} placeholder="Search company, country, product, source, email, phone, LinkedIn" />
+        <input aria-label="Search leads" value={filters.search} onChange={(event) => updateFilter('search', event.target.value)} placeholder="Search company, country, product, source, email, phone, LinkedIn" />
       </label>
       <div className="cio-filter-grid">
         <CIOSelect label="Country" value={filters.country} onChange={(value) => updateFilter('country', value)} options={['All', ...(data.countries || [])]} />
@@ -18934,6 +18965,10 @@ async function runCmoManualStepAction(step = {}, label = '') {
   };
 }
 
+function isStep6DevTestMode() {
+  return Boolean(import.meta.env.DEV) || (typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname));
+}
+
 function getLatestFounderDecisionContent(archive = {}) {
   const items = Array.isArray(archive?.items) ? archive.items : [];
   return items.find((item) => {
@@ -19026,7 +19061,7 @@ function FounderDecisionEmptyState() {
   );
 }
 
-function FounderDecisionCommandCenter({ step, content, steps, controlState, processingAction, onDecision, onClose }) {
+function FounderDecisionCommandCenter({ step, content, steps, controlState, processingAction, devMode, devAction, onCreateTestContent, onCleanupTestContent, onDecision, onClose }) {
   const Logo = cmoAutomationLogoMap[step.logoKey] || ShieldCheck;
   const decisionState = getFounderDecisionState(content);
   const hashtags = normalizeContentArray(content?.hashtags);
@@ -19060,10 +19095,22 @@ function FounderDecisionCommandCenter({ step, content, steps, controlState, proc
               </div>
             </div>
             <div className="cmo-step-detail-actions">
+              {content?.metadata?.test_mode ? <span className="founder-dev-badge">DEV TEST CONTENT</span> : null}
               <FounderDecisionStatusPill state={decisionState} />
               <button type="button" className="tactical-button ghost" onClick={onClose}>Close</button>
             </div>
           </header>
+
+          {devMode ? (
+            <section className="founder-dev-testbar" data-cmo-flow-interactive="true">
+              <div>
+                <span>Developer test mode</span>
+                <strong>Creates real Supabase test rows marked metadata.test_mode=true.</strong>
+              </div>
+              <button type="button" onClick={onCreateTestContent} disabled={Boolean(devAction || processingAction)}>{devAction === 'create' ? 'Creating...' : 'Create Test Content Package'}</button>
+              <button type="button" onClick={onCleanupTestContent} disabled={Boolean(devAction || processingAction)}>{devAction === 'cleanup' ? 'Cleaning...' : 'Delete Latest Test Package'}</button>
+            </section>
+          ) : null}
 
           <div className="founder-decision-summary-grid">
             {[
@@ -19151,7 +19198,7 @@ function FounderDecisionCommandCenter({ step, content, steps, controlState, proc
   );
 }
 
-function CMOWorkflowStepDetail({ step, steps, content, onClose }) {
+function CMOWorkflowStepDetail({ step, steps, content, devMode = false, devAction = '', onCreateTestContent, onCleanupTestContent, onContentUpdated, onClose }) {
   const [controlState, setControlState] = useState({ status: 'idle', message: '' });
   const [manualOutput, setManualOutput] = useState(null);
   const [localDecisionContent, setLocalDecisionContent] = useState(content || null);
@@ -19236,6 +19283,7 @@ function CMOWorkflowStepDetail({ step, steps, content, onClose }) {
         ...(result.data.content_history || {}),
         content_approvals: result.data.content_history?.content_approvals || current?.content_approvals || []
       }));
+      onContentUpdated?.(result.data.content_history);
       setControlState({
         status: 'live',
         message: label.includes('Approve')
@@ -19258,6 +19306,10 @@ function CMOWorkflowStepDetail({ step, steps, content, onClose }) {
         steps={steps}
         controlState={controlState}
         processingAction={processingAction}
+        devMode={devMode}
+        devAction={devAction}
+        onCreateTestContent={onCreateTestContent}
+        onCleanupTestContent={onCleanupTestContent}
         onDecision={handleFounderDecisionControl}
         onClose={onClose}
       />
@@ -19426,6 +19478,7 @@ function CMOAutomationFlow({ flow, contentMemoryArchive }) {
   const steps = Array.isArray(flow?.steps) ? flow.steps : [];
   const [selectedStep, setSelectedStep] = useState(null);
   const [liveContentArchive, setLiveContentArchive] = useState(contentMemoryArchive || { items: [] });
+  const [devAction, setDevAction] = useState('');
   const [schedulerHealth, setSchedulerHealth] = useState(() => pendingSchedulerHealth());
   const [openAIStatus, setOpenAIStatus] = useState(() => normalizeOpenAIStatusForStep({ status: 'pending' }));
   const [creativeStatus, setCreativeStatus] = useState({
@@ -19563,6 +19616,30 @@ function CMOAutomationFlow({ flow, contentMemoryArchive }) {
   });
   const latestFounderContent = getLatestFounderDecisionContent(liveContentArchive);
   const selectedDisplayStep = selectedStep ? displaySteps.find((step) => step.id === selectedStep.id) || selectedStep : null;
+  const updateArchiveWithContent = (content) => {
+    if (!content?.id) return;
+    setLiveContentArchive((current) => {
+      const items = Array.isArray(current?.items) ? current.items : [];
+      const filtered = items.filter((item) => item.id !== content.id);
+      return { ...(current || {}), items: [content, ...filtered], loadedAt: getCmoNowUtc() };
+    });
+  };
+  const handleCreateStep6TestContent = async () => {
+    setDevAction('create');
+    const response = await createStep6TestContentPackage();
+    if (response.ok && response.data?.archive) {
+      setLiveContentArchive(response.data.archive);
+    }
+    setDevAction('');
+  };
+  const handleCleanupStep6TestContent = async () => {
+    setDevAction('cleanup');
+    const response = await cleanupLatestStep6TestContentPackage();
+    if (response.ok && response.data?.archive) {
+      setLiveContentArchive(response.data.archive);
+    }
+    setDevAction('');
+  };
   const openStepDetail = (event, step) => {
     if (event?.target?.closest?.('[data-cmo-flow-interactive="true"], button, a, input, textarea, select, label')) return;
     setSelectedStep(step);
@@ -19667,6 +19744,11 @@ function CMOAutomationFlow({ flow, contentMemoryArchive }) {
           step={selectedDisplayStep}
           steps={displaySteps}
           content={selectedDisplayStep.id === 'founder-decision' ? latestFounderContent : null}
+          devMode={selectedDisplayStep.id === 'founder-decision' && isStep6DevTestMode()}
+          devAction={devAction}
+          onCreateTestContent={handleCreateStep6TestContent}
+          onCleanupTestContent={handleCleanupStep6TestContent}
+          onContentUpdated={updateArchiveWithContent}
           onClose={() => setSelectedStep(null)}
         />
       ) : null}
