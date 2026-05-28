@@ -282,6 +282,19 @@ import {
 import { getTrustCenterData } from './services/trustCenterService.js';
 import './styles.css';
 
+function announceToSR(message, priority = 'polite') {
+  const id = priority === 'assertive' ? 'sr-alert' : 'sr-announcer';
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = '';
+  setTimeout(() => { el.textContent = message; }, 50);
+}
+
+function getRouteAnnouncement(path) {
+  const leaf = String(path || '/export-os').split('/').filter(Boolean).pop() || 'dashboard';
+  return leaf.replace(/[-_]/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 function highlightMatch(text, query) {
   if (!query || !text) return text;
   const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -1642,6 +1655,7 @@ function App() {
       window.history.pushState({}, '', path);
     }
     setRoute(path);
+    announceToSR(`Navigated to ${getRouteAnnouncement(path)}`);
   }
 
   if (isProtectedRoute && backendStatus.mode === 'Connected' && !authState.ready) {
@@ -2258,7 +2272,7 @@ function Sidebar({ activePage, setActivePage, drawerOpen, setDrawerOpen }) {
             <span>EXPORT COMMAND</span>
           </div>
         </div>
-        <nav className="nav-list">
+        <nav className="nav-list stagger-list">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -2351,6 +2365,13 @@ function PageHero({ current }) {
 }
 
 function Dashboard() {
+  const auditLog = approvalAuditEvents.map((event) => ({
+    ...event,
+    module: event.actor,
+    message: event.event,
+    type: event.status?.toLowerCase().includes('revision') ? 'warning' : 'success'
+  }));
+
   return (
     <>
       <MetricGrid />
@@ -2361,6 +2382,16 @@ function Dashboard() {
         <ShipmentTable />
         <SystemStatus />
         <ActivityFeed />
+        <section className="panel" aria-labelledby="activity-title">
+          <div className="approval-section-header">
+            <div>
+              <span>Live Feed</span>
+              <h2 id="activity-title">Recent Activity</h2>
+            </div>
+            <Activity size={18} aria-hidden="true" />
+          </div>
+          <ActivityTimeline events={auditLog || []} />
+        </section>
       </div>
     </>
   );
@@ -2851,6 +2882,21 @@ function ShipmentTrackerPage({ navigate, onBack, shipmentId }) {
     if (filter === 'Delivered') return shipment.current_stage === 'Delivered';
     return shipment.current_stage === 'Issue / Hold';
   });
+  const shipmentRows = React.useMemo(() => visibleShipments.map((shipment) => ({
+    ...shipment,
+    reference: shipment.shipment_reference || shipment.reference || shipment.id,
+    status: shipmentStatusLabel(getShipmentStatus(shipment))
+  })), [visibleShipments]);
+  const { sorted: sortedShipments, sortKey, sortDir, toggle: toggleSort } = useSortable(shipmentRows, 'current_stage');
+  const { selected, toggle, toggleAll, clear, isSelected, allSelected, someSelected, selectedItems } = useRowSelection(sortedShipments);
+  const SHIPMENT_COLS = React.useMemo(() => [
+    { key: 'reference', label: 'Reference', flex: 1.2 },
+    { key: 'product_name', label: 'Product', flex: 1.5 },
+    { key: 'destination', label: 'Destination', flex: 1 },
+    { key: 'current_stage', label: 'Stage', flex: 1.2 },
+    { key: 'etd', label: 'ETD', flex: 0.9, accessor: (shipment) => formatShipmentDate(shipment.etd) },
+    { key: 'status', label: 'Status', flex: 0.9, sortable: false },
+  ], []);
   const selectedShipment = shipments.find((shipment) => shipment.id === selectedId || shipment.shipment_reference === selectedId) || null;
   const referencePreview = generateShipmentReference(shipments);
   const verifiedBuyer = buyers.find((buyer) => buyer.id === form.buyer_id);
@@ -3028,8 +3074,34 @@ function ShipmentTrackerPage({ navigate, onBack, shipmentId }) {
           <ShipmentFilterPanel filter={filter} onFilter={setFilter} />
         </section>
         <section className="shipment-card-grid">
-          {visibleShipments.map((shipment) => <ShipmentTrackerCard key={shipment.id} shipment={shipment} onOpen={openShipment} />)}
-          {!visibleShipments.length && <section className="shipment-empty"><strong>No shipments match this filter.</strong><span>Create a shipment or switch filter.</span></section>}
+          <BulkActionBar
+            count={selected.size}
+            onClear={clear}
+            onExport={() => exportCSV(selectedItems, SHIPMENT_COLS, 'shipments')}
+            actions={[
+              { label: 'Mark Completed', icon: CheckCircle2, onClick: () => {} },
+              { label: 'Escalate', icon: TriangleAlert, onClick: () => {} },
+            ]}
+          />
+          <SortableTableHeader
+            columns={SHIPMENT_COLS}
+            sortKey={sortKey}
+            sortDir={sortDir}
+            onSort={toggleSort}
+            allSelected={allSelected}
+            someSelected={someSelected}
+            onToggleAll={toggleAll}
+          />
+          {sortedShipments.map((shipment) => (
+            <ShipmentTrackerRow
+              key={shipment.id}
+              shipment={shipment}
+              selected={isSelected(shipment.id)}
+              onToggle={() => toggle(shipment.id)}
+              onOpen={openShipment}
+            />
+          ))}
+          {!sortedShipments.length && <section className="shipment-empty"><strong>No shipments match this filter.</strong><span>Create a shipment or switch filter.</span></section>}
         </section>
       </main>
 
@@ -3084,6 +3156,47 @@ const ShipmentTrackerCard = React.memo(function ShipmentTrackerCard({ shipment, 
         <div><span>ETD / ETA</span><strong>{formatShipmentDate(shipment.etd)} / {formatShipmentDate(shipment.eta)}</strong></div>
       </div>
       <footer><span>Next action</span><strong>{getNextShipmentAction(shipment)}</strong></footer>
+    </button>
+  );
+});
+
+const ShipmentTrackerRow = React.memo(function ShipmentTrackerRow({ shipment, selected, onToggle, onOpen }) {
+  const status = getShipmentStatus(shipment);
+  return (
+    <button className={`shipment-card stable-row status-${status}`} onClick={() => onOpen(shipment)}>
+      <div className="stable-cell stable-check">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggle}
+          aria-label={`Select shipment ${shipment.reference}`}
+          onClick={(event) => event.stopPropagation()}
+        />
+      </div>
+      <div className="stable-cell stable-data" style={{ flex: 1.2, minWidth: 80 }}>
+        <span>Reference</span>
+        <strong>{shipment.reference}</strong>
+      </div>
+      <div className="stable-cell stable-data" style={{ flex: 1.5, minWidth: 80 }}>
+        <span>Product</span>
+        <strong>{shipment.product_name}</strong>
+      </div>
+      <div className="stable-cell stable-data" style={{ flex: 1, minWidth: 80 }}>
+        <span>Destination</span>
+        <strong>{shipment.destination}</strong>
+      </div>
+      <div className="stable-cell stable-data" style={{ flex: 1.2, minWidth: 80 }}>
+        <span>Stage</span>
+        <strong>{shipment.current_stage}</strong>
+      </div>
+      <div className="stable-cell stable-data" style={{ flex: 0.9, minWidth: 80 }}>
+        <span>ETD</span>
+        <strong>{formatShipmentDate(shipment.etd)}</strong>
+      </div>
+      <div className="stable-cell stable-data" style={{ flex: 0.9, minWidth: 80 }}>
+        <span>Status</span>
+        <StatusBadge label={shipmentStatusLabel(status)} state={shipmentStatusState(status)} />
+      </div>
     </button>
   );
 });
@@ -3998,6 +4111,56 @@ function SettingsPanel({ open, onClose, prefs, onPref }) {
               value={prefs.showClock}
               onChange={(v) => onPref('showClock', v)}
             />
+            <div className="setting-row">
+              <div className="setting-copy">
+                <span className="setting-label">Appearance</span>
+                <span className="setting-desc">Switch between dark and light mode</span>
+              </div>
+              <div className="view-toggle">
+                <button
+                  className={`view-toggle-btn ${prefs.theme === 'dark' ? 'active' : ''}`}
+                  onClick={() => onPref('theme', 'dark')}
+                  aria-pressed={prefs.theme === 'dark'}
+                  aria-label="Dark mode"
+                >
+                  Dark
+                </button>
+                <button
+                  className={`view-toggle-btn ${prefs.theme === 'light' ? 'active' : ''}`}
+                  onClick={() => onPref('theme', 'light')}
+                  aria-pressed={prefs.theme === 'light'}
+                  aria-label="Light mode"
+                >
+                  Light
+                </button>
+              </div>
+            </div>
+
+            <div className="setting-row">
+              <div className="setting-copy">
+                <span className="setting-label">Accent colour</span>
+                <span className="setting-desc">Choose the interface highlight colour</span>
+              </div>
+              <div className="accent-swatches" role="radiogroup" aria-label="Accent colour">
+                {[
+                  { key: 'cyan', color: '#2ef2ff' },
+                  { key: 'blue', color: '#5b8cff' },
+                  { key: 'green', color: '#3ddc84' },
+                  { key: 'amber', color: '#ffb547' },
+                  { key: 'purple', color: '#a78bfa' },
+                ].map((a) => (
+                  <button
+                    key={a.key}
+                    className={`accent-swatch ${prefs.accent === a.key ? 'active' : ''}`}
+                    style={{ background: a.color }}
+                    onClick={() => onPref('accent', a.key)}
+                    role="radio"
+                    aria-checked={prefs.accent === a.key}
+                    aria-label={`${a.key} accent`}
+                  />
+                ))}
+              </div>
+            </div>
           </section>
 
           <section className="settings-section">
@@ -4230,6 +4393,325 @@ function CommandPalette({ open, onClose, onNavigate, onAction }) {
   );
 }
 
+function useSortable(data, defaultKey = null) {
+  const [sortKey, setSortKey] = React.useState(defaultKey);
+  const [sortDir, setSortDir] = React.useState('asc');
+
+  const sorted = React.useMemo(() => {
+    if (!sortKey || !data?.length) return data || [];
+    return [...data].sort((a, b) => {
+      const av = a[sortKey] ?? '';
+      const bv = b[sortKey] ?? '';
+      const cmp = String(av).localeCompare(String(bv), undefined, { numeric: true });
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [data, sortKey, sortDir]);
+
+  function toggle(key) {
+    if (sortKey === key) setSortDir((d) => d === 'asc' ? 'desc' : 'asc');
+    else { setSortKey(key); setSortDir('asc'); }
+  }
+
+  return { sorted, sortKey, sortDir, toggle };
+}
+
+function useDebounce(value, delay = 300) {
+  const [debounced, setDebounced] = React.useState(value);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+
+  return debounced;
+}
+
+function usePrevious(value) {
+  const ref = React.useRef();
+
+  React.useEffect(() => {
+    ref.current = value;
+  });
+
+  return ref.current;
+}
+
+function useRowSelection(items = [], idKey = 'id') {
+  const [selected, setSelected] = React.useState(new Set());
+
+  const toggle = (id) => setSelected((s) => {
+    const next = new Set(s);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+  const toggleAll = () => setSelected((s) =>
+    s.size === items.length ? new Set() : new Set(items.map((i) => i[idKey]))
+  );
+  const clear = () => setSelected(new Set());
+  const isSelected = (id) => selected.has(id);
+  const allSelected = selected.size === items.length && items.length > 0;
+  const someSelected = selected.size > 0 && !allSelected;
+  const selectedItems = items.filter((i) => selected.has(i[idKey]));
+
+  return { selected, toggle, toggleAll, clear, isSelected, allSelected, someSelected, selectedItems };
+}
+
+function VirtualList({
+  items = [],
+  itemHeight = 56,
+  overscan = 3,
+  renderItem,
+  getItemKey,
+  className = ''
+}) {
+  const containerRef = React.useRef(null);
+  const [scrollTop, setScrollTop] = React.useState(0);
+  const [containerHeight, setContainerHeight] = React.useState(400);
+
+  React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return undefined;
+
+    setContainerHeight(el.clientHeight || 400);
+
+    if (typeof ResizeObserver === 'undefined') return undefined;
+
+    const observer = new ResizeObserver(([entry]) => {
+      setContainerHeight(entry.contentRect.height);
+    });
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, []);
+
+  const safeItems = Array.isArray(items) ? items : [];
+  const totalHeight = safeItems.length * itemHeight;
+  const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
+  const endIndex = Math.min(
+    safeItems.length - 1,
+    Math.ceil((scrollTop + containerHeight) / itemHeight) + overscan
+  );
+
+  const visibleItems = [];
+  for (let i = startIndex; i <= endIndex; i += 1) {
+    const item = safeItems[i];
+    if (item === undefined) continue;
+
+    visibleItems.push(
+      <div
+        key={getItemKey ? getItemKey(item, i) : item?.id ?? i}
+        style={{ position: 'absolute', top: i * itemHeight, left: 0, right: 0, height: itemHeight }}
+      >
+        {renderItem(item, i)}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      className={`virtual-list ${className}`.trim()}
+      style={{ overflowY: 'auto', position: 'relative' }}
+      onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+    >
+      <div style={{ height: totalHeight, position: 'relative' }}>
+        {visibleItems}
+      </div>
+    </div>
+  );
+}
+
+function exportCSV(rows, columns, filename = 'export') {
+  const header = columns.map((c) => `"${c.label}"`).join(',');
+  const body = rows.map((row) =>
+    columns.map((c) => {
+      const val = c.accessor ? c.accessor(row) : (row[c.key] ?? '');
+      return `"${String(val).replace(/"/g, '""')}"`;
+    }).join(',')
+  ).join('\n');
+  const csv = `${header}\n${body}`;
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${filename}-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function SortableTableHeader({ columns, sortKey, sortDir, onSort, allSelected, someSelected, onToggleAll, selectable = true }) {
+  return (
+    <div className="stable-header" role="row">
+      {selectable && (
+        <div className="stable-cell stable-check" role="columnheader">
+          <input
+            type="checkbox"
+            aria-label="Select all rows"
+            checked={allSelected}
+            ref={(el) => { if (el) el.indeterminate = someSelected; }}
+            onChange={onToggleAll}
+          />
+        </div>
+      )}
+      {columns.map((col) => (
+        <div
+          key={col.key}
+          className={`stable-cell stable-th ${col.sortable !== false ? 'sortable' : ''} ${sortKey === col.key ? 'sorted' : ''}`}
+          role="columnheader"
+          aria-sort={sortKey === col.key ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+          style={{ flex: col.flex || 1, minWidth: col.minWidth || 80 }}
+          onClick={() => col.sortable !== false && onSort(col.key)}
+        >
+          <span>{col.label}</span>
+          {col.sortable !== false && (
+            <span className="sort-icon" aria-hidden="true">
+              {sortKey === col.key ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function BulkActionBar({ count, actions, onClear, onExport }) {
+  if (count === 0) return null;
+  return (
+    <div className="bulk-bar" role="toolbar" aria-label={`${count} rows selected`}>
+      <span className="bulk-count">
+        <CheckCircle2 size={14} aria-hidden="true" />
+        {count} selected
+      </span>
+      <div className="bulk-actions">
+        {actions.map((action) => (
+          <button
+            key={action.label}
+            className={`ghost-button ${action.cls || ''}`}
+            onClick={action.onClick}
+            aria-label={action.label}
+          >
+            {action.icon && <action.icon size={13} aria-hidden="true" />}
+            {action.label}
+          </button>
+        ))}
+        {onExport && (
+          <button className="ghost-button" onClick={onExport} aria-label="Export selected to CSV">
+            <UploadCloud size={13} aria-hidden="true" />
+            Export CSV
+          </button>
+        )}
+      </div>
+      <button className="bulk-clear" onClick={onClear} aria-label="Clear selection">
+        ✕ Clear
+      </button>
+    </div>
+  );
+}
+
+function InvoiceDocument({ invoice }) {
+  if (!invoice) return null;
+  const items = invoice.line_items || invoice.items || [];
+  const subtotal = items.reduce((s, i) => {
+    const amount = Number(i.amount ?? (Number(i.quantity || 0) * Number(i.rate || i.unit_price || 0)));
+    return s + (Number.isFinite(amount) ? amount : 0);
+  }, 0);
+  const tax = invoice.tax_amount || invoice.igst_amount || 0;
+  const total = invoice.total_amount || (subtotal + Number(tax));
+  const currency = invoice.currency || 'USD';
+  const fmt = (n) => Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+  const statusClass = String(invoice.status || 'draft').toLowerCase().replace(/[^a-z0-9-]+/g, '-');
+
+  return (
+    <div className="invoice-doc-wrap" id="invoice-print-area">
+      <header className="invoice-doc-header">
+        <div className="invoice-doc-brand">
+          <strong>GOPU EXPORTS</strong>
+          <span>
+            {invoice.seller_address || invoice.company_address || 'Export Division'}<br />
+            GSTIN: {invoice.seller_gstin || invoice.gstin || '-'}<br />
+            IEC: {invoice.iec_code || '-'}
+          </span>
+        </div>
+        <div className="invoice-doc-meta">
+          <span className="invoice-doc-type">{invoice.invoice_type || 'Commercial Invoice'}</span>
+          <span className="invoice-doc-number">{invoice.invoice_number || invoice.reference || 'DRAFT'}</span>
+          <span className="invoice-doc-date">Date: {invoice.invoice_date || new Date().toLocaleDateString()}</span>
+          {invoice.due_date && <span className="invoice-doc-date">Due: {invoice.due_date}</span>}
+          <div aria-label={`Invoice status: ${invoice.status || 'Draft'}`} style={{ marginTop: 8 }} className={`invoice-status-stamp ${statusClass}`}>
+            {invoice.status || 'Draft'}
+          </div>
+        </div>
+      </header>
+      <div className="invoice-doc-parties">
+        <div className="invoice-party-block">
+          <span className="invoice-party-role">Bill From</span>
+          <span className="invoice-party-name">{invoice.seller_name || 'GOPU Exports Pvt Ltd'}</span>
+          <span className="invoice-party-detail">{invoice.seller_address || '-'}</span>
+        </div>
+        <div className="invoice-party-block">
+          <span className="invoice-party-role">Bill To</span>
+          <span className="invoice-party-name">{invoice.buyer_name || invoice.buyer?.company_name || '-'}</span>
+          <span className="invoice-party-detail">
+            {invoice.buyer_address || '-'}<br />
+            {invoice.buyer_country && `Country: ${invoice.buyer_country}`}
+          </span>
+        </div>
+      </div>
+      <table className="invoice-items-table" aria-label="Invoice line items">
+        <thead>
+          <tr><th style={{ width: 32 }}>#</th><th>Description</th><th>HSN</th><th>Qty</th><th>Unit</th><th>Rate ({currency})</th><th>Amount ({currency})</th></tr>
+        </thead>
+        <tbody>
+          {items.map((item, i) => {
+            const amount = item.amount ?? (Number(item.quantity || 0) * Number(item.rate || item.unit_price || 0));
+            return (
+              <tr key={`${item.description || item.product_name || item.product_description || 'item'}-${i}`}>
+                <td>{i + 1}</td>
+                <td><div className="invoice-item-desc"><strong>{item.description || item.product_name || item.product_description}</strong>{item.note && <span>{item.note}</span>}</div></td>
+                <td><span style={{ fontFamily: 'var(--font-mono)' }}>{item.hsn_code || '-'}</span></td>
+                <td><span style={{ fontFamily: 'var(--font-mono)' }}>{item.quantity || '-'}</span></td>
+                <td>{item.unit || 'PCS'}</td>
+                <td><span style={{ fontFamily: 'var(--font-mono)' }}>{fmt(item.rate || item.unit_price || 0)}</span></td>
+                <td>{fmt(amount || 0)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <div className="invoice-totals">
+        <div className="invoice-total-row"><span>Subtotal</span><span>{currency} {fmt(subtotal)}</span></div>
+        {invoice.freight_amount && <div className="invoice-total-row"><span>Freight</span><span>{currency} {fmt(invoice.freight_amount)}</span></div>}
+        {tax > 0 && <div className="invoice-total-row"><span>Tax / IGST ({invoice.tax_rate || invoice.igst_rate || 0}%)</span><span>{currency} {fmt(tax)}</span></div>}
+        <div className="invoice-total-row grand"><span>Total Due</span><span>{currency} {fmt(total)}</span></div>
+      </div>
+      {(invoice.bank_name || invoice.account_number) && (
+        <div className="invoice-bank-block">
+          <span className="invoice-bank-title">Payment Details</span>
+          <div className="invoice-bank-grid">
+            {[
+              ['Bank', invoice.bank_name],
+              ['Account', invoice.account_number],
+              ['SWIFT / IFSC', invoice.swift_code || invoice.ifsc_code],
+              ['Branch', invoice.bank_branch],
+            ].filter(([, v]) => v).map(([label, value]) => (
+              <div key={label} className="invoice-bank-field"><label>{label}</label><span>{value}</span></div>
+            ))}
+          </div>
+        </div>
+      )}
+      <footer className="invoice-doc-footer">
+        <p className="invoice-doc-notes">{invoice.terms || invoice.payment_terms || 'Payment due within 30 days. Please reference invoice number in all communications.'}</p>
+        <div className="invoice-doc-seal">
+          <div style={{ width: 80, height: 80, border: '2px solid var(--border-cyan)', borderRadius: '50%', display: 'grid', placeItems: 'center', color: 'var(--cyan)' }}>
+            <ShieldCheck size={32} aria-hidden="true" />
+          </div>
+          <span>Authorised Signatory</span>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
 const ShellControlsContext = React.createContext(null);
 
 function ExportOSShell({ children, className = '', liveDataConnected = backendStatus.mode === 'Connected', statusMessage, loading = false }) {
@@ -4238,21 +4720,45 @@ function ExportOSShell({ children, className = '', liveDataConnected = backendSt
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [notifOpen, setNotifOpen] = React.useState(false);
   const [showSearch, setShowSearch] = React.useState(false);
-  const [prefs, setPrefs] = React.useState({
-    compact: false,
-    reducedMotion: false,
-    showClock: true,
-    alertsCritical: true,
-    alertsApprovals: true,
-    autoRefresh: false,
+  const [prefs, setPrefs] = React.useState(() => {
+    const defaults = {
+      compact: false,
+      reducedMotion: false,
+      showClock: true,
+      alertsCritical: true,
+      alertsApprovals: true,
+      autoRefresh: false,
+      theme: 'dark',
+      accent: 'cyan',
+    };
+    try {
+      const saved = localStorage.getItem('gopu-os-prefs');
+      return saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
+    } catch {
+      return defaults;
+    }
   });
-  const handlePref = (key, val) => setPrefs((p) => ({ ...p, [key]: val }));
+  const handlePref = (key, val) => setPrefs((p) => {
+    const next = { ...p, [key]: val };
+    try { localStorage.setItem('gopu-os-prefs', JSON.stringify(next)); } catch {}
+    return next;
+  });
   const shellControls = React.useMemo(() => ({
     prefs,
     openNotifications: () => setNotifOpen(true),
     openSettings: () => setSettingsOpen(true),
     openCommandPalette: () => setShowSearch(true)
   }), [prefs]);
+
+  React.useEffect(() => {
+    document.documentElement.setAttribute('data-theme', prefs.theme);
+    document.documentElement.setAttribute('data-accent', prefs.accent);
+    if (prefs.reducedMotion) {
+      document.documentElement.setAttribute('data-reduced-motion', 'true');
+    } else {
+      document.documentElement.removeAttribute('data-reduced-motion');
+    }
+  }, [prefs.theme, prefs.accent, prefs.reducedMotion]);
 
   React.useEffect(() => {
     function handleKey(e) {
@@ -4292,6 +4798,7 @@ function ExportOSShell({ children, className = '', liveDataConnected = backendSt
     const path = routes[page] || '/export-os';
     window.history.pushState({}, '', path);
     window.dispatchEvent(new PopStateEvent('popstate'));
+    announceToSR(`Navigated to ${getRouteAnnouncement(path)}`);
   }
 
   async function runCommandAction(action) {
@@ -4323,6 +4830,20 @@ function ExportOSShell({ children, className = '', liveDataConnected = backendSt
       <TopLoadingBar loading={loading} />
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <ConnectionBanner />
+      <div
+        id="sr-announcer"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      />
+      <div
+        id="sr-alert"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+        className="sr-only"
+      />
       <div className="background-grid" />
       <GlobalBackNavigation />
       <div className={`backend-status-banner ${liveDataConnected ? 'connected' : 'pending'}`}>
@@ -6826,7 +7347,22 @@ function ApprovalWallHeader({ onBack, onOpenTasks, pendingCount, highRiskCount }
 function ApprovalQueueList({ requests, filters, activeFilter, setActiveFilter, selectedId, onSelect }) {
   const [page, setPage] = React.useState(1);
   const PER_PAGE = 20;
-  const paged = requests.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const approvalRows = React.useMemo(() => requests.map((request) => ({
+    ...request,
+    title: request.title || request.summary || 'Approval request',
+    department: request.department || request.executive_owner || request.category || 'Executive',
+    risk_level: request.risk_level || request.priority || 'Medium'
+  })), [requests]);
+  const { sorted: sortedApprovals, sortKey: aSort, sortDir: aDir, toggle: toggleASort } = useSortable(approvalRows, 'created_at');
+  const { selected: aSelected, toggle: aToggle, toggleAll: aToggleAll, clear: aClear, isSelected: aIsSelected, allSelected: aAll, someSelected: aSome, selectedItems: aItems } = useRowSelection(sortedApprovals);
+  const APPROVAL_COLS = React.useMemo(() => [
+    { key: 'title', label: 'Title', flex: 2 },
+    { key: 'department', label: 'Department', flex: 1 },
+    { key: 'status', label: 'Status', flex: 0.9, sortable: false },
+    { key: 'created_at', label: 'Date', flex: 0.9 },
+    { key: 'risk_level', label: 'Risk', flex: 0.8 },
+  ], []);
+  const paged = sortedApprovals.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   React.useEffect(() => {
     setPage(1);
   }, [activeFilter, requests.length]);
@@ -6846,21 +7382,54 @@ function ApprovalQueueList({ requests, filters, activeFilter, setActiveFilter, s
           </button>
         ))}
       </div>
+      <BulkActionBar
+        count={aSelected.size}
+        onClear={aClear}
+        onExport={() => exportCSV(aItems, APPROVAL_COLS, 'approvals')}
+        actions={[
+          { label: 'Approve All', icon: CheckCircle2, onClick: () => {} },
+          { label: 'Reject All', icon: AlertTriangle, cls: 'danger-button', onClick: () => {} },
+        ]}
+      />
+      <SortableTableHeader
+        columns={APPROVAL_COLS}
+        sortKey={aSort}
+        sortDir={aDir}
+        onSort={toggleASort}
+        allSelected={aAll}
+        someSelected={aSome}
+        onToggleAll={aToggleAll}
+      />
       <div className="approval-queue-list">
-        {requests.length === 0
+        {sortedApprovals.length === 0
           ? <EmptyState icon={CheckCircle2} title="All clear" description="No pending approvals at this time." />
           : paged.map((request) => (
-            <ApprovalQueueCard key={request.id} request={request} selected={selectedId === request.id} onSelect={() => onSelect(request.id)} />
+            <ApprovalQueueCard
+              key={request.id}
+              request={request}
+              selected={selectedId === request.id}
+              checked={aIsSelected(request.id)}
+              onToggle={() => aToggle(request.id)}
+              onSelect={() => onSelect(request.id)}
+            />
           ))}
       </div>
-      <Pagination total={requests.length} perPage={PER_PAGE} page={page} onPage={setPage} />
+      <Pagination total={sortedApprovals.length} perPage={PER_PAGE} page={page} onPage={setPage} />
     </section>
   );
 }
 
-const ApprovalQueueCard = React.memo(function ApprovalCard({ request, selected, onSelect }) {
+const ApprovalQueueCard = React.memo(function ApprovalCard({ request, selected, checked, onToggle, onSelect }) {
   return (
     <button className={`approval-queue-card ${selected ? 'selected' : ''}`} onClick={onSelect}>
+      <span className="approval-select-box" onClick={(event) => event.stopPropagation()}>
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={onToggle}
+          aria-label={`Select approval ${request.title}`}
+        />
+      </span>
       <div>
         <strong>{request.title}</strong>
         <StatusBadge label={request.status} state={getApprovalState(request.status)} />
@@ -11072,7 +11641,34 @@ function InvoiceBuilder({ navigate, invoiceId, onBack, onOpenTasks }) {
           </InvoiceSetupAccordion>
         </main>
         <section className="invoice-preview-column">
-          <InvoicePreviewA4 invoice={invoice} canRelease={canRelease} />
+          <InvoiceDocument invoice={{
+            ...invoice,
+            line_items: invoice.items?.map((item) => ({
+              ...item,
+              description: item.description || item.product_description,
+              amount: item.amount ?? (Number(item.quantity || 0) * Number(item.unit_price || item.rate || 0)),
+              rate: item.rate ?? item.unit_price
+            })),
+            seller_name: invoice.company_snapshot?.legal_company_name,
+            seller_address: invoice.company_snapshot?.registered_address,
+            seller_gstin: invoice.company_snapshot?.gstin,
+            iec_code: invoice.company_snapshot?.iec,
+            bank_name: invoice.company_snapshot?.default_bank_name,
+            account_number: invoice.company_snapshot?.default_bank_account_masked,
+            buyer_name: invoice.buyer_company || invoice.buyer_name,
+            buyer_address: invoice.buyer_address,
+            buyer_country: invoice.buyer_country || invoice.destination_country,
+            freight_amount: invoice.freight,
+            total_amount: calculateInvoiceTotals(invoice).grandTotal,
+            terms: invoice.payment_terms || invoice.company_snapshot?.default_payment_terms,
+            status: canRelease ? 'Approved' : invoice.status
+          }} />
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 12 }}>
+            <button className="ghost-button" onClick={() => window.print()}>
+              <FileText size={14} />
+              Print / Save PDF
+            </button>
+          </div>
         </section>
         <aside className="invoice-control-stack">
           <ValidationChecklist validation={validation} navigate={navigate} />
@@ -11281,11 +11877,88 @@ function InvoiceRevisionHistory({ invoice }) {
   return <section className="invoice-side-panel invoice-revision-history"><div className="approval-section-header"><div><span>Revision History</span><h2>Version control</h2></div><TimerReset size={18} /></div><div className="snapshot-grid">{rows.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div></section>;
 }
 
+function useDragDrop(onDrop) {
+  const dragging = React.useRef(null);
+  const [overCol, setOverCol] = React.useState(null);
+  function onDragStart(e, item) {
+    dragging.current = item;
+    e.dataTransfer.effectAllowed = 'move';
+    e.currentTarget.classList.add('dragging');
+  }
+  function onDragEnd(e) {
+    dragging.current = null;
+    setOverCol(null);
+    e.currentTarget.classList.remove('dragging');
+  }
+  function onDragOver(e, col) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setOverCol(col);
+  }
+  function onDragLeave() { setOverCol(null); }
+  function onDropCol(e, col) {
+    e.preventDefault();
+    setOverCol(null);
+    if (dragging.current) onDrop(dragging.current, col);
+    dragging.current = null;
+  }
+  return { onDragStart, onDragEnd, onDragOver, onDragLeave, onDropCol, overCol };
+}
+
+const KANBAN_COLS = [
+  { key: 'To Do', label: 'To Do', color: 'var(--muted)' },
+  { key: 'In Progress', label: 'In Progress', color: 'var(--blue)' },
+  { key: 'Blocked', label: 'Blocked', color: 'var(--error)' },
+  { key: 'Done', label: 'Done', color: 'var(--success)' },
+];
+
+function normalizeKanbanStatus(status = 'To Do') {
+  if (status === 'Done') return 'Done';
+  if (status === 'In Progress') return 'In Progress';
+  if (['Blocked', 'Escalated', 'Waiting Founder Approval', 'Revision Required'].includes(status)) return 'Blocked';
+  return 'To Do';
+}
+
+function KanbanBoard({ tasks = [], onStatusChange }) {
+  const { onDragStart, onDragEnd, onDragOver, onDragLeave, onDropCol, overCol } = useDragDrop((task, newStatus) => onStatusChange(task, newStatus));
+  return (
+    <div className="kanban-board" role="region" aria-label="Task board">
+      {KANBAN_COLS.map((col) => {
+        const colTasks = tasks.filter((t) => normalizeKanbanStatus(t.status) === col.key);
+        return (
+          <div key={col.key} className={`kanban-col ${overCol === col.key ? 'drag-over' : ''}`} onDragOver={(e) => onDragOver(e, col.key)} onDragLeave={onDragLeave} onDrop={(e) => onDropCol(e, col.key)} aria-label={`${col.label} column, ${colTasks.length} tasks`}>
+            <header className="kanban-col-header"><span className="kanban-col-dot" style={{ background: col.color }} aria-hidden="true" /><span className="kanban-col-title">{col.label}</span><span className="kanban-col-count">{colTasks.length}</span></header>
+            <div className="kanban-cards stagger-list">
+              {colTasks.length === 0 && <div className="kanban-empty">Drop tasks here</div>}
+              {colTasks.map((task) => {
+                const due = task.due_date ? new Date(task.due_date) : null;
+                const validDue = due && !Number.isNaN(due.getTime());
+                const dueLabel = validDue ? due.toLocaleDateString([], { month: 'short', day: 'numeric' }) : task.due_date;
+                return (
+                  <div key={task.id} className="kanban-card" draggable="true" onDragStart={(e) => onDragStart(e, task)} onDragEnd={onDragEnd} role="article" aria-label={`Task: ${task.title}`} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.preventDefault(); }}>
+                    <div className="kanban-card-top"><span className="kanban-card-title">{task.title}</span>{task.priority && <span className="kanban-priority" style={{ color: task.priority === 'High' ? 'var(--error)' : task.priority === 'Medium' ? 'var(--warning)' : 'var(--muted)' }}>{task.priority}</span>}</div>
+                    {task.description && <p className="kanban-card-desc">{task.description}</p>}
+                    <footer className="kanban-card-footer">
+                      {task.owner_command && <span className="kanban-owner">{task.owner_command}</span>}
+                      {dueLabel && <time className="kanban-due" dateTime={validDue ? due.toISOString() : undefined} style={{ color: task.due_date === 'Overdue' || (validDue && due < new Date()) ? 'var(--error)' : 'var(--dim)' }}>{dueLabel}</time>}
+                    </footer>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function TaskFollowupEngine({ navigate, onBack }) {
   const [tasks, setTasks] = useState(initialTaskItems);
   const [auditEvents, setAuditEvents] = useState([]);
   const [activeFilter, setActiveFilter] = useState('All');
   const [search, setSearch] = useState('');
+  const [taskView, setTaskView] = React.useState('list');
   const [selectedId, setSelectedId] = useState(initialTaskItems[0].id);
   const [note, setNote] = useState('');
   const [dailyPlan, setDailyPlan] = useState('');
@@ -11342,6 +12015,13 @@ function TaskFollowupEngine({ navigate, onBack }) {
       await addTaskComment(demoTenantId, selectedTask.id, notes, 'COO Command');
       setNote('');
     }
+  }
+
+  async function updateTaskFromBoard(task, status) {
+    const result = await updateWorkflowTaskStatus(demoTenantId, task.id, status, 'Task moved from kanban board.', 'COO Command');
+    const updated = result.data || { ...task, status, updated_at: 'Now' };
+    setTasks((current) => current.map((item) => item.id === task.id ? updated : item));
+    setSelectedId(task.id);
   }
 
   async function addNoteToTask(notes = '') {
@@ -11404,7 +12084,23 @@ function TaskFollowupEngine({ navigate, onBack }) {
           <EscalationRulesPanel rules={taskEscalationRules} />
         </aside>
         <main className="task-center-stack">
-          <TaskBoard tasks={filteredTasks} selectedId={selectedTask?.id} onSelect={setSelectedId} />
+          <div className="task-view-header">
+            <div>
+              <span>Task Workspace</span>
+              <h2>{taskView === 'board' ? 'Kanban execution board' : 'Operational task list'}</h2>
+            </div>
+            <div className="view-toggle" role="group" aria-label="View mode">
+              <button className={`view-toggle-btn ${taskView === 'list' ? 'active' : ''}`} onClick={() => setTaskView('list')} aria-pressed={taskView === 'list'} aria-label="List view">
+                <ClipboardList size={14} />
+              </button>
+              <button className={`view-toggle-btn ${taskView === 'board' ? 'active' : ''}`} onClick={() => setTaskView('board')} aria-pressed={taskView === 'board'} aria-label="Board view">
+                <Boxes size={14} />
+              </button>
+            </div>
+          </div>
+          {taskView === 'board'
+            ? <KanbanBoard tasks={filteredTasks} onStatusChange={updateTaskFromBoard} />
+            : <TaskBoard tasks={filteredTasks} selectedId={selectedTask?.id} onSelect={setSelectedId} />}
           <DailyFollowupPanel tasks={tasks} output={dailyPlan} onGenerate={generateDailyPlan} />
         </main>
         <aside className="task-right-stack">
@@ -25524,28 +26220,330 @@ function ApprovalRequestsPanel({ requests, onOpenApprovalWall }) {
   );
 }
 
-function ActivityTimeline({ entries }) {
+function ActivityTimeline({ events = [], entries = [] }) {
+  const rows = events.length ? events : entries;
+  if (!rows.length) {
+    return <EmptyState icon={Activity} title="No recent activity" description="Events will appear here as the OS processes operations." />;
+  }
   return (
-    <section className="coo-panel">
-      <div className="coo-panel-header">
-        <div>
-          <span>Execution trace</span>
-          <h2>COO Activity Timeline</h2>
-        </div>
-        <Activity size={20} />
-      </div>
-      <div className="coo-timeline">
-        {entries.map((entry) => (
-          <div className="timeline-entry" key={entry.id}>
-            <i />
-            <div>
-              <strong>{entry.event}</strong>
-              <span>{entry.status}</span>
-            </div>
+    <ol className="activity-timeline" aria-label="Activity timeline">
+      {rows.map((event, i) => (
+        <li key={event.id || i} className="timeline-event">
+          <div className="timeline-track" aria-hidden="true">
+            <span
+              className="timeline-dot"
+              style={{
+                background:
+                  event.type === 'error' ? 'var(--error)' :
+                    event.type === 'warning' ? 'var(--warning)' :
+                      event.type === 'success' ? 'var(--success)' : 'var(--cyan)',
+              }}
+            />
+            {i < rows.length - 1 && <span className="timeline-line" />}
           </div>
-        ))}
+          <div className="timeline-body">
+            <div className="timeline-header">
+              <span className="timeline-actor">{event.actor || event.module || 'GOPU OS'}</span>
+              <time className="notification-timestamp" dateTime={event.time || event.created_at}>
+                {event.time
+                  ? event.time
+                  : event.created_at
+                    ? new Date(event.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    : 'Now'}
+              </time>
+            </div>
+            <p className="timeline-event-text">{event.event || event.message || event.title}</p>
+            {event.status && <StatusBadge status={event.status} size="sm" />}
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function Stepper({ steps, current, onChange }) {
+  return (
+    <nav className="stepper" aria-label="Progress steps">
+      <ol className="stepper-list">
+        {steps.map((step, i) => {
+          const done    = i < current;
+          const active  = i === current;
+          const state   = done ? 'done' : active ? 'active' : 'pending';
+          return (
+            <li
+              key={i}
+              className={`stepper-step ${state}`}
+              aria-current={active ? 'step' : undefined}
+            >
+              <button
+                className="stepper-node"
+                onClick={() => done && onChange && onChange(i)}
+                disabled={!done}
+                aria-label={`${step.label}${done ? ' — completed' : active ? ' — current' : ' — upcoming'}`}
+              >
+                {done
+                  ? <CheckCircle2 size={16} aria-hidden="true" />
+                  : <span aria-hidden="true">{i + 1}</span>
+                }
+              </button>
+              <span className="stepper-label">{step.label}</span>
+              {i < steps.length - 1 && (
+                <span className="stepper-connector" aria-hidden="true" />
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
+function useWizard(totalSteps) {
+  const [step, setStep] = React.useState(0);
+  const next  = () => setStep((s) => Math.min(s + 1, totalSteps - 1));
+  const back  = () => setStep((s) => Math.max(s - 1, 0));
+  const goTo  = (i) => setStep(i);
+  const reset = () => setStep(0);
+  const isFirst = step === 0;
+  const isLast  = step === totalSteps - 1;
+  return { step, next, back, goTo, reset, isFirst, isLast };
+}
+
+const SHIPMENT_WIZARD_STEPS = [
+  { label: 'Buyer & Product' },
+  { label: 'Logistics'       },
+  { label: 'Documents'       },
+  { label: 'Review'          },
+];
+
+function ShipmentWizard({ onComplete, onCancel, buyers = [] }) {
+  const { step, next, back, isFirst, isLast } = useWizard(SHIPMENT_WIZARD_STEPS.length);
+  const [form, setForm] = React.useState({
+    buyer_id: '', product_name: '', quantity: '', unit: 'KG',
+    origin: '', destination: '', incoterm: 'FOB',
+    etd: '', eta: '', vessel: '', bl_number: '',
+    logistics_notes: '', packing_type: '', marks: '',
+  });
+  const [errors, setErrors] = React.useState({});
+  const update = (key, val) => setForm((f) => ({ ...f, [key]: val }));
+
+  function validateStep() {
+    const e = {};
+    if (step === 0) {
+      if (!form.buyer_id)     e.buyer_id     = 'Select a buyer';
+      if (!form.product_name) e.product_name = 'Product name required';
+      if (!form.quantity)     e.quantity     = 'Quantity required';
+    }
+    if (step === 1) {
+      if (!form.origin)      e.origin      = 'Origin required';
+      if (!form.destination) e.destination = 'Destination required';
+      if (!form.etd)         e.etd         = 'ETD required';
+    }
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
+  function handleNext() { if (validateStep()) next(); }
+
+  return (
+    <div className="wizard-shell">
+      <Stepper steps={SHIPMENT_WIZARD_STEPS} current={step} />
+
+      <div className="wizard-body">
+        {step === 0 && (
+          <section className="wizard-section" aria-labelledby="wizard-s0">
+            <h3 id="wizard-s0">Buyer & Product Details</h3>
+            <div className="wizard-grid">
+              <label className="wizard-field">
+                <span className="field-label field-required">Buyer</span>
+                <select value={form.buyer_id} onChange={(e) => update('buyer_id', e.target.value)}>
+                  <option value="">Select verified buyer</option>
+                  {buyers.map((b) => <option key={b.id} value={b.id}>{b.company_name}</option>)}
+                </select>
+                {errors.buyer_id && <span className="field-error-msg" role="alert">{errors.buyer_id}</span>}
+              </label>
+              <label className="wizard-field">
+                <span className="field-label field-required">Product name</span>
+                <input value={form.product_name} onChange={(e) => update('product_name', e.target.value)} placeholder="e.g. Red Chilli Powder" />
+                {errors.product_name && <span className="field-error-msg" role="alert">{errors.product_name}</span>}
+              </label>
+              <label className="wizard-field">
+                <span className="field-label field-required">Quantity</span>
+                <input inputMode="decimal" value={form.quantity} onChange={(e) => update('quantity', e.target.value)} placeholder="e.g. 500" />
+                {errors.quantity && <span className="field-error-msg" role="alert">{errors.quantity}</span>}
+              </label>
+              <label className="wizard-field">
+                <span className="field-label">Unit</span>
+                <select value={form.unit} onChange={(e) => update('unit', e.target.value)}>
+                  {['KG', 'MT', 'LT', 'PCS', 'BAG', 'DRUM', 'CTN'].map((u) => <option key={u}>{u}</option>)}
+                </select>
+              </label>
+            </div>
+          </section>
+        )}
+
+        {step === 1 && (
+          <section className="wizard-section" aria-labelledby="wizard-s1">
+            <h3 id="wizard-s1">Logistics Details</h3>
+            <div className="wizard-grid">
+              <label className="wizard-field">
+                <span className="field-label field-required">Origin port / city</span>
+                <input value={form.origin} onChange={(e) => update('origin', e.target.value)} placeholder="e.g. Nhava Sheva, India" />
+                {errors.origin && <span className="field-error-msg" role="alert">{errors.origin}</span>}
+              </label>
+              <label className="wizard-field">
+                <span className="field-label field-required">Destination</span>
+                <input value={form.destination} onChange={(e) => update('destination', e.target.value)} placeholder="e.g. Jebel Ali, UAE" />
+                {errors.destination && <span className="field-error-msg" role="alert">{errors.destination}</span>}
+              </label>
+              <label className="wizard-field">
+                <span className="field-label">Incoterm</span>
+                <select value={form.incoterm} onChange={(e) => update('incoterm', e.target.value)}>
+                  {['FOB', 'CIF', 'CFR', 'EXW', 'DDP', 'DAP'].map((t) => <option key={t}>{t}</option>)}
+                </select>
+              </label>
+              <label className="wizard-field">
+                <span className="field-label field-required">ETD</span>
+                <input type="date" value={form.etd} onChange={(e) => update('etd', e.target.value)} />
+                {errors.etd && <span className="field-error-msg" role="alert">{errors.etd}</span>}
+              </label>
+              <label className="wizard-field">
+                <span className="field-label">ETA</span>
+                <input type="date" value={form.eta} onChange={(e) => update('eta', e.target.value)} />
+              </label>
+              <label className="wizard-field">
+                <span className="field-label">Vessel / Flight</span>
+                <input value={form.vessel} onChange={(e) => update('vessel', e.target.value)} placeholder="Optional" />
+              </label>
+            </div>
+          </section>
+        )}
+
+        {step === 2 && (
+          <section className="wizard-section" aria-labelledby="wizard-s2">
+            <h3 id="wizard-s2">Document & Packing Details</h3>
+            <div className="wizard-grid">
+              <label className="wizard-field">
+                <span className="field-label">B/L Number</span>
+                <input value={form.bl_number} onChange={(e) => update('bl_number', e.target.value)} placeholder="Bill of lading reference" />
+              </label>
+              <label className="wizard-field">
+                <span className="field-label">Packing type</span>
+                <select value={form.packing_type} onChange={(e) => update('packing_type', e.target.value)}>
+                  <option value="">Select</option>
+                  {['Bags', 'Drums', 'Cartons', 'Pallets', 'Bulk', 'Containers'].map((p) => <option key={p}>{p}</option>)}
+                </select>
+              </label>
+              <label className="wizard-field wizard-field-full">
+                <span className="field-label">Shipping marks</span>
+                <input value={form.marks} onChange={(e) => update('marks', e.target.value)} placeholder="Marks and numbers on packages" />
+              </label>
+              <label className="wizard-field wizard-field-full">
+                <span className="field-label">Logistics notes</span>
+                <textarea value={form.logistics_notes} onChange={(e) => update('logistics_notes', e.target.value)} rows={3} placeholder="Special handling, temperature, hazmat notes..." />
+              </label>
+            </div>
+          </section>
+        )}
+
+        {step === 3 && (
+          <section className="wizard-section" aria-labelledby="wizard-s3">
+            <h3 id="wizard-s3">Review & Confirm</h3>
+            <div className="wizard-review-grid">
+              {[
+                ['Buyer',        buyers.find((b) => b.id === form.buyer_id)?.company_name || '—'],
+                ['Product',      form.product_name],
+                ['Quantity',     `${form.quantity} ${form.unit}`],
+                ['Origin',       form.origin],
+                ['Destination',  form.destination],
+                ['Incoterm',     form.incoterm],
+                ['ETD',          form.etd],
+                ['ETA',          form.eta || '—'],
+                ['Vessel',       form.vessel || '—'],
+                ['B/L Number',   form.bl_number || '—'],
+                ['Packing',      form.packing_type || '—'],
+              ].map(([label, value]) => (
+                <div key={label} className="wizard-review-row">
+                  <span className="wizard-review-label">{label}</span>
+                  <span className="wizard-review-value">{value}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
-    </section>
+
+      <footer className="wizard-footer">
+        <button className="ghost-button" onClick={isFirst ? onCancel : back}>
+          <ArrowLeft size={14} aria-hidden="true" />
+          {isFirst ? 'Cancel' : 'Back'}
+        </button>
+        <div className="wizard-step-count" aria-live="polite">
+          Step {step + 1} of {SHIPMENT_WIZARD_STEPS.length}
+        </div>
+        <button className="tactical-button" onClick={isLast ? () => onComplete(form) : handleNext}>
+          {isLast ? 'Create Shipment' : 'Continue'}
+          {!isLast && <ChevronRight size={14} aria-hidden="true" />}
+        </button>
+      </footer>
+    </div>
+  );
+}
+
+const SHIPMENT_STAGE_LIST = [
+  'Order Confirmed',
+  'Production Ready',
+  'Pre-Shipment Inspection',
+  'Customs Clearance — Export',
+  'Port Loading',
+  'In Transit',
+  'Customs Clearance — Import',
+  'Port Discharge',
+  'Delivered',
+];
+
+function ShipmentProgressTracker({ currentStage, shipment }) {
+  const currentIdx = SHIPMENT_STAGE_LIST.findIndex(
+    (s) => s.toLowerCase() === (currentStage || '').toLowerCase()
+  );
+  const active = currentIdx >= 0 ? currentIdx : 0;
+
+  return (
+    <div className="shipment-tracker" aria-label="Shipment progress">
+      <ol className="tracker-steps">
+        {SHIPMENT_STAGE_LIST.map((stage, i) => {
+          const done    = i < active;
+          const current = i === active;
+          return (
+            <li
+              key={i}
+              className={`tracker-step ${done ? 'done' : current ? 'current' : 'pending'}`}
+              aria-current={current ? 'step' : undefined}
+            >
+              <div className="tracker-node" aria-hidden="true">
+                {done
+                  ? <CheckCircle2 size={14} />
+                  : current
+                    ? <Zap size={14} />
+                    : <span>{i + 1}</span>
+                }
+              </div>
+              <span className="tracker-stage-label">{stage}</span>
+              {i < SHIPMENT_STAGE_LIST.length - 1 && (
+                <span className={`tracker-line ${done ? 'done' : ''}`} aria-hidden="true" />
+              )}
+            </li>
+          );
+        })}
+      </ol>
+      {shipment?.etd && (
+        <div className="tracker-meta">
+          <span>ETD <time dateTime={shipment.etd}>{new Date(shipment.etd).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}</time></span>
+          {shipment.eta && <span>ETA <time dateTime={shipment.eta}>{new Date(shipment.eta).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}</time></span>}
+          {shipment.vessel && <span>Vessel — {shipment.vessel}</span>}
+        </div>
+      )}
+    </div>
   );
 }
 
