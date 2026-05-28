@@ -36,6 +36,7 @@ import {
   Keyboard,
   KeyRound,
   LockKeyhole,
+  LayoutDashboard,
   Mail,
   Menu,
   Network,
@@ -2600,9 +2601,14 @@ const osLoginConfig = {
 };
 
 const blockedExampleIdentityPattern = /(^founder@gopu\.example$|\.example$)/i;
+const supabaseJwtKeyPattern = /^eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/;
 const pinPattern = /^\d{4,8}$/;
 function normalizeLoginEmail(value) {
   return value.trim().replace(/\s+/g, '').toLowerCase();
+}
+
+function isLikelySupabaseApiKey(value) {
+  return supabaseJwtKeyPattern.test(value.trim()) || /^sb_(publishable|secret)_/i.test(value.trim());
 }
 
 function SelectedOSLogin({ osId, onBack, onSuccess }) {
@@ -2613,6 +2619,7 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
   const config = osLoginConfig[osId] ?? osLoginConfig.export;
   const [values, setValues] = useState({ identity: '', password: '', pin: '' });
   const [errors, setErrors] = useState({});
+  const [resetStatus, setResetStatus] = useState('');
   const [authMessage, setAuthMessage] = useState(backendStatus.mode === 'Connected' ? 'Live Auth Connected' : 'Connect Supabase to activate');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const hasLoginError = Object.values(errors).some(Boolean) || /failed|blocked|pending/i.test(authMessage);
@@ -2635,6 +2642,7 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
   function updateField(field, value) {
     setValues((currentValues) => ({ ...currentValues, [field]: value }));
     setErrors((currentErrors) => ({ ...currentErrors, [field]: '' }));
+    setResetStatus('');
   }
 
   async function submitLogin(event) {
@@ -2645,6 +2653,7 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
     if (!identity) nextErrors.identity = 'Email is required.';
     else if (blockedExampleIdentityPattern.test(identity)) nextErrors.identity = 'Use a real Supabase Auth email. Local .example identities are blocked in production.';
     if (!values.password.trim()) nextErrors.password = 'Password is required.';
+    else if (isLikelySupabaseApiKey(values.password)) nextErrors.password = 'Do not paste a Supabase API key here. Use the Supabase Auth password for this email.';
     setErrors(nextErrors);
 
     if (Object.keys(nextErrors).length === 0 && backendStatus.mode === 'Connected') {
@@ -2654,7 +2663,10 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
       setIsSubmitting(false);
       if (error) {
         setAuthMessage('Login failed');
-        setErrors({ password: error.message || 'Supabase authentication failed.' });
+        const message = /invalid api key/i.test(error.message || '')
+          ? 'Supabase project key was rejected. Restart the dev server after the env sync, then try the Supabase Auth password.'
+          : error.message || 'Supabase authentication failed.';
+        setErrors({ password: message });
         return;
       }
       window.sessionStorage.setItem('selectedOS', osId);
@@ -2671,6 +2683,31 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
     } else {
       setAuthMessage('Complete the required login fields.');
     }
+  }
+
+  async function requestPasswordReset() {
+    const identity = normalizeLoginEmail(values.identity);
+    if (!identity) {
+      setErrors((currentErrors) => ({ ...currentErrors, identity: 'Enter the account email before requesting a reset link.' }));
+      setAuthMessage('Email required for password reset');
+      return;
+    }
+    if (blockedExampleIdentityPattern.test(identity)) {
+      setErrors((currentErrors) => ({ ...currentErrors, identity: 'Use a real Supabase Auth email. Local .example identities are blocked in production.' }));
+      setAuthMessage('Password reset blocked');
+      return;
+    }
+    setResetStatus('Sending password reset link...');
+    const { error } = await sendPasswordReset(identity);
+    if (error) {
+      setResetStatus('');
+      setAuthMessage('Password reset failed');
+      setErrors((currentErrors) => ({ ...currentErrors, identity: error.message || 'Could not send password reset link.' }));
+      return;
+    }
+    setErrors((currentErrors) => ({ ...currentErrors, identity: '' }));
+    setResetStatus('Password reset link requested. Check the Supabase Auth email inbox.');
+    setAuthMessage('Password reset link sent');
   }
 
   return (
@@ -2716,6 +2753,10 @@ function ExportOSLoginPage({ osId, onBack, onSuccess }) {
               {isSubmitting ? 'Verifying...' : 'Login'}
               <ChevronRight size={16} />
             </button>
+            <button className="ghost-button login-reset-button" type="button" onClick={requestPasswordReset}>
+              Send Password Reset Link
+            </button>
+            {resetStatus && <p className="login-reset-status">{resetStatus}</p>}
           </form>
         </div>
       </section>
@@ -4225,6 +4266,140 @@ function SkeletonKpiBar({ count = 6 }) {
   );
 }
 
+function MobileBottomNav({ navigate, activeRoute }) {
+  const tabs = [
+    { label: 'Home', icon: LayoutDashboard, route: '/export-os' },
+    { label: 'Approvals', icon: ClipboardCheck, route: '/export-os/approval-wall' },
+    { label: 'Director', icon: DirectorIcon, route: '/export-os/director' },
+    { label: 'Shipments', icon: COOIcon, route: '/export-os/executives/coo' },
+    { label: 'Settings', icon: Settings, route: '/export-os/admin' },
+  ];
+
+  return (
+    <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
+      {tabs.map((tab) => {
+        const Icon = tab.icon;
+        const isActive = activeRoute === tab.route || activeRoute?.startsWith(`${tab.route}/`);
+        return (
+          <button
+            key={tab.route}
+            className={`mobile-nav-tab ${isActive ? 'active' : ''}`}
+            onClick={() => navigate(tab.route)}
+            aria-label={tab.label}
+            aria-current={isActive ? 'page' : undefined}
+          >
+            <div className="mobile-nav-icon">
+              <Icon size={22} />
+              {isActive && <span className="mobile-nav-dot" aria-hidden="true" />}
+            </div>
+            <span className="mobile-nav-label">{tab.label}</span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
+function useSwipeToDismiss(onDismiss, threshold = 60) {
+  const ref = React.useRef(null);
+  const startX = React.useRef(null);
+
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+
+    function onTouchStart(event) {
+      startX.current = event.touches[0].clientX;
+    }
+
+    function onTouchMove(event) {
+      if (startX.current === null) return;
+      const dx = event.touches[0].clientX - startX.current;
+      if (Math.abs(dx) > 10) {
+        el.style.transform = `translateX(${dx}px)`;
+        el.style.opacity = `${1 - Math.abs(dx) / 200}`;
+      }
+    }
+
+    function onTouchEnd(event) {
+      if (startX.current === null) return;
+      const dx = event.changedTouches[0].clientX - startX.current;
+      startX.current = null;
+      if (Math.abs(dx) > threshold) {
+        el.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+        el.style.transform = `translateX(${dx > 0 ? 120 : -120}%)`;
+        el.style.opacity = '0';
+        setTimeout(onDismiss, 200);
+      } else {
+        el.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+        el.style.transform = '';
+        el.style.opacity = '';
+        setTimeout(() => {
+          if (el) el.style.transition = '';
+        }, 200);
+      }
+    }
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: true });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [onDismiss, threshold]);
+
+  return ref;
+}
+
+function MobileSheet({ open, onClose, title, children }) {
+  const sheetRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+      sheetRef.current?.focus();
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [open]);
+
+  React.useEffect(() => {
+    function handleKey(event) {
+      if (event.key === 'Escape') onClose();
+    }
+    if (open) window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="mobile-sheet-backdrop"
+      onClick={(event) => event.target === event.currentTarget && onClose()}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
+      <div className="mobile-sheet" ref={sheetRef} tabIndex={-1}>
+        <div className="mobile-sheet-handle" aria-hidden="true" />
+        <div className="mobile-sheet-header">
+          <span className="mobile-sheet-title">{title}</span>
+          <button className="mobile-sheet-close" onClick={onClose} aria-label="Close">
+            <X size={18} />
+          </button>
+        </div>
+        <div className="mobile-sheet-body">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 function ConfirmDialog({ open, title, message, confirmLabel = 'Confirm', confirmClass = 'tactical-button', onConfirm, onCancel }) {
   const ref = React.useRef(null);
   useFocusTrap(ref, open);
@@ -4269,12 +4444,14 @@ function useConfirm() {
 
 function useToast() {
   const [toast, setToast] = React.useState(null);
+  const removeToast = React.useCallback(() => setToast(null), []);
+  const swipeRef = useSwipeToDismiss(removeToast);
   const show = React.useCallback((message, type = 'success') => {
-    setToast({ message, type });
+    setToast({ id: Date.now(), message, type });
     setTimeout(() => setToast(null), 3000);
   }, []);
   const ToastUI = toast ? (
-    <div className={`toast-strip ${toast.type}`} role="status" aria-live="polite">
+    <div ref={swipeRef} className={`toast-strip ${toast.type}`} role="status" aria-live="polite">
       {toast.type === 'success' && <CheckCircle2 size={15} />}
       {toast.type === 'error' && <AlertTriangle size={15} />}
       {toast.type === 'warning' && <TriangleAlert size={15} />}
@@ -6132,6 +6309,7 @@ function ExecutiveCommandDeck({ navigate, onLogout, showSearch, setShowSearch, s
       <OperationalStatusSystem groups={operationalStatusGroups} navigate={navigate} />
       <ExecutiveLeadershipLayout commands={executiveCommandDeck} navigate={navigate} />
       <FounderOperationalOverview navigate={navigate} newsItems={newsItems} newsStatus={newsStatus} />
+      <MobileBottomNav navigate={navigate} activeRoute={window.location.pathname} />
     </ExportOSShell>
   );
 }
@@ -6224,6 +6402,7 @@ function CommandDeckHeader({ navigate, onLogout, showSearch = false, setShowSear
   const [activePanel, setActivePanel] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [notificationFilter, setNotificationFilter] = useState('All');
+  const [isMobilePanel, setIsMobilePanel] = useState(() => window.matchMedia?.('(max-width: 768px)').matches ?? false);
   const shellControls = React.useContext(ShellControlsContext);
 
   useEffect(() => {
@@ -6238,6 +6417,17 @@ function CommandDeckHeader({ navigate, onLogout, showSearch = false, setShowSear
     }
     setActivePanel((current) => current === 'search' ? null : current);
   }, [showSearch]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia?.('(max-width: 768px)');
+    if (!mediaQuery) return undefined;
+    function handleChange(event) {
+      setIsMobilePanel(event.matches);
+    }
+    setIsMobilePanel(mediaQuery.matches);
+    mediaQuery.addEventListener?.('change', handleChange);
+    return () => mediaQuery.removeEventListener?.('change', handleChange);
+  }, []);
 
   const unreadCount = topBarNotifications.filter((item) => ['Critical', 'High Risk', 'Attention'].includes(item.severity)).length;
   const systemStatus = topBarNotifications.some((item) => item.severity === 'Critical')
@@ -6262,6 +6452,41 @@ function CommandDeckHeader({ navigate, onLogout, showSearch = false, setShowSear
     setShowSearch?.(false);
   }
 
+  function renderActivePanel() {
+    if (activePanel === 'session') return <SessionSecurityPanel now={now} navigate={openRoute} />;
+    if (activePanel === 'status') return <SystemHealthPanel rows={executiveHealthRows} navigate={openRoute} />;
+    if (activePanel === 'clock') return <GlobalOperationsClock now={now} />;
+    if (activePanel === 'notifications') {
+      return (
+        <TopNotificationPanel
+          notifications={topBarNotifications}
+          filter={notificationFilter}
+          setFilter={setNotificationFilter}
+          navigate={openRoute}
+        />
+      );
+    }
+    if (activePanel === 'search') {
+      return (
+        <GlobalCommandSearch
+          query={searchQuery}
+          setQuery={setSearchQuery}
+          records={topBarSearchRecords}
+          navigate={openRoute}
+        />
+      );
+    }
+    return null;
+  }
+
+  const panelTitles = {
+    session: 'Founder session',
+    status: 'System status',
+    clock: 'Global operations clock',
+    notifications: 'Notifications',
+    search: 'Command search',
+  };
+
   return (
     <header className="deck-header">
       <div className="deck-header-copy" data-tour="sidebar">
@@ -6280,12 +6505,12 @@ function CommandDeckHeader({ navigate, onLogout, showSearch = false, setShowSear
           <CalendarClock size={16} /><span>{now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span>
         </button>
         <Tooltip text="Notifications">
-          <button className="icon-button top-icon-button notification-button" aria-label="Notifications" onClick={() => shellControls?.openNotifications?.()} aria-expanded={false}>
+          <button className="icon-button top-icon-button notification-button" aria-label="Notifications" onClick={() => togglePanel('notifications')} aria-expanded={activePanel === 'notifications'}>
             <Bell size={18} /><span>{unreadCount}</span>
           </button>
         </Tooltip>
         <Tooltip text="Global operational command search">
-          <button className="icon-button top-icon-button" aria-label="Global operational command search" onClick={() => shellControls?.openCommandPalette?.()} aria-expanded={false} data-tour="cmd-palette-trigger"><Search size={18} /></button>
+          <button className="icon-button top-icon-button" aria-label="Global operational command search" onClick={() => togglePanel('search')} aria-expanded={activePanel === 'search'} data-tour="cmd-palette-trigger"><Search size={18} /></button>
         </Tooltip>
         <button
           className="icon-button top-icon-button"
@@ -6302,30 +6527,15 @@ function CommandDeckHeader({ navigate, onLogout, showSearch = false, setShowSear
         <UserChip session={session} onSettings={() => shellControls?.openSettings?.()} />
       </div>
       <AnimatePresence>
-        {activePanel && (
+        {activePanel && !isMobilePanel && (
           <TopCommandPanel panel={activePanel} onClose={closePanel}>
-            {activePanel === 'session' && <SessionSecurityPanel now={now} navigate={openRoute} />}
-            {activePanel === 'status' && <SystemHealthPanel rows={executiveHealthRows} navigate={openRoute} />}
-            {activePanel === 'clock' && <GlobalOperationsClock now={now} />}
-            {activePanel === 'notifications' && (
-              <TopNotificationPanel
-                notifications={topBarNotifications}
-                filter={notificationFilter}
-                setFilter={setNotificationFilter}
-                navigate={openRoute}
-              />
-            )}
-            {activePanel === 'search' && (
-              <GlobalCommandSearch
-                query={searchQuery}
-                setQuery={setSearchQuery}
-                records={topBarSearchRecords}
-                navigate={openRoute}
-              />
-            )}
+            {renderActivePanel()}
           </TopCommandPanel>
         )}
       </AnimatePresence>
+      <MobileSheet open={Boolean(activePanel && isMobilePanel)} onClose={closePanel} title={panelTitles[activePanel] || 'Panel'}>
+        {renderActivePanel()}
+      </MobileSheet>
     </header>
   );
 }
