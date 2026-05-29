@@ -8340,52 +8340,131 @@ function DirectorCommandCenter({ navigate, onBack, onOpenTasks }) {
     setMessage(`Director command routed to ${response.routedExecutives.join(' + ')}.`);
   }
 
+  const agentColours = { CIO: '#6366f1', CFO: '#f59e0b', COO: '#10b981', CMO: '#ec4899', CTO: '#3b82f6' };
+  const isLive = message.toLowerCase().includes('live') || message.toLowerCase().includes('synced');
+  const actionOptions = ['Approve', 'Reject', 'Clarify', 'Escalate', 'Assign CIO', 'Assign CFO', 'Assign COO', 'Assign CMO', 'Assign CTO'];
+
   return (
-    <ExportOSShell className="operational-export-shell director-command-shell director-decision-shell">
-      <DirectorExecutiveHeader
-        now={now}
-        summary={summary}
-        onBack={onBack}
-        onOpenTasks={onOpenTasks}
-      />
-      <DirectorDecisionSummaryStrip summary={summary} />
-      <main className="director-decision-zone">
-        <DirectorDecisionQueue
-          items={visibleDecisions}
-          totalCount={items.length}
-          selectedId={selectedItem?.id}
-          filter={decisionFilter}
-          sort={decisionSort}
-          onFilter={setDecisionFilter}
-          onSort={setDecisionSort}
-          onSelect={setSelectedId}
-          onAction={runDirectorAction}
-        />
-        <DirectorAttentionRail
-          criticalItems={criticalAttentionItems}
-          whatsappActions={directorData.whatsappActions}
-          events={directorData.executiveEventStream}
-          followups={followups}
-          onSyncWhatsApp={syncWhatsAppAction}
-          onRunFollowups={runFollowupEngine}
-          navigate={navigate}
-        />
-      </main>
-      <DirectorSupportIntelligence
-        opportunities={directorData.globalOpportunities}
-        delays={directorData.workflowDelayIntelligence}
-        insights={directorData.executivePerformanceInsights}
-        recommendations={directorData.aiRecommendations}
-      />
-      <DirectorExecutiveFooter
-        message={message}
-        commandInput={commandInput}
-        setCommandInput={setCommandInput}
-        commandResponse={commandResponse}
-        commandHistory={commandHistory}
-        onRunCommand={runDirectorCommand}
+    <div className="director-command-page">
+      {/* Header */}
+      <div className="page-header director-page-header">
+        <button className="director-back-link" onClick={onBack}><ArrowLeft size={15} /> Back</button>
+        <div className="director-page-title">
+          <h1>Director Command</h1>
+          <p>All agents report here. You make the final call.</p>
+        </div>
+        <button className="tactical-button" onClick={onOpenTasks}>Open Tasks</button>
+      </div>
+
+      {/* Status Bar */}
+      <div className="director-status-bar">
+        {[
+          { label: 'Pending Decisions', value: items.length },
+          { label: 'Critical', value: summary.critical },
+          { label: 'Waiting >24h', value: summary.waiting24 },
+          { label: 'Agent Messages', value: (directorData.agentMemory || []).length },
+          { label: 'System Health', value: isLive ? 'Live' : 'Offline', highlight: isLive }
+        ].map((chip) => (
+          <div key={chip.label} className={`director-stat-chip${chip.highlight ? ' director-stat-chip--live' : ''}`}>
+            <span className="director-stat-value">{chip.value}</span>
+            <span className="director-stat-label">{chip.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Filter bar */}
+      <div className="director-filter-bar">
+        {['All', 'Critical', 'High', 'Pending'].map((f) => (
+          <button
+            key={f}
+            className={`director-filter-btn${decisionFilter === f ? ' active' : ''}`}
+            onClick={() => setDecisionFilter(f)}
+          >{f}</button>
+        ))}
+      </div>
+
+      {/* Main Grid */}
+      <div className="director-main-grid">
+        {/* Decision Queue */}
+        <section className="director-queue-panel">
+          <h2 className="director-section-heading">Decision Queue</h2>
+          {visibleDecisions.length === 0 ? (
+            <div className="director-empty-state">
+              <span className="director-empty-icon">✓</span>
+              <p>No pending decisions. All agents are running autonomously.</p>
+            </div>
+          ) : (
+            <div className="director-card-list">
+              {visibleDecisions.map((item, idx) => (
+                <div
+                  key={item.id}
+                  className={`director-decision-card${selectedId === item.id ? ' selected' : ''}`}
+                  onClick={() => setSelectedId(selectedId === item.id ? null : item.id)}
+                >
+                  <div className="ddc-row-top">
+                    <span className="ddc-row-num">#{idx + 1}</span>
+                    <span className={`ddc-priority-badge ddc-priority-${(item.priority || 'Medium').toLowerCase()}`}>{item.priority || 'Medium'}</span>
+                    <span className="ddc-title">{item.title}</span>
+                    {item.source_executive && <span className="ddc-owner-tag">{item.source_executive}</span>}
+                  </div>
+                  {item.summary && <p className="ddc-summary">{item.summary}</p>}
+                  <div className="ddc-row-meta">
+                    <span className="ddc-wait">{item.waiting_hours != null ? `${item.waiting_hours}h waiting` : ''}</span>
+                    {item.risk_level && <span className={`ddc-risk ddc-risk-${item.risk_level.toLowerCase()}`}>Risk: {item.risk_level}</span>}
+                    <select
+                      className="ddc-action-select"
+                      defaultValue=""
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => { if (e.target.value) { runDirectorAction(item, e.target.value); e.target.value = ''; } }}
+                    >
+                      <option value="" disabled>Action…</option>
+                      {actionOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Agent Activity Feed */}
+        <aside className="director-agent-feed">
+          <h2 className="director-section-heading">Agent Activity</h2>
+          {(directorData.agentActivityFeed || []).length === 0 ? (
+            <p className="director-feed-empty">Agents are active. Activity will appear here as decisions are made.</p>
+          ) : (
+            <div className="director-feed-list">
+              {(directorData.agentActivityFeed || []).map((entry, i) => {
+                const agentKey = Object.keys(agentColours).find((k) => (entry.agent || '').toUpperCase().includes(k)) || 'CIO';
+                return (
+                  <div key={i} className="director-feed-entry">
+                    <span className="director-feed-dot" style={{ background: agentColours[agentKey] }} />
+                    <div className="director-feed-body">
+                      <strong>{entry.agent || agentKey}</strong>
+                      <span>{entry.subject || entry.message || ''}</span>
+                    </div>
+                    <small className="director-feed-time">{entry.time || entry.created_at || ''}</small>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </aside>
+      </div>
+
+      {/* Command Console */}
+      <DirectorCommandConsole
+        value={commandInput}
+        setValue={setCommandInput}
+        onRun={runDirectorCommand}
+        response={commandResponse}
+        history={commandHistory}
         navigate={navigate}
+        onEscalate={() => selectedItem && runDirectorAction(selectedItem, 'Escalate')}
+        onCreateFollowup={runFollowupEngine}
       />
+
+      {/* Review Drawer */}
       {selectedItem && (
         <DirectorReviewDrawer
           item={selectedItem}
@@ -8400,7 +8479,7 @@ function DirectorCommandCenter({ navigate, onBack, onOpenTasks }) {
           onAddNote={() => setMessage('Director note staged in audit history.')}
         />
       )}
-    </ExportOSShell>
+    </div>
   );
 }
 
