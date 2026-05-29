@@ -418,7 +418,7 @@ import {
   searchImporters,
   verifyImporter
 } from './services/importerIntelligenceService.js';
-import { createLeadDraft } from './services/leadService.js';
+import { createLeadDraft, leadService } from './services/leadService.js';
 import { sendLeadEmails } from './services/leadEmailService.js';
 import {
   getSlackNotificationActivity,
@@ -6924,81 +6924,151 @@ function DashboardActivityFeed() {
   );
 }
 
+function HomeKpiStrip({ navigate }) {
+  const [kpis, setKpis] = useState({ leads: 0, pending: 0, tasks: 0, revenue: '—', health: 'Checking...' });
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [leadsResult, approvalsResult, tasksResult] = await Promise.all([
+          leadService.list(demoTenantId).catch(() => ({ data: [] })),
+          getApprovalQueue(demoTenantId).catch(() => ({ data: [] })),
+          getTasks(demoTenantId).catch(() => ({ data: [] })),
+        ]);
+        setKpis({
+          leads: (leadsResult.data || []).length,
+          pending: (approvalsResult.data || []).filter(a => a.status === 'Pending Approval').length,
+          tasks: (tasksResult.data || []).filter(t => !['Done', 'Completed'].includes(t.status)).length,
+          revenue: '—',
+          health: 'Live',
+        });
+      } catch {
+        setKpis(k => ({ ...k, health: 'Offline' }));
+      }
+    }
+    load();
+  }, []);
+
+  const chips = [
+    { label: 'Total Leads', value: kpis.leads, route: '/export-os/leads' },
+    { label: 'Pending Approvals', value: kpis.pending, route: '/export-os/director' },
+    { label: 'Open Tasks', value: kpis.tasks, route: '/export-os/tasks' },
+    { label: 'Monthly Revenue', value: kpis.revenue, route: '/export-os/executives/cfo' },
+    { label: 'System', value: kpis.health, route: '/export-os/executives/cto', live: kpis.health === 'Live' },
+  ];
+
+  return (
+    <div className="home-kpi-strip">
+      {chips.map(({ label, value, route, live }) => (
+        <button key={label} className={`home-kpi-chip${live ? ' home-kpi-chip--live' : ''}`} onClick={() => navigate(route)}>
+          <strong>{value}</strong>
+          <span>{label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function HomeDirectorPreview({ navigate }) {
+  const [items, setItems] = useState([]);
+  useEffect(() => {
+    getApprovalQueue(demoTenantId).then(r => setItems((r.data || []).slice(0, 3))).catch(() => {});
+  }, []);
+
+  return (
+    <section className="home-panel">
+      <div className="home-panel-header">
+        <h2>Director Queue</h2>
+        <button className="ghost-button" onClick={() => navigate('/export-os/director')}>View all →</button>
+      </div>
+      {items.length === 0
+        ? <p className="home-panel-empty">No pending decisions. Agents are running.</p>
+        : items.map(item => (
+            <article key={item.id} className="home-queue-item" onClick={() => navigate('/export-os/director')}>
+              <strong>{item.title || item.request_type}</strong>
+              <span>{item.status}</span>
+            </article>
+          ))
+      }
+    </section>
+  );
+}
+
+function HomeQuickActions({ navigate }) {
+  const actions = [
+    { label: 'New Lead', desc: 'Create a buyer lead', route: '/export-os/leads/new' },
+    { label: 'Pricing Engine', desc: 'Generate a quote', route: '/export-os/pricing-engine' },
+    { label: 'New Invoice', desc: 'Draft an invoice', route: '/export-os/invoices/new' },
+    { label: 'Suppliers', desc: 'Manage procurement', route: '/export-os/suppliers' },
+    { label: 'Warehouse', desc: 'Stock & inventory', route: '/export-os/warehouse' },
+    { label: 'Tasks', desc: 'Open action items', route: '/export-os/tasks' },
+  ];
+  return (
+    <section className="home-panel">
+      <div className="home-panel-header"><h2>Quick Actions</h2></div>
+      <div className="home-quick-list">
+        {actions.map(a => (
+          <button key={a.label} className="home-quick-item" onClick={() => navigate(a.route)}>
+            <strong>{a.label}</strong>
+            <span>{a.desc}</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function ExecutiveCommandDeck({ navigate, onLogout, showSearch, setShowSearch, setShowShortcuts, session }) {
   const { rates, status: forexStatus } = useLiveForexRates();
-  const { items: newsItems, status: newsStatus } = useLiveExportNews();
 
   return (
     <ExportOSShell className="executive-home-shell">
       <ForexTicker items={rates} status={forexStatus} />
       <CommandDeckHeader navigate={navigate} onLogout={onLogout} showSearch={showSearch} setShowSearch={setShowSearch} setShowShortcuts={setShowShortcuts} session={session} />
-      <section className="rich-kpi-row" aria-label="Executive KPI overview">
-        <RichKpiCard
-          label="Active Workflows"
-          value="12"
-          change={8}
-          trend="up-good"
-          sparkData={[6, 7, 8, 7, 9, 10, 11, 10, 12]}
-          color="#2ef2ff"
-        />
-        <RichKpiCard
-          label="Critical Blockers"
-          value="3"
-          change={-25}
-          trend="down-good"
-          sparkData={[5, 6, 4, 5, 4, 3, 4, 3, 3]}
-          color="#ff4d6d"
-        />
-        <RichKpiCard
-          label="Director Queue"
-          value="5"
-          unit="pending"
-          change={2}
-          trend="down-good"
-          sparkData={[2, 3, 4, 3, 4, 5, 4, 5, 5]}
-          color="#f59e0b"
-        />
-        <RichKpiCard
-          label="Shipment Readiness"
-          value="78"
-          unit="%"
-          change={4}
-          trend="up-good"
-          sparkData={[68, 70, 72, 70, 74, 73, 76, 75, 78]}
-          color="#22c55e"
-        />
-        <RichKpiCard
-          label="Payment Watch"
-          value="2"
-          change={0}
-          trend="neutral"
-          sparkData={[1, 2, 1, 2, 2, 2, 2, 2, 2]}
-          color="#60a5fa"
-        />
-        <RichKpiCard
-          label="Market Signals"
-          value="4"
-          change={33}
-          trend="up-good"
-          sparkData={[1, 2, 2, 3, 2, 3, 3, 4, 4]}
-          color="#a78bfa"
-          onClick={() => navigate('/export-os/cio')}
-        />
-      </section>
-      <section className="deck-main-grid" aria-label="Executive command overview">
-        <div className="deck-main-left">
-          <HeroCommandPanel navigate={navigate} />
-          <TodaysPriorities navigate={navigate} />
+
+      {/* Hero */}
+      <section className="home-hero">
+        <div className="home-hero-left">
+          <span className="home-hero-tag">GOPU Export OS</span>
+          <h1 className="home-hero-title">Export Command</h1>
+          <p className="home-hero-sub">Zero employees. Five agents. You make the final call.</p>
         </div>
-        <div className="deck-main-right">
-          <QuickLaunch navigate={navigate} />
-          <DashboardActivityFeed />
+        <div className="home-hero-actions">
+          <button className="tactical-button" onClick={() => navigate('/export-os/director')}>Director Command</button>
+          <button className="ghost-button" onClick={() => navigate('/export-os/leads/new')}>New Lead</button>
+          <button className="ghost-button" onClick={() => navigate('/export-os/pricing-engine')}>Pricing Engine</button>
         </div>
       </section>
-      <DirectorOperatingMap navigate={navigate} />
-      <OperationalStatusSystem groups={operationalStatusGroups} navigate={navigate} />
-      <ExecutiveLeadershipLayout commands={executiveCommandDeck} navigate={navigate} />
-      <FounderOperationalOverview navigate={navigate} newsItems={newsItems} newsStatus={newsStatus} />
+
+      {/* Live KPI strip */}
+      <HomeKpiStrip navigate={navigate} />
+
+      {/* Agent grid */}
+      <section className="home-agent-grid">
+        {[
+          { role: 'CIO', label: 'Chief Intelligence Officer', desc: 'Lead scoring · Market intelligence · Buyer analytics', route: '/export-os/cio', color: '#818cf8' },
+          { role: 'CFO', label: 'Chief Financial Officer', desc: 'P&L · Auto-payments · Payment vault', route: '/export-os/executives/cfo', color: '#22c55e' },
+          { role: 'COO', label: 'Chief Operations Officer', desc: 'Shipments · Suppliers · Document readiness', route: '/export-os/executives/coo', color: '#f59e0b' },
+          { role: 'CMO', label: 'Chief Marketing Officer', desc: 'LinkedIn · Email campaigns · Buyer outreach', route: '/export-os/executives/cmo', color: '#ec4899' },
+          { role: 'CTO', label: 'Chief Technology Officer', desc: 'Integrations · API health · System uptime', route: '/export-os/executives/cto', color: '#38bdf8' },
+        ].map(({ role, label, desc, route, color }) => (
+          <article key={role} className="home-agent-card" onClick={() => navigate(route)} style={{ '--agent-color': color }}>
+            <div className="home-agent-role">{role}</div>
+            <div className="home-agent-info">
+              <strong>{label}</strong>
+              <span>{desc}</span>
+            </div>
+            <button className="ghost-button" onClick={(e) => { e.stopPropagation(); navigate(route); }}>Open →</button>
+          </article>
+        ))}
+      </section>
+
+      {/* Bottom split */}
+      <section className="home-bottom-grid">
+        <HomeDirectorPreview navigate={navigate} />
+        <HomeQuickActions navigate={navigate} />
+      </section>
+
       <MobileBottomNav navigate={navigate} activeRoute={window.location.pathname} />
     </ExportOSShell>
   );
@@ -7054,16 +7124,6 @@ function HeroCommandPanel({ navigate }) {
   );
 }
 
-const topBarNotifications = [
-  { id: 'top-alert-daily-update', section: 'Pending Reviews', title: 'Daily update ready for Director', message: 'Daily briefing and daily update summary is prepared for WhatsApp delivery review.', severity: 'Attention', owner: 'Director', route: '/export-os/morning-briefing', status: 'Monitoring' },
-  { id: 'top-alert-lut', section: 'Critical Alerts', title: 'Invoice blocked by LUT data', message: 'Export Tax Invoice remains draft-only until LUT ARN and validity are completed.', severity: 'Critical', owner: 'CFO', route: '/export-os/invoices/new', status: 'Review Required' },
-  { id: 'top-alert-shipment', section: 'Shipment Risks', title: 'Shipment deadline risk', message: 'Supplier confirmation and dispatch plan are still pending for GCC spice lane.', severity: 'High Risk', owner: 'COO', route: '/export-os/executives/coo', status: 'Escalated' },
-  { id: 'top-alert-payment', section: 'Payment Alerts', title: 'OpenAI renewal watch', message: 'CTO detected credit risk; CFO budget validation is required before payment.', severity: 'Attention', owner: 'CTO + CFO', route: '/export-os/payment-vault', status: 'Monitoring' },
-  { id: 'top-alert-tech', section: 'Technical Incidents', title: 'Automation retry queue', message: 'Approval routing workflow has retry events waiting for CTO review.', severity: 'Attention', owner: 'CTO', route: '/export-os/executives/cto', status: 'Monitoring' },
-  { id: 'top-alert-opportunity', section: 'Strategic Opportunities', title: 'Country pending turmeric demand signal', message: 'CIO opportunity feed detected GCC importer activity and CMO outreach potential.', severity: 'Opportunity Detected', owner: 'CIO + CMO', route: '/export-os/director', status: 'Monitoring' },
-  { id: 'top-alert-review', section: 'Pending Reviews', title: 'Low-margin quotation review', message: 'Pricing Engine marked margin below safe threshold; Director decision is pending.', severity: 'High Risk', owner: 'CFO', route: '/export-os/pricing-engine', status: 'Review Required' },
-  { id: 'top-alert-escalation', section: 'Executive Escalations', title: 'Supplier confirmation delayed', message: 'COO follow-up is waiting on supplier response before dispatch readiness.', severity: 'High Risk', owner: 'COO', route: '/export-os/tasks', status: 'Escalated' }
-];
 
 const topBarSearchRecords = [
   { id: 'srch-workflow-delayed', title: 'Delayed shipment workflows', type: 'Workflow', owner: 'COO', status: 'Delayed', priority: 'High', route: '/export-os/workflows', keywords: 'show delayed shipments delayed shipment blocker dispatch supplier container cha logistics' },
