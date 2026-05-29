@@ -1,0 +1,76 @@
+name: Sync Claude branches to main
+
+on:
+  push:
+    branches:
+      - 'claude/**'
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-claude-branches-to-main
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cherry-pick Claude branch commits into main
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin --prune '+refs/heads/*:refs/remotes/origin/*'
+          git checkout main
+          git reset --hard origin/main
+
+          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF_NAME}" == claude/* ]]; then
+            branches=("${GITHUB_REF_NAME}")
+          else
+            mapfile -t branches < <(git for-each-ref --format='%(refname:short)' refs/remotes/origin/claude/ | sed 's#^origin/##')
+          fi
+
+          if [[ ${#branches[@]} -eq 0 ]]; then
+            echo "No claude/* branches found."
+            exit 0
+          fi
+
+          for branch in "${branches[@]}"; do
+            remote_ref="origin/${branch}"
+            if ! git rev-parse --verify --quiet "${remote_ref}" >/dev/null; then
+              echo "Skipping missing remote ref ${remote_ref}."
+              continue
+            fi
+
+            mapfile -t commits < <(git rev-list --reverse "origin/main..${remote_ref}")
+            if [[ ${#commits[@]} -eq 0 ]]; then
+              echo "No new commits to sync from ${branch}."
+              continue
+            fi
+
+            echo "Syncing ${#commits[@]} commit(s) from ${branch} into main."
+            git checkout main
+            git reset --hard origin/main
+
+            for commit in "${commits[@]}"; do
+              echo "Cherry-picking ${commit}"
+              git cherry-pick -x "${commit}"
+            done
+
+            git push origin HEAD:main
+            git fetch origin main --prune
+            git reset --hard origin/main
+          done
