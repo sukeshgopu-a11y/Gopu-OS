@@ -1131,6 +1131,35 @@ const masterDataModels = [
 
 const approvalWallRequests = [
   {
+    id: 'approval-lead-sukesh',
+    request_type: 'New Lead Review',
+    title: 'New lead: Sukesh — Onion 20 MT to Australia',
+    department: 'Sales',
+    executive_owner: 'CIO Command',
+    buyer_name: 'Sukesh',
+    amount: 'Pending quote',
+    risk_level: 'Low',
+    priority: 'Medium',
+    status: 'New Lead',
+    category: 'Lead Intake',
+    summary: 'New buyer enquiry for Onion 20 MT delivery to Australia. Requires COO intake review and CFO pricing before quoting.',
+    details: {
+      buyer: 'Sukesh',
+      product: 'Onion',
+      quantity: '20 MT',
+      destination: 'Australia',
+      shipping_mode: 'Sea freight',
+      price_offered: 'Pending',
+      expected_margin: 'Pending CFO review',
+      market_comparison: 'Australia onion import lane — standard FOB pricing applies',
+      operational_availability: 'Subject to warehouse stock and supplier confirmation',
+      cio_notes: 'Lead created via Director Command. Buyer verification pending.',
+      coo_notes: 'Stock and supplier availability check required before pricing.',
+      risk_summary: 'Low risk new enquiry. Proceed with COO intake review and CFO margin check.'
+    },
+    created_at: 'Today 10:00'
+  },
+  {
     id: 'approval-quote-dubai',
     request_type: 'Quotation Approval',
     title: 'Dubai buyer quotation requires founder approval',
@@ -20069,10 +20098,27 @@ const buyerDirectorySeed = [
     status: 'Risk Review',
     risk: 'High',
     relationshipValue: 'High Value'
+  },
+  {
+    id: 'buyer-sukesh-onion',
+    buyerName: 'Sukesh',
+    company: 'Sukesh',
+    country: 'Australia',
+    email: 'sukesh@buyer.local',
+    phone: '',
+    whatsapp: '',
+    interests: ['Onion'],
+    lastContact: 'Today',
+    openEnquiries: 1,
+    quoteValue: 'Pending',
+    status: 'New Lead',
+    risk: 'Low',
+    relationshipValue: 'New'
   }
 ];
 
 const buyerEnquirySeed = [
+  ['May 29, 2026', 'Onion', '20 MT', 'Australia', 'Director Command', 'New Lead', 'PR-SUKESH-001', 'Pending quote'],
   ['May 26, 2026', 'Product pending', '2 tons', 'Country pending', 'WhatsApp', 'Pricing Review', 'PR-PENDING', 'GOPU-QTN-PENDING'],
   ['May 25, 2026', 'Product pending', '5 tons', 'Oman', 'Website Form', 'Draft', 'PR-DEMO-002', 'Pending quote'],
   ['May 22, 2026', 'Product pending', '1.5 tons', 'Country pending', 'Trade Directory', 'Monitoring', 'PR-PENDING', 'GOPU-QTN-PENDING']
