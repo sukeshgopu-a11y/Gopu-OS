@@ -310,3 +310,32 @@ export async function generateFounderTechnicalSummary(tenantId = demoTenantId) {
     ].join('\n')
   };
 }
+
+export function getCTOKnowledgeBase() {
+  return {
+    role: 'Chief Technology Officer',
+    mandate: 'The OS never sleeps. Every buyer email lands. Every integration stays green.',
+    integrations: [
+      { name: 'Supabase', role: 'Primary database', critical: true, envVars: ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY'] },
+      { name: 'OpenAI', role: 'Agent memory + embeddings', critical: true, envVars: ['OPENAI_API_KEY'] },
+      { name: 'Slack', role: 'Founder notifications + approvals + OTP', critical: true, envVars: ['SLACK_BOT_TOKEN', 'SLACK_CHANNEL_ID', 'SLACK_SIGNING_SECRET'] },
+      { name: 'Resend', role: 'Transactional email to buyers', critical: true, envVars: ['RESEND_API_KEY'] },
+      { name: 'Twilio', role: 'WhatsApp command interface', critical: false, envVars: ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN'] },
+      { name: 'Vercel', role: 'Hosting + serverless functions', critical: true, envVars: ['VERCEL_URL'] },
+    ],
+    monitoringRules: [
+      'If OpenAI credits < 20% → notify CFO to top up, send Slack alert',
+      'If Resend quota > 80% used → raise payment requirement to CFO',
+      'If Supabase connection fails → alert Director immediately',
+      'If any buyer email bounces → alert CMO + COO',
+      'If automation queue has >3 failed jobs → create incident',
+    ],
+    securityRules: [
+      'No API keys in code — env vars only',
+      'OTP values never stored in DB or logs',
+      'All Slack webhooks verified with signing secret',
+      'Supabase RLS enabled on all buyer-facing tables',
+    ],
+    kpis: ['System uptime %', 'API health score', 'Live integrations / total', 'Mean time to resolve incident', 'Email delivery rate'],
+  };
+}

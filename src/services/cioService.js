@@ -231,3 +231,32 @@ export async function getCIODashboard(tenantId = demoTenantId) {
     backend: backendStatus,
   };
 }
+
+export function getCIOKnowledgeBase() {
+  return {
+    role: 'Chief Intelligence Officer',
+    mandate: 'No lead enters without a score. No market moves without CIO knowing first.',
+    leadScoringCriteria: {
+      baseScore: 5,
+      bonuses: [
+        { condition: 'Quantity ≥ 20 MT', points: 2 },
+        { condition: 'Quantity ≥ 10 MT', points: 1 },
+        { condition: 'Email provided', points: 1 },
+        { condition: 'Payment terms: Advance / TT in Advance', points: 1 },
+        { condition: 'Destination: Australia, UAE, Saudi Arabia, Singapore, UK, USA, Germany', points: 1 },
+      ],
+      tiers: { A: '≥8 — High priority, fast-track to Founder approval', B: '6–7 — Standard pipeline', C: '<6 — Nurture or deprioritise' },
+    },
+    marketIntelligenceSources: [
+      'APEDA export statistics (apeda.gov.in)',
+      'Spice Board price bulletins (indianspices.com)',
+      'Ministry of Commerce trade data (tradestat.commerce.gov.in)',
+      'Own pipeline win/loss data from lead_intake table',
+    ],
+    buyerSignals: {
+      highValue: ['Large quantity order', 'Advance payment terms', 'Known import market', 'Responds within 24h', 'Has company email'],
+      lowValue: ['No email', 'Unknown destination', 'Vague quantity', 'No payment terms specified'],
+    },
+    kpis: ['Lead conversion rate by tier', 'Average lead score', 'Top destination trends', 'Win rate by product/country', 'Time to first quote'],
+  };
+}

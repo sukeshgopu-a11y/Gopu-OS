@@ -2452,3 +2452,50 @@ export async function generateCMOReport() {
 export async function generateFounderMarketingSummary() {
   return serviceResponse('Founder marketing summary: CMO is positioned for Tenglish export authority content, premium thumbnail direction, and worldwide targeting across UAE, GCC, Europe, ASEAN, USA, Africa, LATAM, and Australia. Keep claims proof-backed, keep campaign budgets CFO-controlled, and connect analytics before reporting live performance.');
 }
+
+export function getCMOKnowledgeBase() {
+  return {
+    role: 'Chief Marketing Officer',
+    mandate: 'Every international buyer knows GOPU Exports before they search for a supplier.',
+    linkedInStrategy: {
+      postingFrequency: '2-3 posts per week',
+      bestFormats: [
+        { format: 'Carousel', why: '3x more click-throughs, great for product showcases and step-by-step content' },
+        { format: 'Video', why: '5x more engagement, best for trust-building with overseas buyers' },
+        { format: 'Text + Image', why: 'Thought leadership, market intelligence, pricing updates' },
+        { format: 'Poll', why: 'Engagement driver, learn buyer preferences' },
+      ],
+      postTypes: [
+        'Product showcase: Real photo + quality certs + origin story + buyer CTA',
+        'Shipment milestone: "20 MT Onion just shipped to Sydney 🇦🇺" — social proof',
+        'Behind the scenes: Warehouse, packing, quality inspection photos',
+        'Market intelligence: Price trends, seasonal availability, regulatory updates',
+        'Educational: "5 things to check before importing Indian spices" — buyer search intent',
+        'Testimonial: Buyer quote + flag of their country',
+      ],
+      captionStructure: [
+        '1. Hook — 1 punchy line (no fluff, no "I am excited to announce")',
+        '2. Value/story — 3-5 lines explaining product, quality, or insight',
+        '3. CTA — "DM us for a quote" / "Comment your requirement" / "Link in bio"',
+        '4. Hashtags — 3-5 at bottom',
+      ],
+      hashtags: {
+        core: ['#IndianExports', '#ExportFromIndia', '#GlobalTrade', '#B2BImporter'],
+        product: ['#SpiceExport', '#OnionExport', '#RiceExport', '#AgriExport', '#FoodExport'],
+        destination: ['#IndiaToAustralia', '#IndiaToUAE', '#IndiaToUK', '#IndiaToUSA'],
+        trade: ['#APEDA', '#SpiceBoard', '#ExportBusiness', '#ImportExport'],
+      },
+      imageGuide: {
+        dimensions: '1080x1080px for image posts, 1200x628px for link posts',
+        style: 'Real product photos > stock photos. Clean background. Weight/quantity text overlay. APEDA/Spice Board logo visible.',
+        avoid: 'Generic stock images, cluttered designs, text-heavy images',
+      },
+    },
+    targetBuyers: {
+      markets: ['Australia', 'UAE', 'Saudi Arabia', 'Singapore', 'UK', 'USA', 'Germany'],
+      jobTitles: ['Import Manager', 'Purchasing Manager', 'F&B Procurement Head', 'Commodity Trader', 'Food Distributor'],
+      painPoints: ['Consistent quality', 'Reliable delivery timeline', 'Competitive pricing', 'Proper documentation', 'Organic/certified options'],
+    },
+    kpis: ['LinkedIn impressions', 'DMs from buyers', 'Profile views', 'Lead attribution from social', 'Email open rate'],
+  };
+}

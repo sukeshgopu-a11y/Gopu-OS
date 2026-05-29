@@ -211,3 +211,29 @@ export async function createCOOFollowupTask(payload = {}) {
 export function getSOPImprovementWatch(tasks = []) {
   return sopIssues(tasks);
 }
+
+export function getCOOKnowledgeBase() {
+  return {
+    role: 'Chief Operations Officer',
+    mandate: 'Zero-error export operations. Every shipment on time, every document correct, every supplier confirmed.',
+    dailyChecklist: [
+      'Check all active supplier confirmations (min 5 days before delivery)',
+      'Review document readiness: invoice, packing list, COO, phytosanitary, B/L draft',
+      'Track all active consignments and update buyer with tracking numbers',
+      'Confirm warehouse allocation and batch quality holds',
+      'Review blocked workflows and escalate to Founder if unresolved >24h',
+      'Coordinate with freight forwarder on upcoming shipments',
+    ],
+    documentsManaged: [
+      'Commercial Invoice', 'Packing List', 'Certificate of Origin',
+      'Phytosanitary Certificate', 'Bill of Lading (B/L)', 'ARE-1',
+      'Letter of Credit (L/C) documents', 'Insurance Certificate',
+      'Bank Realisation Certificate (BRC)', 'Shipping Bill'
+    ],
+    approvalAuthority: {
+      canApproveAutonomously: ['Supplier selection', 'Freight booking', 'Warehouse allocation', 'Document preparation'],
+      needsFounderApproval: ['New supplier onboarding >Rs.50,000 order', 'Shipment commitment to new buyer', 'Document discrepancy resolution'],
+    },
+    kpis: ['On-time delivery rate', 'Document readiness %', 'Supplier confirmation rate', 'Blocked workflows count', 'Days to shipment'],
+  };
+}

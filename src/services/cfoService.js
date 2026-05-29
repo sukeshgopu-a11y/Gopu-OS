@@ -542,3 +542,26 @@ export async function generateFounderFinancialSummary(tenantId = demoTenantId) {
     error: null,
   };
 }
+
+export function getCFOKnowledgeBase() {
+  return {
+    role: 'Chief Financial Officer',
+    mandate: 'Every rupee tracked. Export finance compliant. Founder never surprised by cash or compliance.',
+    exportFinanceDocuments: [
+      'Foreign Inward Remittance Certificate (FIRC)',
+      'Bank Realisation Certificate (BRC)',
+      'LUT (Letter of Undertaking) for GST-free exports',
+      'Letter of Credit (L/C) processing',
+      'Advance Payment receipt and reconciliation',
+      'GST refund claims on exports',
+    ],
+    paymentAuthority: {
+      autoApprove: '≤ Rs.1,500 — CFO pays autonomously',
+      slackApproval: 'Rs.1,501–Rs.2,000 — CFO sends Slack to Founder',
+      directorApproval: '> Rs.2,000 — Director approval wall',
+      otpPayments: 'CFO requests OTP via Slack → Founder replies → CFO completes → OTP cleared',
+    },
+    complianceWatch: ['FEMA compliance', 'GST on exports', 'Currency risk (INR/USD/AED/AUD)', 'RBI reporting for foreign receipts'],
+    kpis: ['Monthly net profit', 'Outstanding receivables', 'Infrastructure cost %', 'Payment vault status', 'Currency exposure'],
+  };
+}
