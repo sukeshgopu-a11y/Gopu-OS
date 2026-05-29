@@ -7,10 +7,26 @@
     <title>GOPU OS | Export Command</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   </head>
   <body>
+    <div id="print-header" aria-hidden="true">
+      <div class="print-header-brand">
+        <strong>GOPU OS</strong>
+        <span>Export Command Platform</span>
+      </div>
+      <div class="print-header-meta">
+        <span id="print-timestamp"></span>
+        <span>Confidential — Executive Use Only</span>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      window.addEventListener('beforeprint', function() {
+        var el = document.getElementById('print-timestamp');
+        if (el) el.textContent = 'Printed: ' + new Date().toLocaleString();
+      });
+    </script>
   </body>
 </html>

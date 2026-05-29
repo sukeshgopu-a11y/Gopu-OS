@@ -15,6 +15,7 @@ import { demoTenantId } from './demoData.js';
 const serviceResponse = (data) => ({ ok: true, data, error: null, backend: backendStatus });
 const serviceErrorResponse = (data, error) => ({ ok: false, data, error: error?.message || String(error), backend: backendStatus });
 const CMO_MAX_PUBLISH_ATTEMPTS = 3;
+const isLocalDevRuntime = () => Boolean(import.meta.env?.DEV) || (typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname));
 const connectedIntegrationStates = new Set(['connected', 'healthy', 'active', 'verified', 'verification success']);
 const platformProviderMap = {
   LinkedIn: 'linkedin',
@@ -558,37 +559,37 @@ const cmoAutomationFlowDefinitions = [
   {
     id: 'meta-publish-engine',
     step: 7,
-    title: 'Meta Publish Engine',
+    title: 'Publishing State',
     time: 'Publish queue',
     engine: 'Instagram Graph API, Facebook Pages API, WhatsApp Cloud API',
-    description: 'Publishes approved content through connected Meta platform APIs.',
+    description: 'Tracks approved content as it moves from queued state into the protected publishing path.',
     logoKey: 'meta',
     integrationKeys: ['meta', 'instagram', 'facebook', 'whatsapp'],
-    outputs: ['Instagram Graph API', 'Facebook Pages API', 'WhatsApp Cloud API'],
+    outputs: ['Queued', 'Publishing', 'Published', 'Failed', 'Retry scheduled'],
     missingMessage: 'Missing Meta publishing config: Meta access token, Instagram business account, Facebook page, WhatsApp phone number ID, or webhook status is not live.'
   },
   {
     id: 'delivery-tracking',
     step: 8,
-    title: 'Delivery Tracking',
-    time: 'Webhook events',
-    engine: 'Webhook + publish response tracker',
-    description: 'Tracks publish response, WhatsApp webhook event, and platform post IDs.',
+    title: 'Analytics State',
+    time: 'Engagement sync',
+    engine: 'Publish response, platform engagement sync, and learning signals',
+    description: 'Collects post-delivery signals after publishing has succeeded.',
     logoKey: 'tracking',
     integrationKeys: ['delivery-tracking', 'webhook-events', 'meta-webhook', 'whatsapp-webhook'],
-    outputs: ['Published', 'Failed', 'Delivered', 'Read'],
+    outputs: ['Collecting analytics', 'Engagement sync', 'AI learning'],
     missingMessage: 'Missing delivery/webhook health: publish response or platform webhook tracking is not live.'
   },
   {
     id: 'audit-analytics',
     step: 9,
-    title: 'Audit & Analytics',
-    time: 'Audit write',
-    engine: 'Supabase audit_logs',
-    description: 'Saves timestamps, provider responses, errors, and dashboard metrics.',
+    title: 'Optimization State',
+    time: 'AI learning',
+    engine: 'Supabase audit_logs and AI optimization memory',
+    description: 'Saves the audit trail and adapts future content from approved performance signals.',
     logoKey: 'supabase',
     integrationKeys: ['supabase', 'audit_logs', 'audit-analytics'],
-    outputs: ['Step timestamp', 'Provider response', 'Error message', 'Dashboard metrics'],
+    outputs: ['AI optimization running', 'Hashtag optimization', 'Performance adaptation'],
     missingMessage: 'Missing Supabase audit_logs health: audit insert/read test or Supabase integration status is not live.'
   }
 ];
@@ -1368,6 +1369,9 @@ export async function guardCmoPublishAttempt(payload = {}) {
   if (!isFounderApprovalApproved(approvalStatus)) {
     return blocked('founder_approval_required', 'Publishing blocked: founder approval must be approved before any platform publish attempt.');
   }
+  if ((payload.is_test === true || payload.metadata?.test_mode === true) && !isLocalDevRuntime()) {
+    return blocked('test_content_publish_blocked', 'Publishing blocked: test-mode content cannot enter production publishing queue.', { test_mode: true });
+  }
 
   const providerResponse = await getCmoProviderConnectionStatus([platform], tenantId);
   const provider = providerResponse.data?.[0];
@@ -1383,7 +1387,7 @@ export async function guardCmoPublishAttempt(payload = {}) {
   try {
     const existing = await client
       .from('content_history')
-      .select('id,status,publish_status,publish_attempt_count,post_url,live_post_url')
+      .select('id,status,publish_status,publish_attempt_count,post_url,live_post_url,metadata')
       .eq('tenant_id', tenantId)
       .eq('platform', platform)
       .eq('run_id', runId)
@@ -1394,6 +1398,9 @@ export async function guardCmoPublishAttempt(payload = {}) {
     }
 
     const existingRow = existing.data;
+    if (existingRow?.metadata?.test_mode === true && !isLocalDevRuntime()) {
+      return blocked('test_content_publish_blocked', 'Publishing blocked: test-mode content cannot enter production publishing queue.', { content_history_id: existingRow.id, test_mode: true });
+    }
     const existingStatus = String(existingRow?.publish_status || existingRow?.status || '').toLowerCase();
     const existingAttempts = Number(existingRow?.publish_attempt_count || 0);
     if (existingRow && !['failed', 'retry_allowed'].includes(existingStatus)) {
@@ -1564,6 +1571,7 @@ export async function saveGeneratedContentPackage(payload = {}) {
     ai_quality_review: aiQualityReview,
     generated_at: nowUtc,
     generated_at_utc: nowUtc,
+    scheduled_at_utc: payload.scheduled_at_utc || payload.scheduled_at || null,
     timezone: getSelectedCmoTimezone({ timezone: payload.timezone }),
     country: payload.country || getCmoTimezoneOption(getSelectedCmoTimezone({ timezone: payload.timezone })).country,
     platform_integration_connected: false,
@@ -1572,7 +1580,9 @@ export async function saveGeneratedContentPackage(payload = {}) {
     last_publish_error: null,
     metadata: {
       source: payload.source || 'cmo_generated_package',
-      no_public_publish: true
+      no_public_publish: true,
+      ...(payload.metadata || {}),
+      ...(payload.is_test ? { test_mode: true, is_test: true } : {})
     }
   };
 
@@ -1785,17 +1795,36 @@ export async function updateFounderContentDecision(contentHistoryId, action, opt
   const decidedAt = getCmoNowUtc();
   const tenantId = options.tenant_id || demoTenantId;
   const note = options.note || decision.note;
+  const existing = await client
+    .from('content_history')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (existing.error && existing.error.code !== 'PGRST116') {
+    return serviceErrorResponse({ updated: false }, existing.error);
+  }
+  const existingMetadata = existing.data?.metadata && typeof existing.data.metadata === 'object' ? existing.data.metadata : {};
+  const existingHasCurrentStep = Object.prototype.hasOwnProperty.call(existing.data || {}, 'current_step');
+  const existingHasWorkflowStage = Object.prototype.hasOwnProperty.call(existing.data || {}, 'workflow_stage');
+  const existingHasStatus = Object.prototype.hasOwnProperty.call(existing.data || {}, 'status');
+  const nextStep = decision.action === 'approve' ? 7 : 6;
+  const workflowStage = decision.action === 'approve' ? 'publishing' : decision.action === 'needs_edit' ? 'content_edit' : 'approval_hold';
   const baseHistoryPatch = {
     approval_status: decision.approvalStatus,
     publish_status: decision.publishStatus,
-    status: decision.finalStatus,
     updated_at: decidedAt,
     metadata: {
+      ...existingMetadata,
+      current_step: nextStep,
+      workflow_stage: workflowStage,
       founder_decision: decision.action,
       founder_decision_at: decidedAt,
       no_public_publish_from_step_6_ui: true
     }
   };
+  if (existingHasCurrentStep) baseHistoryPatch.current_step = nextStep;
+  if (existingHasWorkflowStage) baseHistoryPatch.workflow_stage = workflowStage;
+  if (existingHasStatus) baseHistoryPatch.status = workflowStage;
 
   const historyPatch = decision.action === 'approve'
     ? {
@@ -1826,8 +1855,6 @@ export async function updateFounderContentDecision(contentHistoryId, action, opt
       approval_status: decision.approvalStatus,
       status: decision.approvalLabel,
       notes: note,
-      decided_at: decidedAt,
-      decided_at_utc: decidedAt,
       timezone: history.timezone || getSelectedCmoTimezone({ timezone: options.timezone }),
       country: history.country || getCmoTimezoneOption(getSelectedCmoTimezone({ timezone: options.timezone })).country
     };
@@ -1894,6 +1921,98 @@ export async function updateFounderContentDecision(contentHistoryId, action, opt
     });
   } catch (error) {
     return serviceErrorResponse({ updated: false }, error);
+  }
+}
+
+export async function createStep6TestContentPackage() {
+  if (!isLocalDevRuntime()) return serviceErrorResponse({ saved: false }, new Error('Step 6 test mode is available only in local development.'));
+  const scheduledAt = DateTime.utc().plus({ hours: 2 }).toISO();
+  const runId = `dev-step6-${Date.now()}`;
+  const posterSvg = encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+      <rect width="1200" height="675" fill="#071015"/>
+      <linearGradient id="g" x1="0" x2="1"><stop stop-color="#2ef2ff" stop-opacity=".22"/><stop offset="1" stop-color="#ffbf69" stop-opacity=".2"/></linearGradient>
+      <rect x="70" y="70" width="1060" height="535" rx="28" fill="url(#g)" stroke="#2ef2ff" stroke-opacity=".32"/>
+      <text x="105" y="165" fill="#2ef2ff" font-family="Arial" font-size="30" font-weight="700">DEV TEST CONTENT</text>
+      <text x="105" y="270" fill="#f4f9fb" font-family="Arial" font-size="58" font-weight="700">Founder Decision Review</text>
+      <text x="105" y="345" fill="#b8c4d5" font-family="Arial" font-size="32">Real Supabase row, blocked from production publishing.</text>
+      <text x="105" y="515" fill="#ffd37a" font-family="Arial" font-size="28">GOPU OS Step 6 Test Mode</text>
+    </svg>
+  `);
+  const result = await saveGeneratedContentPackage({
+    run_id: runId,
+    platform: 'LinkedIn',
+    platform_targets: ['LinkedIn', 'Instagram', 'Facebook'],
+    content_type: 'Post',
+    campaign_name: 'DEV Step 6 approval test',
+    topic: 'Founder-led export trust systems',
+    caption: 'Indian agri exporters win global buyer trust when pricing, documentation, shipment readiness, and founder approval gates work together. GOPU OS keeps content draft-only until the founder approves the final version.',
+    hashtags: ['#AgriExport', '#FounderLed', '#GlobalTrade', '#GOPUOS'],
+    image_prompt: 'Premium dark export-tech founder OS poster showing global trade routes, approval shield, and agri export operations command center.',
+    poster_url: `data:image/svg+xml;charset=utf-8,${posterSvg}`,
+    approval_status: 'waiting',
+    publish_status: 'pending',
+    scheduled_at_utc: scheduledAt,
+    timezone: DEFAULT_CMO_TIMEZONE,
+    country: 'India',
+    is_test: true,
+    metadata: {
+      test_mode: true,
+      is_test: true,
+      dev_only: true,
+      step: 6,
+      cleanup_key: runId,
+      production_publish_blocked: true
+    },
+    source: 'step_6_dev_test_mode'
+  });
+  if (!result.ok) return result;
+
+  const archive = await getContentMemoryArchive({ timezone: DEFAULT_CMO_TIMEZONE });
+  return serviceResponse({
+    ...result.data,
+    archive: archive.data,
+    created_count: 1
+  });
+}
+
+export async function cleanupLatestStep6TestContentPackage() {
+  if (!isLocalDevRuntime()) return serviceErrorResponse({ deleted: false }, new Error('Step 6 cleanup is available only in local development.'));
+  const { client, error } = requireSupabase();
+  if (error) return serviceErrorResponse({ deleted: false }, error);
+  try {
+    const { data: rows, error: readError } = await client
+      .from('content_history')
+      .select('id,run_id,tenant_id')
+      .contains('metadata', { test_mode: true, step: 6 })
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (readError) return serviceErrorResponse({ deleted: false }, readError);
+    const target = rows?.[0];
+    if (!target) return serviceResponse({ deleted: false, message: 'No Step 6 test content package found.' });
+
+    const cleanup = { content_history_id: target.id, deleted: true, related: {}, errors: [] };
+    for (const table of ['content_approvals', 'content_links', 'content_versions', 'content_quality_reviews', 'ai_content_memory']) {
+      const { error: deleteError } = await client.from(table).delete().eq('content_history_id', target.id);
+      cleanup.related[table] = !deleteError;
+      if (deleteError) cleanup.errors.push(`${table}: ${deleteError.message}`);
+    }
+    const auditDelete = await client
+      .from('audit_logs')
+      .delete()
+      .eq('related_table', 'content_history')
+      .eq('related_record_id', target.id);
+    cleanup.related.audit_logs = !auditDelete.error;
+    if (auditDelete.error) cleanup.errors.push(`audit_logs: ${auditDelete.error.message}`);
+
+    const { error: historyDeleteError } = await client.from('content_history').delete().eq('id', target.id);
+    cleanup.related.content_history = !historyDeleteError;
+    if (historyDeleteError) cleanup.errors.push(`content_history: ${historyDeleteError.message}`);
+
+    const archive = await getContentMemoryArchive({ timezone: DEFAULT_CMO_TIMEZONE });
+    return serviceResponse({ ...cleanup, archive: archive.data });
+  } catch (error) {
+    return serviceErrorResponse({ deleted: false }, error);
   }
 }
 

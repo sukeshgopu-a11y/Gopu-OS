@@ -10,6 +10,7 @@ import { getCreativeEngineStatus } from '../lib/creativeStatus.mjs';
 import {
   handleLearningCentreFindings,
   handleLearningCentreReport,
+  handleLearningCentreSafeTest,
   handleLearningCentreSetup,
   handleLearningCentreStart,
   handleLearningCentreStatus,
@@ -779,6 +780,7 @@ async function handleSupabaseStorageStatus(_request, response) {
 async function handleSlackStatus(_request, response) {
   const botTokenConfigured = Boolean(env('SLACK_BOT_TOKEN'));
   const channelConfigured = Boolean(env('SLACK_CHANNEL_ID'));
+  const channelDisplay = env('SLACK_CHANNEL_NAME_FOR_DISPLAY') || '#all-gopu-os';
   const signingSecretConfigured = Boolean(env('SLACK_SIGNING_SECRET'));
   const approvalWebhookConfigured = Boolean(env('SLACK_APPROVAL_WEBHOOK_URL') || env('SLACK_WEBHOOK_URL'));
   const live = botTokenConfigured && channelConfigured && signingSecretConfigured && approvalWebhookConfigured;
@@ -787,6 +789,7 @@ async function handleSlackStatus(_request, response) {
     platform_key: 'slack',
     platform_name: 'Slack Approval',
     provider: 'slack',
+    channel_display: channelDisplay,
     status: live ? 'live' : 'error',
     runtime: 'slack_block_kit',
     error_message: live ? null : 'Missing Slack approval config.',
@@ -839,6 +842,10 @@ const server = http.createServer((request, response) => {
   }
   if (request.method === 'POST' && routePath === '/api/learning-centre/start') {
     handleLearningCentreStart(request, (statusCode, payload) => sendJson(response, statusCode, payload, request.headers.origin || ''));
+    return;
+  }
+  if (request.method === 'POST' && routePath === '/api/learning-centre/safe-test') {
+    handleLearningCentreSafeTest(request, (statusCode, payload) => sendJson(response, statusCode, payload, request.headers.origin || ''));
     return;
   }
   if (request.method === 'POST' && routePath === '/api/learning-centre/stop') {
