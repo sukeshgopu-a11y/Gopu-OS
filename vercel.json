@@ -1,7 +1,5 @@
 {
-  "crons": [
-    { "path": "/api/cron/daily-social-trigger", "schedule": "0 0 * * *" }
-  ],
+  "crons": [{ "path": "/api/cron/daily-social-trigger", "schedule": "0 0 * * *" }],
   "functions": {
     "api/**/*.ts": { "includeFiles": "lib/**" },
     "api/**/*.js": { "includeFiles": "lib/**" }
