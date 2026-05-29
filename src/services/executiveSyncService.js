@@ -3,6 +3,8 @@ import { demoTenantId } from './demoData.js';
 import { createTaskFromWorkflow } from './taskService.js';
 import { getWorkflowDependencyEngineData } from './workflowDependencyService.js';
 import { getWorkflowJourneyDashboard } from './operationalTimelineService.js';
+import { getAllAgentMemorySummary, writeAgentMemory } from './agentMemoryService.js';
+import { getAgentActivityFeed } from './agentWorkflowService.js';
 
 const demoDelay = 70;
 const generatedSyncEvents = new Set();
@@ -263,9 +265,11 @@ function buildWarRoomSummary(journeys, alerts, risks, escalations) {
 
 export async function getExecutiveSyncDashboard() {
   await wait();
-  const [journeyResponse, dependencyResponse] = await Promise.all([
+  const [journeyResponse, dependencyResponse, agentMemoryResult, agentActivityResult] = await Promise.all([
     getWorkflowJourneyDashboard(),
-    getWorkflowDependencyEngineData()
+    getWorkflowDependencyEngineData(),
+    getAllAgentMemorySummary(),
+    getAgentActivityFeed()
   ]);
   const journeys = journeyResponse.data.workflows;
   const dependencyEngine = dependencyResponse.data;
@@ -278,8 +282,26 @@ export async function getExecutiveSyncDashboard() {
   const bottlenecks = buildBottlenecks();
   const conflicts = buildConflicts();
   const opportunities = buildOpportunitySync();
-  const memory = buildMemory();
+  const staticMemory = buildMemory();
+
+  // Merge static memory with live OpenAI-stored agent knowledge
+  const liveMemoryRows = Object.entries(agentMemoryResult.data || {}).flatMap(([role, rows]) =>
+    rows.slice(0, 3).map((row) => ({
+      id: `live-memory-${role}-${row.topic_cluster}`,
+      memory_type: `${role} knowledge`,
+      content: row.knowledge_value?.slice(0, 200) || '',
+      status: 'Memory',
+      confidence: row.confidence_score,
+      updated_at: row.updated_at
+    }))
+  );
+  const memory = [...liveMemoryRows, ...staticMemory];
+
   const warRoom = buildWarRoomSummary(journeys, crossExecutiveAlerts, riskBoard, founderEscalations);
+
+  // Persist the current sync state as agent memory so all agents can query it
+  await writeAgentMemory('COO', 'sync-dashboard', `OperationalReadiness:${warRoom.operationalReadiness}% Status:${warRoom.status} Bottlenecks:${bottlenecks.length} Conflicts:${conflicts.length}`, { confidence: 0.7 }).catch(() => null);
+
   return {
     ok: true,
     backend: backendStatus,
@@ -295,7 +317,9 @@ export async function getExecutiveSyncDashboard() {
       conflicts,
       opportunities,
       memory,
-      journeys
+      journeys,
+      agentMessages: agentActivityResult.data?.messages?.slice(0, 10) || [],
+      agentPendingByRole: agentActivityResult.data?.pendingByRole || {}
     },
     error: null
   };

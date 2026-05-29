@@ -1,5 +1,7 @@
 import { backendStatus } from '../lib/supabaseClient.js';
 import { getApprovalQueue } from './approvalService.js';
+import { getAllAgentMemorySummary } from './agentMemoryService.js';
+import { getAgentActivityFeed } from './agentWorkflowService.js';
 
 export const directorBranches = [
   {
@@ -65,11 +67,17 @@ const warRoomItems = [];
 const aiRecommendations = [];
 
 export async function getDirectorCommandData(tenantId) {
-  const approvals = await getApprovalQueue(tenantId);
+  const [approvals, agentMemory, agentActivity] = await Promise.all([
+    getApprovalQueue(tenantId),
+    getAllAgentMemorySummary(),
+    getAgentActivityFeed(tenantId)
+  ]);
+
   const approvalQueue = approvals.data || [];
   const liveMode = (approvals.backend || backendStatus).mode === 'Connected';
   const allQueue = liveMode ? approvalQueue : [...approvalQueue, ...directorQueueFallback];
   const liveSupport = liveMode ? [] : null;
+
   return {
     ok: true,
     backend: approvals.backend || backendStatus,
@@ -80,8 +88,13 @@ export async function getDirectorCommandData(tenantId) {
         branches: directorBranches.length,
         pendingDecisions: allQueue.filter((item) => !['Approved', 'Rejected'].includes(item.status)).length,
         critical: allQueue.filter((item) => item.priority === 'Critical' || item.risk_level === 'Critical').length,
-        escalated: allQueue.filter((item) => item.status === 'Escalated').length
+        escalated: allQueue.filter((item) => item.status === 'Escalated').length,
+        agentMessagesPending: agentActivity.data?.totalPending || 0,
+        lastAgentActivity: agentActivity.data?.lastActivity || null
       },
+      agentMemory: agentMemory.data || {},
+      agentActivityFeed: agentActivity.data?.messages || [],
+      agentPendingByRole: agentActivity.data?.pendingByRole || {},
       whatsappActions: liveSupport || whatsappActions,
       globalOpportunities: liveSupport || globalOpportunities,
       worldwideTradeEvents: liveSupport || worldwideTradeEvents,
