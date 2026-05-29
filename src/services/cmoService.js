@@ -1753,6 +1753,98 @@ export async function getContentMemoryArchive(filters = {}) {
   }
 }
 
+export async function getCmoLearningCentreDashboard(tenantId = demoTenantId) {
+  const emptyDashboard = {
+    connected: backendStatus.mode === 'Connected',
+    filters: [],
+    findings: [],
+    statusCards: [
+      { label: 'Research findings', value: 0 },
+      { label: 'Pattern library', value: 0 },
+      { label: 'Strategy memory', value: 0 },
+      { label: 'Latest source', value: 'Not recorded' }
+    ],
+    growthPlan: {
+      followerGoal: '100,000 followers in 1 month',
+      goalNote: 'Growth target only. No results are claimed without connected platform analytics.',
+      strategy: [],
+      warningRules: []
+    },
+    error: ''
+  };
+  const { client, error } = requireSupabase();
+  if (error) return serviceResponse({ ...emptyDashboard, connected: false, error: error.message });
+
+  try {
+    const [findingsResult, patternResult, strategyResult] = await Promise.all([
+      client
+        .from('content_research_findings')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .order('created_at', { ascending: false })
+        .limit(25),
+      client
+        .from('content_pattern_library')
+        .select('id, platform, pattern_type, created_at')
+        .eq('tenant_id', tenantId)
+        .limit(50),
+      client
+        .from('cmo_strategy_memory')
+        .select('id, strategy_type, recommendation, avoid_rule, created_at')
+        .eq('tenant_id', tenantId)
+        .order('created_at', { ascending: false })
+        .limit(20)
+    ]);
+
+    const queryError = findingsResult.error || patternResult.error || strategyResult.error;
+    if (queryError) return serviceErrorResponse(emptyDashboard, queryError);
+
+    const rows = Array.isArray(findingsResult.data) ? findingsResult.data : [];
+    const patterns = Array.isArray(patternResult.data) ? patternResult.data : [];
+    const strategyRows = Array.isArray(strategyResult.data) ? strategyResult.data : [];
+    const filters = Array.from(new Set(rows.map((row) => row.platform || row.source_platform || row.content_category || row.topic).filter(Boolean))).slice(0, 8);
+    const latest = rows[0] || {};
+
+    return serviceResponse({
+      ...emptyDashboard,
+      connected: true,
+      filters,
+      findings: rows.map((row) => ({
+        id: row.id,
+        sourcePlatform: row.platform || row.source_platform || 'Unknown platform',
+        companyName: row.company_name || row.source_name || row.brand_name || 'Source not recorded',
+        sourceDomain: row.source_domain || '',
+        sourceUrl: row.source_url || '',
+        topic: row.topic || row.research_topic || 'Topic not recorded',
+        contentCategory: row.content_category || row.category || '',
+        learningSummary: row.learning_summary || row.summary || row.insight || '',
+        gopuLearning: row.gopu_learning || row.recommendation || row.learning_summary || '',
+        visualStyle: row.visual_style || row.format || '',
+        captionStyle: row.caption_style || row.copy_style || '',
+        hashtagsUsed: Array.isArray(row.hashtags_used) ? row.hashtags_used : [],
+        engagementSignals: row.engagement_signals || row.performance_signal || '',
+        whyPerformedWell: row.why_performed_well || row.reason || '',
+        avoid: row.avoid || row.avoid_rule || '',
+        confidenceScore: row.confidence_score ?? 0,
+        recordedAt: row.recorded_at || row.created_at || row.updated_at
+      })),
+      statusCards: [
+        { label: 'Research findings', value: rows.length },
+        { label: 'Pattern library', value: patterns.length },
+        { label: 'Strategy memory', value: strategyRows.length },
+        { label: 'Latest source', value: latest.source_domain || latest.source_url || 'Not recorded' }
+      ],
+      growthPlan: {
+        ...emptyDashboard.growthPlan,
+        strategy: strategyRows.map((row) => row.recommendation || row.strategy_type).filter(Boolean).slice(0, 5),
+        warningRules: strategyRows.map((row) => row.avoid_rule).filter(Boolean).slice(0, 5)
+      }
+    });
+  } catch (error) {
+    return serviceErrorResponse(emptyDashboard, error);
+  }
+}
+
 function normalizeFounderDecisionAction(action = '') {
   const value = String(action || '').toLowerCase();
   if (value.includes('approve')) {
