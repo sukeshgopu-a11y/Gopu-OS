@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -66,7 +66,7 @@ import {
   Zap
 } from 'lucide-react';
 
-// ── GOPU Brand Identity ───────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ GOPU Brand Identity Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 function GopuLogoMark({ size = 40, className = '' }) {
   return (
@@ -310,19 +310,28 @@ import {
 import {
   createPaymentRequirement,
   generateFounderTechnicalSummary,
-  getCTODashboard
+  getCTODashboard,
+  getIncidents,
+  getLiveIntegrationStatus,
+  getSubscriptionWatch,
+  getSystemHealthSummary
 } from './services/ctoService.js';
 import { getPaymentVaultRenewals } from './services/renewalService.js';
 import {
   generateCFOReport,
+  getCFODashboard,
   generateFounderFinancialSummary,
   getCFOSummary,
   getFinancialRisks,
+  getMonthlyProfit,
   getMarginAnalytics,
   getPayables,
   getPaymentVaultSummary,
+  getRecurringPayments,
   getReceivables,
-  getRenewalForecast
+  getRenewalForecast,
+  getWeeklyProfit,
+  initiatePayment
 } from './services/cfoService.js';
 import {
   generateDailyGrowthRunbook,
@@ -485,9 +494,9 @@ const KEYBOARD_SHORTCUTS = [
   {
     section: 'Navigation',
     shortcuts: [
-      { keys: ['⌘', 'K'], action: 'Command palette', desc: 'Open the global command palette' },
-      { keys: ['⌘', '/'], action: 'Focus search', desc: 'Jump to the search input' },
-      { keys: ['⌘', 'B'], action: 'Toggle sidebar', desc: 'Collapse or expand the sidebar' },
+      { keys: ['Ã¢Å’Ëœ', 'K'], action: 'Command palette', desc: 'Open the global command palette' },
+      { keys: ['Ã¢Å’Ëœ', '/'], action: 'Focus search', desc: 'Jump to the search input' },
+      { keys: ['Ã¢Å’Ëœ', 'B'], action: 'Toggle sidebar', desc: 'Collapse or expand the sidebar' },
       { keys: ['G', 'H'], action: 'Go to Home', desc: 'Navigate to Executive Command Deck' },
       { keys: ['G', 'A'], action: 'Go to Analytics', desc: 'Open analytics dashboard' },
       { keys: ['G', 'S'], action: 'Go to Shipments', desc: 'Open shipment tracking' },
@@ -496,18 +505,18 @@ const KEYBOARD_SHORTCUTS = [
   {
     section: 'Actions',
     shortcuts: [
-      { keys: ['⌘', 'N'], action: 'New command', desc: 'Create a new executive command' },
-      { keys: ['⌘', 'E'], action: 'Export CSV', desc: 'Export current view as CSV' },
-      { keys: ['⌘', 'Enter'], action: 'Submit / Approve', desc: 'Submit form or approve selected item' },
-      { keys: ['⌘', 'Z'], action: 'Undo', desc: 'Undo last action' },
+      { keys: ['Ã¢Å’Ëœ', 'N'], action: 'New command', desc: 'Create a new executive command' },
+      { keys: ['Ã¢Å’Ëœ', 'E'], action: 'Export CSV', desc: 'Export current view as CSV' },
+      { keys: ['Ã¢Å’Ëœ', 'Enter'], action: 'Submit / Approve', desc: 'Submit form or approve selected item' },
+      { keys: ['Ã¢Å’Ëœ', 'Z'], action: 'Undo', desc: 'Undo last action' },
     ],
   },
   {
     section: 'Selection & Lists',
     shortcuts: [
-      { keys: ['↑', '↓'], action: 'Navigate list', desc: 'Move focus up or down in any list' },
+      { keys: ['Ã¢â€ â€˜', 'Ã¢â€ â€œ'], action: 'Navigate list', desc: 'Move focus up or down in any list' },
       { keys: ['Space'], action: 'Select row', desc: 'Toggle selection of focused row' },
-      { keys: ['⌘', 'A'], action: 'Select all', desc: 'Select all rows in current view' },
+      { keys: ['Ã¢Å’Ëœ', 'A'], action: 'Select all', desc: 'Select all rows in current view' },
       { keys: ['Esc'], action: 'Clear selection', desc: 'Deselect all / close panel' },
     ],
   },
@@ -515,15 +524,15 @@ const KEYBOARD_SHORTCUTS = [
     section: 'Filters',
     shortcuts: [
       { keys: ['F'], action: 'Focus filter bar', desc: 'Jump to the filter search input' },
-      { keys: ['⌘', 'Shift', 'X'], action: 'Clear filters', desc: 'Reset all active filters' },
+      { keys: ['Ã¢Å’Ëœ', 'Shift', 'X'], action: 'Clear filters', desc: 'Reset all active filters' },
     ],
   },
   {
     section: 'System',
     shortcuts: [
       { keys: ['?'], action: 'Shortcuts', desc: 'Show this keyboard shortcuts reference' },
-      { keys: ['⌘', 'D'], action: 'Toggle dark mode', desc: 'Switch between dark and light theme' },
-      { keys: ['⌘', 'Shift', 'L'], action: 'End Session', desc: 'Securely end current session' },
+      { keys: ['Ã¢Å’Ëœ', 'D'], action: 'Toggle dark mode', desc: 'Switch between dark and light theme' },
+      { keys: ['Ã¢Å’Ëœ', 'Shift', 'L'], action: 'End Session', desc: 'Securely end current session' },
     ],
   },
 ];
@@ -572,20 +581,6 @@ const executiveCommandDeck = [
     tone: 'blue'
   },
   {
-    id: 'cfo',
-    name: 'CFO Command',
-    title: 'Chief Financial Officer',
-    role: 'Monitors pricing, margins, cash flow, expenses, payment tracking, financial risk, cost control, and founder approval flags.',
-    status: 'Online',
-    category: 'Finance',
-    current_focus: 'Quote margins, cash safety, overdue payments, cost control, FX exposure.',
-    key_modules: ['Management Reports', 'Cash & Collections', 'Pricing & Margin', 'Cost Control', 'FX & Risk'],
-    route: '/export-os/executives/cfo',
-    last_checked_at: new Date().toISOString(),
-    icon: CFOIcon,
-    tone: 'amber'
-  },
-  {
     id: 'cmo',
     name: 'CMO Command',
     title: 'Chief Marketing Officer',
@@ -598,6 +593,20 @@ const executiveCommandDeck = [
     last_checked_at: new Date().toISOString(),
     icon: CMOIcon,
     tone: 'cyan'
+  },
+  {
+    id: 'cfo',
+    name: 'CFO Command',
+    title: 'Chief Financial Officer',
+    role: 'Monitors pricing, margins, cash flow, expenses, payment tracking, financial risk, cost control, and founder approval flags.',
+    status: 'Online',
+    category: 'Finance',
+    current_focus: 'Quote margins, cash safety, overdue payments, cost control, FX exposure.',
+    key_modules: ['Management Reports', 'Cash & Collections', 'Pricing & Margin', 'Cost Control', 'FX & Risk'],
+    route: '/export-os/executives/cfo',
+    last_checked_at: new Date().toISOString(),
+    icon: CFOIcon,
+    tone: 'amber'
   },
   {
     id: 'cio',
@@ -1837,7 +1846,7 @@ function KeyboardShortcutsModal({ onClose }) {
         </div>
 
         <div className="kbd-modal-footer">
-          <span>Mac: use <kbd className="kbd">⌘</kbd> &nbsp;·&nbsp; Windows/Linux: use <kbd className="kbd">Ctrl</kbd></span>
+          <span>Mac: use <kbd className="kbd">Ã¢Å’Ëœ</kbd> &nbsp;Ã‚Â·&nbsp; Windows/Linux: use <kbd className="kbd">Ctrl</kbd></span>
         </div>
       </div>
     </div>
@@ -2084,7 +2093,7 @@ function SettingsPage({ onBack }) {
           <p className="settings-page-sub">Manage your profile, preferences, and integrations</p>
         </div>
         {onBack && (
-          <button className="btn btn-ghost btn-sm" onClick={onBack}>← Back</button>
+          <button className="btn btn-ghost btn-sm" onClick={onBack}>Ã¢â€ Â Back</button>
         )}
       </div>
 
@@ -2401,7 +2410,7 @@ const ANALYTICS_DATA = {
     revenue: [42, 38, 55, 61, 49, 67, 72],
     shipments: [3, 2, 4, 5, 3, 6, 5],
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    totalRevenue: '₹48.2L',
+    totalRevenue: 'Ã¢â€šÂ¹48.2L',
     revenueChange: 12,
     totalShipments: 28,
     shipmentChange: 8,
@@ -2414,7 +2423,7 @@ const ANALYTICS_DATA = {
     revenue: [120, 135, 118, 142, 155, 148, 163, 171, 158, 168, 175, 182, 170, 188, 195, 182, 199, 210, 198, 215, 208, 222, 218, 235, 228, 242, 238, 251, 245, 258],
     shipments: [8, 10, 7, 12, 11, 9, 14, 13, 10, 15, 12, 16, 11, 14, 18, 13, 17, 20, 15, 19, 16, 21, 18, 23, 20, 24, 22, 26, 21, 25],
     labels: Array.from({ length: 30 }, (_, i) => `${i + 1}`),
-    totalRevenue: '₹2.14Cr',
+    totalRevenue: 'Ã¢â€šÂ¹2.14Cr',
     revenueChange: 18,
     totalShipments: 124,
     shipmentChange: 15,
@@ -2427,7 +2436,7 @@ const ANALYTICS_DATA = {
     revenue: [380, 420, 395, 445, 468, 432, 478, 512, 488, 524, 506, 548, 532, 568, 552, 589, 575, 610, 592, 628, 614, 645, 630, 658, 645, 672, 660, 685, 670, 694, 682, 708, 695, 720, 708, 732, 718, 745, 730, 755, 742, 768, 755, 778, 765, 790, 778, 802, 790, 815],
     shipments: [22, 26, 24, 28, 30, 27, 32, 35, 31, 36, 34, 38, 36, 40, 38, 42, 40, 45, 43, 47, 45, 49, 47, 52, 50, 54, 52, 56, 54, 58],
     labels: ['Jan W1', 'Jan W2', 'Jan W3', 'Jan W4', 'Feb W1', 'Feb W2', 'Feb W3', 'Feb W4', 'Mar W1', 'Mar W2', 'Mar W3', 'Mar W4'],
-    totalRevenue: '₹6.8Cr',
+    totalRevenue: 'Ã¢â€šÂ¹6.8Cr',
     revenueChange: 24,
     totalShipments: 412,
     shipmentChange: 22,
@@ -2440,7 +2449,7 @@ const ANALYTICS_DATA = {
     revenue: [820, 940, 880, 1020, 980, 1150, 1080, 1240, 1180, 1320, 1260, 1420],
     shipments: [48, 56, 52, 62, 58, 70, 66, 76, 72, 82, 78, 90],
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    totalRevenue: '₹28.4Cr',
+    totalRevenue: 'Ã¢â€šÂ¹28.4Cr',
     revenueChange: 31,
     totalShipments: 1810,
     shipmentChange: 28,
@@ -2452,11 +2461,11 @@ const ANALYTICS_DATA = {
 };
 
 const TOP_MARKETS = [
-  { country: 'UAE', flag: '🇦🇪', revenue: '₹8.2L', share: 72, shipments: 34, trend: 'up' },
-  { country: 'Saudi Arabia', flag: '🇸🇦', revenue: '₹5.6L', share: 49, shipments: 22, trend: 'up' },
-  { country: 'USA', flag: '🇺🇸', revenue: '₹4.1L', share: 36, shipments: 16, trend: 'stable' },
-  { country: 'UK', flag: '🇬🇧', revenue: '₹2.8L', share: 25, shipments: 11, trend: 'up' },
-  { country: 'Germany', flag: '🇩🇪', revenue: '₹1.9L', share: 17, shipments: 8, trend: 'down' },
+  { country: 'UAE', flag: 'Ã°Å¸â€¡Â¦Ã°Å¸â€¡Âª', revenue: 'Ã¢â€šÂ¹8.2L', share: 72, shipments: 34, trend: 'up' },
+  { country: 'Saudi Arabia', flag: 'Ã°Å¸â€¡Â¸Ã°Å¸â€¡Â¦', revenue: 'Ã¢â€šÂ¹5.6L', share: 49, shipments: 22, trend: 'up' },
+  { country: 'USA', flag: 'Ã°Å¸â€¡ÂºÃ°Å¸â€¡Â¸', revenue: 'Ã¢â€šÂ¹4.1L', share: 36, shipments: 16, trend: 'stable' },
+  { country: 'UK', flag: 'Ã°Å¸â€¡Â¬Ã°Å¸â€¡Â§', revenue: 'Ã¢â€šÂ¹2.8L', share: 25, shipments: 11, trend: 'up' },
+  { country: 'Germany', flag: 'Ã°Å¸â€¡Â©Ã°Å¸â€¡Âª', revenue: 'Ã¢â€šÂ¹1.9L', share: 17, shipments: 8, trend: 'down' },
 ];
 
 const PRODUCT_MIX = [
@@ -2622,7 +2631,7 @@ function AnalyticsDashboard({ onBack }) {
           ))}
         </div>
         {onBack && (
-          <button className="btn btn-ghost btn-sm" onClick={onBack} type="button">← Back</button>
+          <button className="btn btn-ghost btn-sm" onClick={onBack} type="button">Ã¢â€ Â Back</button>
         )}
       </div>
 
@@ -2642,7 +2651,7 @@ function AnalyticsDashboard({ onBack }) {
                 color: (k.trend === 'up-good' ? k.change >= 0 : k.change < 0) ? '#22c55e' : '#ff4d6d'
               }}
             >
-              {k.change >= 0 ? '▲' : '▼'} {Math.abs(k.change)}%
+              {k.change >= 0 ? 'Ã¢â€“Â²' : 'Ã¢â€“Â¼'} {Math.abs(k.change)}%
             </span>
           </div>
         ))}
@@ -2693,7 +2702,7 @@ function AnalyticsDashboard({ onBack }) {
                   </td>
                   <td>{m.shipments}</td>
                   <td style={{ color: m.trend === 'up' ? '#22c55e' : m.trend === 'down' ? '#ff4d6d' : 'var(--dim)' }}>
-                    {m.trend === 'up' ? '▲' : m.trend === 'down' ? '▼' : '—'}
+                    {m.trend === 'up' ? 'Ã¢â€“Â²' : m.trend === 'down' ? 'Ã¢â€“Â¼' : 'Ã¢â‚¬â€'}
                   </td>
                 </tr>
               ))}
@@ -3421,7 +3430,7 @@ function OSSelectionCard({ id, title, subtitle, description, icon: Icon, selecte
         <p>{description}</p>
       </div>
       <div className="os-card-footer">
-        <span>{selected ? 'Starting…' : 'Launch'}</span>
+        <span>{selected ? 'StartingÃ¢â‚¬Â¦' : 'Launch'}</span>
         <ChevronRight size={17} />
       </div>
     </motion.button>
@@ -3533,7 +3542,7 @@ function PageHero({ current }) {
       <button className="tactical-button">
         <Zap size={16} />
         Execute Command
-        <kbd className="kbd-hint">⌘K</kbd>
+        <kbd className="kbd-hint">Ã¢Å’ËœK</kbd>
       </button>
     </div>
   );
@@ -3814,7 +3823,7 @@ function LearningCentrePage({ navigate, onBack, reportMode = false }) {
                   <span>{finding.source_url ? <a href={finding.source_url} target="_blank" rel="noreferrer">Open source</a> : 'Source unavailable.'}</span>
                   <span title="Model self-assessment only. This is not a verified truth score.">{Number(finding.confidence_score || 0).toFixed(2)}</span>
                   <span>{finding.status}</span>
-                  <span>{finding.memory_saved ? '✓' : '✗'}</span>
+                  <span>{finding.memory_saved ? 'Ã¢Å“â€œ' : 'Ã¢Å“â€”'}</span>
                   <span>{finding.tokens_processed || 0}</span>
                 </div>
               );
@@ -4778,7 +4787,7 @@ const TrendIndicator = React.memo(function TrendIndicator({ value, suffix = '%',
   const positive = invert ? numericValue < 0 : numericValue > 0;
   const neutral = numericValue === 0;
   const color = neutral ? 'var(--muted)' : positive ? '#3ddc84' : '#ff5a5a';
-  const arrow = neutral ? '→' : positive ? '↑' : '↓';
+  const arrow = neutral ? 'Ã¢â€ â€™' : positive ? 'Ã¢â€ â€˜' : 'Ã¢â€ â€œ';
   const displaySuffix = typeof value === 'string' && /[%a-zA-Z]/.test(value) ? '' : suffix;
   return (
     <span style={{ color, fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
@@ -5126,7 +5135,7 @@ function ConnectionBanner() {
   return (
     <div className="connection-banner" role="alert" aria-live="assertive">
       <AlertTriangle size={14} aria-hidden="true" />
-      You are offline — changes may not save until connection is restored.
+      You are offline Ã¢â‚¬â€ changes may not save until connection is restored.
     </div>
   );
 }
@@ -5241,7 +5250,7 @@ const Pagination = React.memo(function Pagination({ total, perPage = 20, page, o
         disabled={page === 1}
         aria-label="Previous page"
       >
-        ‹
+        Ã¢â‚¬Â¹
       </button>
       {pages.map((p) => (
         <button
@@ -5260,7 +5269,7 @@ const Pagination = React.memo(function Pagination({ total, perPage = 20, page, o
         disabled={page === totalPages}
         aria-label="Next page"
       >
-        ›
+        Ã¢â‚¬Âº
       </button>
     </nav>
   );
@@ -5323,7 +5332,7 @@ function ScrollToTop() {
       }}
       aria-label="Scroll to top"
     >
-      ↑
+      Ã¢â€ â€˜
     </button>
   );
 }
@@ -5857,7 +5866,7 @@ function CommandPalette({ open, onClose, onNavigate, onAction }) {
             value={query}
             onChange={(e) => { setQuery(e.target.value); setCursor(0); }}
             onKeyDown={handleKey}
-            placeholder="Search pages, actions, settings…"
+            placeholder="Search pages, actions, settingsÃ¢â‚¬Â¦"
             aria-label="Command search"
             aria-autocomplete="list"
             aria-controls="cmd-list"
@@ -5892,7 +5901,7 @@ function CommandPalette({ open, onClose, onNavigate, onAction }) {
                     <span className="cmd-item-label">
                       {highlightMatch(item.label, query)}
                     </span>
-                    <kbd className="cmd-item-hint">↵</kbd>
+                    <kbd className="cmd-item-hint">Ã¢â€ Âµ</kbd>
                   </button>
                 );
               })}
@@ -5901,10 +5910,10 @@ function CommandPalette({ open, onClose, onNavigate, onAction }) {
         </div>
 
         <footer className="cmd-footer">
-          <span><kbd>↑↓</kbd> navigate</span>
-          <span><kbd>↵</kbd> select</span>
+          <span><kbd>Ã¢â€ â€˜Ã¢â€ â€œ</kbd> navigate</span>
+          <span><kbd>Ã¢â€ Âµ</kbd> select</span>
           <span><kbd>ESC</kbd> close</span>
-          <span><kbd>⌘K</kbd> toggle</span>
+          <span><kbd>Ã¢Å’ËœK</kbd> toggle</span>
         </footer>
       </div>
     </div>
@@ -6304,7 +6313,7 @@ function SortableTableHeader({ columns, sortKey, sortDir, onSort, allSelected, s
           <span>{col.label}</span>
           {col.sortable !== false && (
             <span className="sort-icon" aria-hidden="true">
-              {sortKey === col.key ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
+              {sortKey === col.key ? (sortDir === 'asc' ? 'Ã¢â€ â€˜' : 'Ã¢â€ â€œ') : 'Ã¢â€ â€¢'}
             </span>
           )}
         </div>
@@ -6341,7 +6350,7 @@ function BulkActionBar({ count, actions, onClear, onExport }) {
         )}
       </div>
       <button className="bulk-clear" onClick={onClear} aria-label="Clear selection">
-        ✕ Clear
+        Ã¢Å“â€¢ Clear
       </button>
     </div>
   );
@@ -6775,7 +6784,7 @@ function RichKpiCard({ label, value, unit = '', change, trend, sparkData, color,
         <span className="rich-kpi-label">{label}</span>
         {change !== undefined && (
           <span className="rich-kpi-change" style={{ color: trendColor }}>
-            {isPositive ? '▲' : '▼'} {Math.abs(change)}%
+            {isPositive ? 'Ã¢â€“Â²' : 'Ã¢â€“Â¼'} {Math.abs(change)}%
           </span>
         )}
       </div>
@@ -6893,12 +6902,12 @@ function QuickLaunch({ navigate }) {
 
 function DashboardActivityFeed() {
   const events = [
-    { id: 1, time: '2m ago', actor: 'CFO', action: 'reviewed', subject: 'Q3 margin report', icon: '📋', tone: 'blue' },
-    { id: 2, time: '11m ago', actor: 'COO', action: 'escalated', subject: 'GCC shipment delay', icon: '⚠️', tone: 'amber' },
-    { id: 3, time: '28m ago', actor: 'System', action: 'generated', subject: 'Morning briefing draft', icon: '⚡', tone: 'cyan' },
-    { id: 4, time: '1h ago', actor: 'CTO', action: 'resolved', subject: 'Automation retry queue', icon: '✅', tone: 'green' },
-    { id: 5, time: '2h ago', actor: 'Director', action: 'approved', subject: 'New buyer quotation release', icon: '✓', tone: 'green' },
-    { id: 6, time: '3h ago', actor: 'CMO', action: 'drafted', subject: 'GCC importer outreach email', icon: '✉', tone: 'blue' },
+    { id: 1, time: '2m ago', actor: 'CFO', action: 'reviewed', subject: 'Q3 margin report', icon: 'Ã°Å¸â€œâ€¹', tone: 'blue' },
+    { id: 2, time: '11m ago', actor: 'COO', action: 'escalated', subject: 'GCC shipment delay', icon: 'Ã¢Å¡Â Ã¯Â¸Â', tone: 'amber' },
+    { id: 3, time: '28m ago', actor: 'System', action: 'generated', subject: 'Morning briefing draft', icon: 'Ã¢Å¡Â¡', tone: 'cyan' },
+    { id: 4, time: '1h ago', actor: 'CTO', action: 'resolved', subject: 'Automation retry queue', icon: 'Ã¢Å“â€¦', tone: 'green' },
+    { id: 5, time: '2h ago', actor: 'Director', action: 'approved', subject: 'New buyer quotation release', icon: 'Ã¢Å“â€œ', tone: 'green' },
+    { id: 6, time: '3h ago', actor: 'CMO', action: 'drafted', subject: 'GCC importer outreach email', icon: 'Ã¢Å“â€°', tone: 'blue' },
   ];
 
   return (
@@ -6925,7 +6934,7 @@ function DashboardActivityFeed() {
 }
 
 function HomeKpiStrip({ navigate }) {
-  const [kpis, setKpis] = useState({ leads: 0, pending: 0, tasks: 0, revenue: '—', health: 'Checking...' });
+  const [kpis, setKpis] = useState({ leads: 0, pending: 0, tasks: 0, revenue: 'â€”', health: 'Checking...' });
 
   useEffect(() => {
     async function load() {
@@ -6939,7 +6948,7 @@ function HomeKpiStrip({ navigate }) {
           leads: (leadsResult.data || []).length,
           pending: (approvalsResult.data || []).filter(a => a.status === 'Pending Approval').length,
           tasks: (tasksResult.data || []).filter(t => !['Done', 'Completed'].includes(t.status)).length,
-          revenue: '—',
+          revenue: 'â€”',
           health: 'Live',
         });
       } catch {
@@ -6979,7 +6988,7 @@ function HomeDirectorPreview({ navigate }) {
     <section className="home-panel">
       <div className="home-panel-header">
         <h2>Director Queue</h2>
-        <button className="ghost-button" onClick={() => navigate('/export-os/director')}>View all →</button>
+        <button className="ghost-button" onClick={() => navigate('/export-os/director')}>View all â†’</button>
       </div>
       {items.length === 0
         ? <p className="home-panel-empty">No pending decisions. Agents are running.</p>
@@ -7026,7 +7035,6 @@ function ExecutiveCommandDeck({ navigate, onLogout, showSearch, setShowSearch, s
       <ForexTicker items={rates} status={forexStatus} />
       <CommandDeckHeader navigate={navigate} onLogout={onLogout} showSearch={showSearch} setShowSearch={setShowSearch} setShowShortcuts={setShowShortcuts} session={session} />
 
-      {/* Hero */}
       <section className="home-hero">
         <div className="home-hero-left">
           <span className="home-hero-tag">GOPU Export OS</span>
@@ -7034,23 +7042,21 @@ function ExecutiveCommandDeck({ navigate, onLogout, showSearch, setShowSearch, s
           <p className="home-hero-sub">Zero employees. Five agents. You make the final call.</p>
         </div>
         <div className="home-hero-actions">
-          <button className="tactical-button" onClick={() => navigate('/export-os/director')}>Director Command</button>
-          <button className="ghost-button" onClick={() => navigate('/export-os/leads/new')}>New Lead</button>
-          <button className="ghost-button" onClick={() => navigate('/export-os/pricing-engine')}>Pricing Engine</button>
+          <button className="tactical-button" type="button" onClick={() => navigate('/export-os/director')}>Director Command</button>
+          <button className="ghost-button" type="button" onClick={() => navigate('/export-os/leads/new')}>New Lead</button>
+          <button className="ghost-button" type="button" onClick={() => navigate('/export-os/pricing-engine')}>Pricing Engine</button>
         </div>
       </section>
 
-      {/* Live KPI strip */}
       <HomeKpiStrip navigate={navigate} />
 
-      {/* Agent grid */}
       <section className="home-agent-grid">
         {[
-          { role: 'CIO', label: 'Chief Intelligence Officer', desc: 'Lead scoring · Market intelligence · Buyer analytics', route: '/export-os/cio', color: '#818cf8' },
-          { role: 'CFO', label: 'Chief Financial Officer', desc: 'P&L · Auto-payments · Payment vault', route: '/export-os/executives/cfo', color: '#22c55e' },
-          { role: 'COO', label: 'Chief Operations Officer', desc: 'Shipments · Suppliers · Document readiness', route: '/export-os/executives/coo', color: '#f59e0b' },
-          { role: 'CMO', label: 'Chief Marketing Officer', desc: 'LinkedIn · Email campaigns · Buyer outreach', route: '/export-os/executives/cmo', color: '#ec4899' },
-          { role: 'CTO', label: 'Chief Technology Officer', desc: 'Integrations · API health · System uptime', route: '/export-os/executives/cto', color: '#38bdf8' },
+          { role: 'CIO', label: 'Chief Intelligence Officer', desc: 'Lead scoring - Market intelligence - Buyer analytics', route: '/export-os/cio', color: '#818cf8' },
+          { role: 'CFO', label: 'Chief Financial Officer', desc: 'P&L - Auto-payments - Payment vault', route: '/export-os/executives/cfo', color: '#22c55e' },
+          { role: 'COO', label: 'Chief Operations Officer', desc: 'Shipments - Suppliers - Document readiness', route: '/export-os/executives/coo', color: '#f59e0b' },
+          { role: 'CMO', label: 'Chief Marketing Officer', desc: 'LinkedIn - Email campaigns - Buyer outreach', route: '/export-os/executives/cmo', color: '#ec4899' },
+          { role: 'CTO', label: 'Chief Technology Officer', desc: 'Integrations - API health - System uptime', route: '/export-os/executives/cto', color: '#38bdf8' },
         ].map(({ role, label, desc, route, color }) => (
           <article key={role} className="home-agent-card" onClick={() => navigate(route)} style={{ '--agent-color': color }}>
             <div className="home-agent-role">{role}</div>
@@ -7058,12 +7064,11 @@ function ExecutiveCommandDeck({ navigate, onLogout, showSearch, setShowSearch, s
               <strong>{label}</strong>
               <span>{desc}</span>
             </div>
-            <button className="ghost-button" onClick={(e) => { e.stopPropagation(); navigate(route); }}>Open →</button>
+            <button className="ghost-button" type="button" onClick={(event) => { event.stopPropagation(); navigate(route); }}>Open</button>
           </article>
         ))}
       </section>
 
-      {/* Bottom split */}
       <section className="home-bottom-grid">
         <HomeDirectorPreview navigate={navigate} />
         <HomeQuickActions navigate={navigate} />
@@ -7073,7 +7078,6 @@ function ExecutiveCommandDeck({ navigate, onLogout, showSearch, setShowSearch, s
     </ExportOSShell>
   );
 }
-
 function ExecutiveKpiTicker({ rates = [], forexStatus }) {
   const primaryRate = rates?.[0];
   const kpis = [
@@ -7116,7 +7120,7 @@ function HeroCommandPanel({ navigate }) {
       <div className="hero-command-actions">
         <button className="tactical-button" onClick={() => navigate('/export-os/director')}>
           Open Director Console
-          <kbd className="kbd-hint">⌘K</kbd>
+          <kbd className="kbd-hint">Ã¢Å’ËœK</kbd>
         </button>
         <button className="ghost-button" onClick={() => navigate('/export-os/workflows')}>View Workflows</button>
       </div>
@@ -8406,79 +8410,83 @@ function DirectorCommandCenter({ navigate, onBack, onOpenTasks }) {
 
   return (
     <div className="director-command-page">
-      {/* Header */}
-      <div className="page-header director-page-header">
+      <header className="director-page-header">
         <button className="director-back-link" onClick={onBack}><ArrowLeft size={15} /> Back</button>
-        <div className="director-page-title">
+        <div>
           <h1>Director Command</h1>
           <p>All agents report here. You make the final call.</p>
         </div>
         <button className="tactical-button" onClick={onOpenTasks}>Open Tasks</button>
-      </div>
+      </header>
 
-      {/* Status Bar */}
       <div className="director-status-bar">
         {[
           { label: 'Pending Decisions', value: items.length },
-          { label: 'Critical', value: summary.critical },
-          { label: 'Waiting >24h', value: summary.waiting24 },
-          { label: 'Agent Messages', value: (directorData.agentMemory || []).length },
-          { label: 'System Health', value: isLive ? 'Live' : 'Offline', highlight: isLive }
+          { label: 'Critical', value: items.filter((item) => item.priority === 'Critical').length },
+          { label: 'Waiting >24h', value: items.filter((item) => item.waiting_hours >= 24).length },
+          { label: 'Agent Messages', value: directorData.agentActivityFeed?.length || 0 },
+          { label: 'System Health', value: backendStatus.mode === 'Connected' ? 'Live' : 'Offline', highlight: backendStatus.mode === 'Connected' }
         ].map((chip) => (
           <div key={chip.label} className={`director-stat-chip${chip.highlight ? ' director-stat-chip--live' : ''}`}>
-            <span className="director-stat-value">{chip.value}</span>
-            <span className="director-stat-label">{chip.label}</span>
+            <strong>{chip.value}</strong>
+            <span>{chip.label}</span>
           </div>
         ))}
       </div>
 
-      {/* Filter bar */}
       <div className="director-filter-bar">
-        {['All', 'Critical', 'High', 'Pending'].map((f) => (
+        {['All', 'Critical', 'High', 'Pending'].map((filter) => (
           <button
-            key={f}
-            className={`director-filter-btn${decisionFilter === f ? ' active' : ''}`}
-            onClick={() => setDecisionFilter(f)}
-          >{f}</button>
+            key={filter}
+            className={decisionFilter === filter ? 'active' : ''}
+            onClick={() => setDecisionFilter(filter)}
+          >
+            {filter}
+          </button>
         ))}
       </div>
 
-      {/* Main Grid */}
       <div className="director-main-grid">
-        {/* Decision Queue */}
         <section className="director-queue-panel">
-          <h2 className="director-section-heading">Decision Queue</h2>
+          <div className="director-queue-header">
+            <h2>Decision Queue</h2>
+            <span>{visibleDecisions.length} shown</span>
+          </div>
           {visibleDecisions.length === 0 ? (
             <div className="director-empty-state">
-              <span className="director-empty-icon">✓</span>
+              <CheckCircle2 size={34} />
               <p>No pending decisions. All agents are running autonomously.</p>
             </div>
           ) : (
-            <div className="director-card-list">
-              {visibleDecisions.map((item, idx) => (
-                <div
-                  key={item.id}
-                  className={`director-decision-card${selectedId === item.id ? ' selected' : ''}`}
-                  onClick={() => setSelectedId(selectedId === item.id ? null : item.id)}
-                >
-                  <div className="ddc-row-top">
-                    <span className="ddc-row-num">#{idx + 1}</span>
-                    <span className={`ddc-priority-badge ddc-priority-${(item.priority || 'Medium').toLowerCase()}`}>{item.priority || 'Medium'}</span>
-                    <span className="ddc-title">{item.title}</span>
-                    {item.source_executive && <span className="ddc-owner-tag">{item.source_executive}</span>}
+            <div>
+              {visibleDecisions.map((item, index) => (
+                <div key={item.id} className="director-decision-card">
+                  <span className="director-row-number">{index + 1}</span>
+                  <div className="director-decision-body">
+                    <div className="director-decision-title-row">
+                      <span className={`director-priority-badge director-priority-${String(item.priority || 'Medium').toLowerCase()}`}>{item.priority || 'Medium'}</span>
+                      <strong>{item.title}</strong>
+                      {item.source_executive && <em>{item.source_executive}</em>}
+                    </div>
+                    <p>{item.summary || item.description || item.impact || 'Decision context is waiting for executive sync.'}</p>
+                    <div className="director-decision-meta">
+                      <span>{item.waiting_hours != null ? `${item.waiting_hours}h waiting` : 'Waiting time not recorded'}</span>
+                      <span>Risk: {item.risk_level || 'Monitoring'}</span>
+                    </div>
                   </div>
-                  {item.summary && <p className="ddc-summary">{item.summary}</p>}
-                  <div className="ddc-row-meta">
-                    <span className="ddc-wait">{item.waiting_hours != null ? `${item.waiting_hours}h waiting` : ''}</span>
-                    {item.risk_level && <span className={`ddc-risk ddc-risk-${item.risk_level.toLowerCase()}`}>Risk: {item.risk_level}</span>}
+                  <div className="director-decision-action">
                     <select
-                      className="ddc-action-select"
+                      aria-label={`Action for ${item.title}`}
                       defaultValue=""
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => { if (e.target.value) { runDirectorAction(item, e.target.value); e.target.value = ''; } }}
+                      onChange={(event) => {
+                        if (!event.target.value) return;
+                        const nextAction = event.target.value === 'Clarify' ? 'Need Clarification' : event.target.value;
+                        runDirectorAction(item, nextAction);
+                        event.target.value = '';
+                      }}
                     >
-                      <option value="" disabled>Action…</option>
-                      {actionOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                      <option value="" disabled>Action</option>
+                      {['Approve', 'Reject', 'Clarify', 'Escalate', 'Assign COO', 'Assign CFO', 'Assign CTO', 'Assign CMO', 'Assign CIO'].map((option) => <option key={option} value={option}>{option}</option>)}
                     </select>
                   </div>
                 </div>
@@ -8487,23 +8495,24 @@ function DirectorCommandCenter({ navigate, onBack, onOpenTasks }) {
           )}
         </section>
 
-        {/* Agent Activity Feed */}
         <aside className="director-agent-feed">
-          <h2 className="director-section-heading">Agent Activity</h2>
+          <div className="director-queue-header">
+            <h2>Agent Activity</h2>
+          </div>
           {(directorData.agentActivityFeed || []).length === 0 ? (
             <p className="director-feed-empty">Agents are active. Activity will appear here as decisions are made.</p>
           ) : (
-            <div className="director-feed-list">
-              {(directorData.agentActivityFeed || []).map((entry, i) => {
-                const agentKey = Object.keys(agentColours).find((k) => (entry.agent || '').toUpperCase().includes(k)) || 'CIO';
+            <div>
+              {(directorData.agentActivityFeed || []).map((entry, index) => {
+                const role = Object.keys(agentColours).find((key) => (entry.agent || entry.role || '').toUpperCase().includes(key)) || 'CIO';
                 return (
-                  <div key={i} className="director-feed-entry">
-                    <span className="director-feed-dot" style={{ background: agentColours[agentKey] }} />
-                    <div className="director-feed-body">
-                      <strong>{entry.agent || agentKey}</strong>
-                      <span>{entry.subject || entry.message || ''}</span>
+                  <div key={entry.id || index} className="director-agent-entry">
+                    <span className={`director-agent-dot agent-dot-${role.toLowerCase()}`} />
+                    <div>
+                      <strong>{entry.subject || entry.title || `${role} update`}</strong>
+                      <span>{entry.message || entry.subject || ''}</span>
+                      <time>{entry.time || entry.created_at || entry.timestamp || 'Now'}</time>
                     </div>
-                    <small className="director-feed-time">{entry.time || entry.created_at || ''}</small>
                   </div>
                 );
               })}
@@ -8512,7 +8521,6 @@ function DirectorCommandCenter({ navigate, onBack, onOpenTasks }) {
         </aside>
       </div>
 
-      {/* Command Console */}
       <DirectorCommandConsole
         value={commandInput}
         setValue={setCommandInput}
@@ -8523,22 +8531,6 @@ function DirectorCommandCenter({ navigate, onBack, onOpenTasks }) {
         onEscalate={() => selectedItem && runDirectorAction(selectedItem, 'Escalate')}
         onCreateFollowup={runFollowupEngine}
       />
-
-      {/* Review Drawer */}
-      {selectedItem && (
-        <DirectorReviewDrawer
-          item={selectedItem}
-          note={note}
-          setNote={setNote}
-          onClose={() => setSelectedId(null)}
-          onApprove={() => runDirectorAction(selectedItem, 'Approve')}
-          onClarify={() => runDirectorAction(selectedItem, 'Need Clarification')}
-          onOpenWorkflow={() => selectedItem?.route && navigate(selectedItem.route)}
-          onCreateFollowup={runFollowupEngine}
-          onEscalate={() => selectedItem && runDirectorAction(selectedItem, 'Escalate')}
-          onAddNote={() => setMessage('Director note staged in audit history.')}
-        />
-      )}
     </div>
   );
 }
@@ -9169,12 +9161,12 @@ function buildDirectorCommandResponse(query, items = [], directorData = {}) {
 }
 
 function DirectorCommandConsole({ value, setValue, onRun, response, history, navigate, onEscalate, onCreateFollowup }) {
-  const suggestions = ['What is pending this month?', 'How much marketing budget pending?', 'Show delayed shipments.', 'Any high-risk buyers?', 'What is blocking invoices?', 'What payments are pending?', 'Any Country pending opportunities?', 'Show today’s priorities.'];
+  const suggestions = ['What is pending this month?', 'How much marketing budget pending?', 'Show delayed shipments.', 'Any high-risk buyers?', 'What is blocking invoices?', 'What payments are pending?', 'Any Country pending opportunities?', 'Show todayÃ¢â‚¬â„¢s priorities.'];
   return (
     <section className="director-panel director-command-console">
       <div className="approval-section-header"><div><span>Director Command Input</span><h2>Ask GOPU OS anything operational</h2></div><Bot size={18} /></div>
       <div className="director-input-row">
-        <textarea aria-label="Command prompt" value={value} onChange={(event) => setValue(event.target.value)} onKeyDown={(event) => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') onRun(); }} placeholder="What is pending this month?  •  Show delayed shipments.  •  Any Country pending opportunities?  •  What is blocking invoices?" />
+        <textarea aria-label="Command prompt" value={value} onChange={(event) => setValue(event.target.value)} onKeyDown={(event) => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') onRun(); }} placeholder="What is pending this month?  Ã¢â‚¬Â¢  Show delayed shipments.  Ã¢â‚¬Â¢  Any Country pending opportunities?  Ã¢â‚¬Â¢  What is blocking invoices?" />
         <button className="tactical-button" onClick={() => onRun()}>Ask Director</button>
       </div>
       <div className="director-suggestion-row">
@@ -9319,7 +9311,7 @@ function ExecutivePerformanceInsights({ insights = [] }) {
 function DirectorAIRecommendations({ recommendations = [] }) {
   return (
     <section className="director-panel">
-      <div className="approval-section-header"><div><span>AI Operational Recommendations</span><h2>AI Recommendation — Human Review Advised</h2></div><BrainCircuit size={18} /></div>
+      <div className="approval-section-header"><div><span>AI Operational Recommendations</span><h2>AI Recommendation Ã¢â‚¬â€ Human Review Advised</h2></div><BrainCircuit size={18} /></div>
       <div className="director-card-list">
         {recommendations.map((item) => <article key={item.recommendation}><div><strong>{item.recommendation}</strong><SeverityBadge severity={item.risk_level} /></div><span>Confidence: {item.confidence}</span><p>{item.next_action}</p></article>)}
       </div>
@@ -9495,11 +9487,11 @@ function FounderApprovalWall({ onBack, onOpenTasks }) {
         setApprovalStatusMessage('Founder note saved to approval comments.');
       } else {
         setApprovalStatusMessage(result?.error?.message || 'Approval action failed.');
-        show('Action failed — please retry', 'error');
+        show('Action failed Ã¢â‚¬â€ please retry', 'error');
       }
     } catch (error) {
       setApprovalStatusMessage(error?.message || 'Approval action failed.');
-      show('Action failed — please retry', 'error');
+      show('Action failed Ã¢â‚¬â€ please retry', 'error');
     }
     setModalAction(null);
   }, [founderNote, replaceRequest, selectedRequest, show]);
@@ -10431,7 +10423,7 @@ const defaultPricingInputs = {
   minimum_margin_percent: '12',
   market_reference_price: '320',
   previous_customer_price: '',
-  notes: '----- MARKET PRICE AUTO CHECK START -----\nMARKET PRICE CHECK\nStatus: REFERENCE ESTIMATE\nProduct: Red Chilli Powder\nGrade/source match: Red Chilli/Guntur Chilli\nLive/reference price: ₹180.00/kg | ₹180,000.00/ton\nManual source check required before buyer-facing quote.'
+  notes: '----- MARKET PRICE AUTO CHECK START -----\nMARKET PRICE CHECK\nStatus: REFERENCE ESTIMATE\nProduct: Red Chilli Powder\nGrade/source match: Red Chilli/Guntur Chilli\nLive/reference price: Ã¢â€šÂ¹180.00/kg | Ã¢â€šÂ¹180,000.00/ton\nManual source check required before buyer-facing quote.'
 };
 
 function buildPricingCostRows(incoterm = 'FOB', currency = 'INR') {
@@ -10808,7 +10800,7 @@ function getPricingRisk(inputs, calc, costRows) {
   const reason = restricted
     ? 'Restricted or sanctioned destination detected. Do not quote.'
     : missingCriticalFields.length > 0
-      ? `Missing critical pricing inputs: ${missingCriticalFields.join(', ')}.`
+      ? `Missing critical pricing inputs: ${safeCfoJoin(missingCriticalFields, ', ')}.`
       : riskyPayment
         ? `${paymentTermRisk.risk} payment risk: ${paymentTermRisk.action}`
       : highRisk
@@ -10984,8 +10976,8 @@ function parsePricingChannelMessage(message) {
   const currencyMatch = text.match(/\b(INR|USD|AUD|EUR|GBP|AED|SAR|SGD)\b/i);
   if (currencyMatch) updates.currency = currencyMatch[1].toUpperCase();
 
-  const priceMatch = text.match(/(?:price|rate|buyer price|target price|required price)\D{0,18}(?:inr|rs\.?|₹)?\s*(\d+(?:\.\d+)?)/i)
-    || text.match(/(?:₹|inr|rs\.?)\s*(\d+(?:\.\d+)?)(?:\s*\/?\s*(?:kg|per kg))?/i);
+  const priceMatch = text.match(/(?:price|rate|buyer price|target price|required price)\D{0,18}(?:inr|rs\.?|Ã¢â€šÂ¹)?\s*(\d+(?:\.\d+)?)/i)
+    || text.match(/(?:Ã¢â€šÂ¹|inr|rs\.?)\s*(\d+(?:\.\d+)?)(?:\s*\/?\s*(?:kg|per kg))?/i);
   if (priceMatch?.[1]) updates.market_reference_price = priceMatch[1];
   return updates;
 }
@@ -11051,7 +11043,7 @@ function buildDirectorPricingReviewNote(inputs, calc, risk, approvalReasons, cha
   const lossLine = position.isLoss
     ? `BIG RED ALERT: Loss order detected on ${position.basis}. Do not allow buyer release. Director can approve final override only after reviewing the loss amount and reason.`
     : `Commercial result: ${formatProfitLossLine(position.activeProfit, position.currency)} on ${position.basis}.`;
-  return [
+  return safeCfoJoin([
     `Director pricing review: ${reviewNeeded ? 'Review needed' : 'No blocking review detected'}`,
     lossLine,
     `Source: ${channel}`,
@@ -11068,7 +11060,7 @@ function buildDirectorPricingReviewNote(inputs, calc, risk, approvalReasons, cha
     `Buyer-required price result: ${position.buyerProfit === null ? 'Buyer price missing' : formatProfitLossLine(position.buyerProfit, position.currency)}`,
     `Margin: ${calc.margin.toFixed(2)}%`,
     `Reason: ${approvalReasons[0] || risk.reason || 'Commercial validation required before buyer-facing release.'}`
-  ].join('\n');
+  ], '\n');
 }
 
 function clampPercent(value) {
@@ -11119,6 +11111,60 @@ function pricingOptionLabel(value) {
 }
 
 const cfoWorkspaceTabs = ['Overview', 'Quotations', 'Cash', 'Receivables', 'Payables', 'Margins', 'Risks', 'Payment Vault', 'Reports'];
+
+function normalizeCfoVault(vault = {}) {
+  return {
+    ...vault,
+    metrics: safeCfoArray(vault.metrics),
+    recentPayments: safeCfoArray(vault.recentPayments),
+    workflowSteps: safeCfoArray(vault.workflowSteps),
+    auditLog: safeCfoArray(vault.auditLog)
+  };
+}
+
+function normalizeCfoMarginAnalytics(value = {}) {
+  return {
+    ...value,
+    byProduct: safeCfoArray(value.byProduct),
+    riskyQuotes: safeCfoArray(value.riskyQuotes),
+    freightImpact: safeCfoArray(value.freightImpact)
+  };
+}
+
+function cfoErrorText(error) {
+  if (!error) return '';
+  if (typeof error === 'string') return error;
+  return error.message || error.code || String(error || '');
+}
+
+function cfoValueForColumn(row, column) {
+  const label = String(column || '').toLowerCase();
+  if (!row || typeof row !== 'object') return String(row || '');
+  if (label.includes('company') || label.includes('buyer')) return row.company || row.company_name || row.buyer || row.buyer_name || row.vendor || 'Pending';
+  if (label.includes('vendor')) return row.vendor || row.company || row.company_name || 'Vendor pending';
+  if (label.includes('invoice')) return row.invoice || row.invoice_number || row.reference || row.id || 'Invoice pending';
+  if (label.includes('amount') || label.includes('inr')) return formatCfoInr(row.amount ?? row.amount_inr ?? row.estimated_value ?? row.value);
+  if (label.includes('status') || label.includes('state')) return row.status || row.approval_state || row.receipt_status || 'Pending';
+  if (label.includes('category') || label.includes('module')) return row.category || row.linked_module || row.source_module || 'CFO Command';
+  if (label.includes('date') || label.includes('due')) return formatLearningDate(row.created_at || row.paid_at || row.due_date || row.date);
+  if (label.includes('actor')) return row.actor || row.owner || 'CFO Command';
+  if (label.includes('event')) return row.event_type || row.event || row.action_type || 'Vault update';
+  if (label.includes('note')) return row.safe_notes || row.notes || row.description || 'Receipt pending';
+  if (label.includes('risk')) return row.type || row.risk_type || row.risk_level || 'Financial Risk';
+  if (label.includes('description') || label.includes('reason')) return row.description || row.reason || 'No description recorded.';
+  if (label.includes('product')) return row.product || row.product_name || 'Product pending';
+  if (label.includes('margin')) return row.margin_percent || row.margin || '0%';
+  if (label.includes('target')) return row.target_margin || row.target || 'Target pending';
+  return row[column] ?? row[label] ?? Object.values(row).find((value) => value !== undefined && value !== null) ?? '';
+}
+
+function cfoRowToArray(row, columns = []) {
+  if (Array.isArray(row)) return row;
+  if (!row || typeof row !== 'object') return [String(row || '')];
+  const safeColumns = safeCfoArray(columns);
+  if (safeColumns.length) return safeColumns.map((column) => cfoValueForColumn(row, column));
+  return Object.values(row).map((value) => String(value ?? ''));
+}
 
 const productIntelligencePresets = {
   pepper: {
@@ -11491,12 +11537,12 @@ function formatDualMoney(line, currency) {
 }
 
 function formatPricingInr(value) {
-  return `₹${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  return `Ã¢â€šÂ¹${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
 
 function formatPricingInrLive(value) {
   if (!Number.isFinite(Number(value)) || Number(value) <= 0) return 'Awaiting calculation';
-  return `₹${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  return `Ã¢â€šÂ¹${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
 
 function getCfoApprovalReasons(inputs, calc, risk, costRows, productIntel) {
@@ -11528,6 +11574,10 @@ function PricingEnginePage({ onBack, onOpenApprovalWall, onOpenTasks }) {
   const [audit, setAudit] = useState(pricingAuditEvents);
   const [message, setMessage] = useState('Pricing logic is running in Connect Supabase to activate. Old GOPU OS source file verification is still required before commercial sign-off.');
   const [cfoData, setCfoData] = useState(() => ({
+    dashboard: null,
+    weeklyPnl: null,
+    monthlyPnl: null,
+    recurringPayments: [],
     summary: null,
     marginAnalytics: null,
     receivables: cfoFinanceData.receivablesRows,
@@ -11549,26 +11599,60 @@ function PricingEnginePage({ onBack, onOpenApprovalWall, onOpenTasks }) {
     let active = true;
     async function loadCfoWorkspace() {
       try {
-        const [summary, margins, receivables, payables, paymentVault, risks, renewals] = await Promise.all([
-          getCFOSummary(),
-          getMarginAnalytics(),
-          getReceivables(),
-          getPayables(),
-          getPaymentVaultSummary(),
-          getFinancialRisks(),
-          getRenewalForecast()
+        const [dashboard, weeklyPnl, monthlyPnl, recurringPayments, summary, margins, receivables, payables, paymentVault, risks, renewals] = await Promise.all([
+          getCFODashboard(demoTenantId),
+          getWeeklyProfit(demoTenantId),
+          getMonthlyProfit(demoTenantId),
+          getRecurringPayments(demoTenantId),
+          getCFOSummary(demoTenantId),
+          getMarginAnalytics(demoTenantId),
+          getReceivables(demoTenantId),
+          getPayables(demoTenantId),
+          getPaymentVaultSummary(demoTenantId),
+          getFinancialRisks(demoTenantId),
+          getRenewalForecast(demoTenantId)
         ]);
         if (!active) return;
+        const marginData = margins.data || {};
+        const paymentVaultData = paymentVault.data || {};
+        const serviceErrors = [
+          dashboard.error,
+          weeklyPnl.error,
+          monthlyPnl.error,
+          recurringPayments.error,
+          summary.error,
+          margins.error,
+          receivables.error,
+          payables.error,
+          paymentVault.error,
+          risks.error,
+          renewals.error
+        ].filter(Boolean).map((error) => safeCfoString(error));
         setCfoData({
+          dashboard: dashboard.data,
+          weeklyPnl: weeklyPnl.data,
+          monthlyPnl: monthlyPnl.data,
+          recurringPayments: safeCfoArray(recurringPayments.data),
           summary: summary.data,
-          marginAnalytics: margins.data,
-          receivables: receivables.data,
-          payables: payables.data,
-          paymentVault: paymentVault.data,
-          risks: risks.data,
-          renewals: renewals.data,
+          marginAnalytics: {
+            ...marginData,
+            byProduct: safeCfoArray(marginData.byProduct),
+            riskyQuotes: safeCfoArray(marginData.riskyQuotes),
+            freightImpact: safeCfoArray(marginData.freightImpact)
+          },
+          receivables: safeCfoArray(receivables.data),
+          payables: safeCfoArray(payables.data),
+          paymentVault: {
+            ...paymentVaultData,
+            recentPayments: safeCfoArray(paymentVaultData.recentPayments),
+            metrics: safeCfoArray(paymentVaultData.metrics),
+            workflowSteps: safeCfoArray(paymentVaultData.workflowSteps),
+            auditLog: safeCfoArray(paymentVaultData.auditLog)
+          },
+          risks: safeCfoArray(risks.data),
+          renewals: safeCfoArray(renewals.data),
           loading: false,
-          error: [summary.error, margins.error, receivables.error, payables.error, paymentVault.error, risks.error, renewals.error].filter(Boolean).join(' ')
+          error: safeCfoJoin(serviceErrors, ' ')
         });
       } catch (error) {
         if (!active) return;
@@ -11655,7 +11739,7 @@ function PricingEnginePage({ onBack, onOpenApprovalWall, onOpenTasks }) {
         priority: 'High',
         status: 'Blocked',
         due_date: 'Today',
-        blocking_reason: Object.values(nextErrors).join(' '),
+        blocking_reason: safeCfoJoin(Object.values(nextErrors), ' '),
         next_action: 'Complete cost input, freight/insurance requirements, and rerun pricing validation.',
         buyer: inputs.company_name || 'Draft buyer',
         product: getDisplayProduct(inputs)
@@ -11677,7 +11761,7 @@ function PricingEnginePage({ onBack, onOpenApprovalWall, onOpenTasks }) {
         priority: approvalReasons.some((item) => item.toLowerCase().includes('high value') || item.toLowerCase().includes('hold')) ? 'Critical' : 'High',
         status: 'Waiting Review',
         due_date: 'Today',
-        blocking_reason: approvalReasons.join(' '),
+        blocking_reason: safeCfoJoin(approvalReasons, ' '),
         next_action: 'CFO must review margin, freight, buyer risk, and founder approval route.',
         buyer: inputs.company_name || 'Draft buyer',
         product: getDisplayProduct(inputs)
@@ -11735,10 +11819,10 @@ function PricingEnginePage({ onBack, onOpenApprovalWall, onOpenTasks }) {
   }
 
   function recordChannelPricingIntake(channel, missingFields, updates) {
-    const updateLabels = Object.keys(updates || {}).map((key) => key.replaceAll('_', ' ')).join(', ') || 'no fields';
+    const updateLabels = safeCfoJoin(Object.keys(updates || {}).map((key) => key.replaceAll('_', ' ')), ', ') || 'no fields';
     setAudit((current) => [{ id: `pricing-channel-${Date.now()}`, time: 'Now', event: `${channel} pricing intake applied`, actor: channel, status: missingFields.length ? 'Clarification Needed' : 'Calculated' }, ...current]);
     setMessage(missingFields.length
-      ? `${channel} intake checked. Missing fields: ${missingFields.map((field) => field.label).join(', ')}.`
+      ? `${channel} intake checked. Missing fields: ${safeCfoJoin(safeCfoArray(missingFields).map((field) => field.label), ', ')}.`
       : `${channel} intake applied (${updateLabels}). Pricing recalculated immediately in the result panel.`);
   }
 
@@ -11800,13 +11884,36 @@ function PricingEnginePage({ onBack, onOpenApprovalWall, onOpenTasks }) {
   const handleOpenPricingTab = React.useCallback(() => setActiveTab('Quotations'), []);
   const handleOpenPaymentVaultTab = React.useCallback(() => setActiveTab('Payment Vault'), []);
   const handleGenerateCfoReport = React.useCallback(async () => {
-    const response = await generateCFOReport();
+    const response = await generateCFOReport(demoTenantId);
     setCfoOutput(response.data || 'CFO report could not be generated.');
   }, []);
   const handleGenerateFounderFinancialSummary = React.useCallback(async () => {
-    const response = await generateFounderFinancialSummary();
+    const response = await generateFounderFinancialSummary(demoTenantId);
     setCfoOutput(response.data || 'Founder financial summary could not be generated.');
   }, []);
+  const handleInitiateCfoPayment = React.useCallback(async (payload) => {
+    const response = await initiatePayment(payload, demoTenantId);
+    const status = response.data?.status || 'Payment request processed';
+    const label = status === 'Auto-Paid'
+      ? 'Auto-Paid âœ“'
+      : status.includes('Director')
+        ? 'Escalated to Director'
+        : 'Sent to Slack for approval';
+    setCfoOutput(`${label}\nVendor: ${response.data?.vendor || payload.vendor}\nAmount: ${formatInrValue(response.data?.amount ?? payload.amount)}\nStatus: ${status}`);
+    return { ...response, label };
+  }, []);
+  const handleSendCfoReportSlack = React.useCallback(async () => {
+    const report = cfoOutput || (await generateCFOReport(demoTenantId)).data;
+    const response = await sendSlackNotification({
+      type: 'High Priority Alert',
+      priority: 'INFO',
+      reference: 'CFO-REPORT',
+      status: 'CFO report generated',
+      actionRequired: report,
+      source: 'CFO Command'
+    });
+    setCfoOutput(response.ok ? `${report}\n\nSlack: CFO report sent.` : `${report}\n\nSlack: report delivery failed safely.`);
+  }, [cfoOutput]);
 
   return (
     <ExportOSShell className="operational-export-shell pricing-engine-shell cfo-grade-pricing-shell">
@@ -11850,6 +11957,8 @@ function PricingEnginePage({ onBack, onOpenApprovalWall, onOpenTasks }) {
               onOpenPaymentVault={handleOpenPaymentVaultTab}
               onGenerateReport={handleGenerateCfoReport}
               onGenerateFounderSummary={handleGenerateFounderFinancialSummary}
+              onInitiatePayment={handleInitiateCfoPayment}
+              onSendReportSlack={handleSendCfoReportSlack}
             />
           </main>
           <CfoIntelligencePanel data={cfoData} onOpenPricing={handleOpenPricingTab} onOpenPaymentVault={handleOpenPaymentVaultTab} />
@@ -11938,7 +12047,7 @@ function QuotationSopPricingPage({ inputs, errors, costRows, calc, rates, risk, 
     <main className="quotation-sop-page">
       <section className="quotation-sop-section">
         <div className="quotation-section-title">
-          <h2>Section 1 — Inquiry Basics</h2>
+          <h2>Section 1 Ã¢â‚¬â€ Inquiry Basics</h2>
           <p>Core inquiry details. Pricing result does not create or send a quotation.</p>
         </div>
         <div className="quotation-basics-grid">
@@ -11978,7 +12087,7 @@ function QuotationSopPricingPage({ inputs, errors, costRows, calc, rates, risk, 
 
       <section className="quotation-sop-section">
         <div className="quotation-section-title">
-          <h2>Section 2 — Cost Inputs</h2>
+          <h2>Section 2 Ã¢â‚¬â€ Cost Inputs</h2>
           <p>Each row shows its basis and calculated line total. Incoterm excluded rows are disabled by default.</p>
         </div>
         <div className="quote-cost-table">
@@ -12017,7 +12126,7 @@ function QuotationSopPricingPage({ inputs, errors, costRows, calc, rates, risk, 
 
       <section className="quotation-sop-section">
         <div className="quotation-section-title">
-          <h2>Section 3 — Margin + Currency</h2>
+          <h2>Section 3 Ã¢â‚¬â€ Margin + Currency</h2>
           <p>Currency and margin assumptions used for the result.</p>
         </div>
         <div className="quotation-margin-grid">
@@ -12036,7 +12145,7 @@ function QuotationSopPricingPage({ inputs, errors, costRows, calc, rates, risk, 
 
       <section className="quotation-sop-section">
         <div className="quotation-section-title">
-          <h2>Section 4 — Result</h2>
+          <h2>Section 4 Ã¢â‚¬â€ Result</h2>
           <p>Live pricing preview. Results update from product, quantity, destination, Incoterm, freight, FX, and margin inputs.</p>
         </div>
         <div className="quotation-result-grid">
@@ -12241,11 +12350,11 @@ function splitPricingRange(range) {
 }
 
 function formatInrZero(value) {
-  return `₹${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `Ã¢â€šÂ¹${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function formatInrFixed(value) {
-  return `₹${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `Ã¢â€šÂ¹${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function formatCurrencyZero(value, currency = 'USD') {
@@ -12254,10 +12363,10 @@ function formatCurrencyZero(value, currency = 'USD') {
 
 function currencySymbol(currency) {
   if (currency === 'USD') return '$';
-  if (currency === 'INR') return '₹';
+  if (currency === 'INR') return 'Ã¢â€šÂ¹';
   if (currency === 'AED') return 'AED ';
-  if (currency === 'EUR') return '€';
-  if (currency === 'GBP') return '£';
+  if (currency === 'EUR') return 'Ã¢â€šÂ¬';
+  if (currency === 'GBP') return 'Ã‚Â£';
   if (currency === 'AUD') return 'A$';
   return `${currency} `;
 }
@@ -12267,7 +12376,7 @@ function buildMarketCheckNote(inputs) {
   const sourcePrice = getAutoMarketSourcePrice(inputs);
   const enteredPrice = Number(inputs.market_reference_price || 0);
   const referencePrice = sourcePrice || enteredPrice;
-  return [
+  return safeCfoJoin([
     '----- MARKET PRICE AUTO CHECK START -----',
     'MARKET PRICE CHECK',
     'Status: REFERENCE ESTIMATE',
@@ -12276,7 +12385,7 @@ function buildMarketCheckNote(inputs) {
     `Auto/source reference price: ${formatInrFixed(referencePrice)}/kg | ${formatInrFixed(referencePrice * 1000)}/ton`,
     `Entered buyer/commercial price: ${formatInrFixed(enteredPrice)}/kg`,
     'Manual source check required before buyer-facing quote.'
-  ].join('\n');
+  ], '\n');
 }
 
 const pricingReferenceCheckedAt = formatDisplayDate(new Date());
@@ -12340,7 +12449,7 @@ function SmartQuoteSetup({ inputs, errors, updateInput, productIntel, approvalRe
   const freightProfile = getFreightProfile(inputs.destination_country);
   return (
     <section className="pricing-panel cfo-smart-setup">
-      <div className="approval-section-header"><div><span>Section A — Product Inputs</span><h2>Live commercial pricing inputs</h2></div><SlidersHorizontal size={18} /></div>
+      <div className="approval-section-header"><div><span>Section A Ã¢â‚¬â€ Product Inputs</span><h2>Live commercial pricing inputs</h2></div><SlidersHorizontal size={18} /></div>
       <div className="cfo-section-a-grid">
         <PricingSelect label="Product" value={inputs.product_name} options={[...pricingProducts, otherPricingOption]} error={errors.product_name} onChange={(value) => updateInput('product_name', value)} />
         <SecureInput label="Quantity" value={inputs.quantity} error={errors.quantity} onChange={(value) => updateInput('quantity', value.replace(/[^\d.]/g, ''))} />
@@ -12376,18 +12485,18 @@ function ProductIntelligenceSuggestions({ productIntel, approvalReasons }) {
     <div className="product-intelligence-box">
       <div>
         <span>Product Intelligence Suggestions</span>
-        <strong>AI suggestion — founder/CA/export consultant review required.</strong>
+        <strong>AI suggestion Ã¢â‚¬â€ founder/CA/export consultant review required.</strong>
       </div>
       <div className="product-intelligence-grid">
         <div><span>Probable HSN</span><strong>{productIntel.hsn}</strong></div>
-        <div><span>Packing</span><strong>{productIntel.packing.join(', ')}</strong></div>
-        <div><span>Grades</span><strong>{productIntel.grades.join(', ')}</strong></div>
+        <div><span>Packing</span><strong>{safeCfoJoin(productIntel.packing, ', ')}</strong></div>
+        <div><span>Grades</span><strong>{safeCfoJoin(productIntel.grades, ', ')}</strong></div>
         <div><span>Preparation</span><strong>{productIntel.preparation}</strong></div>
         <div><span>Shipment Timeframe</span><strong>{productIntel.shipment}</strong></div>
-        <div><span>Documents</span><strong>{productIntel.documents.join(', ')}</strong></div>
+        <div><span>Documents</span><strong>{safeCfoJoin(productIntel.documents, ', ')}</strong></div>
       </div>
       <div className="cfo-chip-list">
-        {[...productIntel.risks, ...approvalReasons.slice(0, 3)].map((item) => <span key={item}>{item}</span>)}
+        {[...safeCfoArray(productIntel.risks), ...safeCfoArray(approvalReasons).slice(0, 3)].map((item) => <span key={item}>{item}</span>)}
       </div>
     </div>
   );
@@ -12428,7 +12537,7 @@ function PricingResultPanel({ calc, inputs, approvalReasons }) {
       <div className="cfo-result-hero">
         <div><span>Margin</span><strong>{calc.margin.toFixed(2)}%</strong><small>Target: {inputs.target_margin_percent}%</small></div>
         <div><span>Unit Price</span><strong>{formatPricingValue(calc.recommendedUnitPrice, inputs.currency)}</strong><small>{formatPricingInrLive(convertCurrency(calc.recommendedUnitPrice, inputs.currency, 'INR', moneyNumber(inputs.exchange_rate)))}</small></div>
-        <div><span>FX Basis</span><strong>1 USD = ₹{inputs.exchange_rate}</strong><small>Manual override allowed, approval tracked.</small></div>
+        <div><span>FX Basis</span><strong>1 USD = Ã¢â€šÂ¹{inputs.exchange_rate}</strong><small>Manual override allowed, approval tracked.</small></div>
       </div>
       <div className="ai-quote-grid">
         <div><span>Safe Quote</span><strong>{formatPricingValue(calc.safeQuotePrice, inputs.currency)}</strong><small>Conservative margin for freight/FX uncertainty.</small></div>
@@ -12454,7 +12563,7 @@ function CfoAiSuggestions({ inputs, calc, risk, productIntel, approvalReasons })
     ['Suggested margin', `${safeMargin}-${Math.max(safeMargin + 4, 24)}% recommended range.`],
     ['Shipment timeline', profile.lead],
     ['Freight complexity', `${profile.zone} lane / ${inputs.shipping_mode} / ${preset.complexity} product complexity.`],
-    ['Missing fields', approvalReasons.length ? approvalReasons.slice(0, 4).join(' ') : 'No critical missing fields detected in local setup.'],
+    ['Missing fields', approvalReasons.length ? safeCfoJoin(approvalReasons.slice(0, 4), ' ') : 'No critical missing fields detected in local setup.'],
     ['Pricing risk', risk.decision === 'QUOTE' ? 'CFO review ready.' : risk.reason],
     ['Freight risk', freightMissing || `${inputs.incoterm} freight estimate is advisory; carrier quote required before release.`],
     ['Insurance logic', incotermIncludedCostKeys(inputs.incoterm).has('insurance_cost') ? 'Insurance included because selected Incoterm carries seller-side exposure.' : 'Insurance not included for this Incoterm unless manually agreed.'],
@@ -12566,8 +12675,8 @@ function FinanceNotesPanel({ productIntel, forexStatus, rates }) {
       <div className="approval-section-header"><div><span>Finance Notes</span><h2>CFO operating context</h2></div><FileText size={18} /></div>
       <div className="approval-memory-list">
         <span>Shipment timeframe: {productIntel.shipment}</span>
-        <span>Packing: {productIntel.packing.join(', ')}</span>
-        <span>Documents: {productIntel.documents.join(', ')}</span>
+        <span>Packing: {safeCfoJoin(productIntel.packing, ', ')}</span>
+        <span>Documents: {safeCfoJoin(productIntel.documents, ', ')}</span>
         <span>FX status: {forexStatus}. Manual rate override must be reviewed.</span>
         <span>USD/INR watch: {rates.find((rate) => rate.pair === 'USD/INR')?.rate || 'Manual'}</span>
         <span>Quote cannot be buyer-facing until approval gates are cleared.</span>
@@ -12581,17 +12690,17 @@ const cfoFinanceData = {
     ['Pending quote approvals', '4', 'Founder review active'],
     ['Margin risk alerts', '3', 'Below 20% or freight sensitive'],
     ['Invoice approval pending', '2', 'LUT/HSN gates active'],
-    ['Payment vault summary', '₹42,800', 'Infrastructure spend monitor'],
+    ['Payment vault summary', 'Ã¢â€šÂ¹42,800', 'Infrastructure spend monitor'],
     ['Receivables pending', '5', 'No payment received claim'],
     ['Payables pending', '6', 'CFO controlled'],
-    ['Monthly spend', '₹18,450', 'Infrastructure view'],
+    ['Monthly spend', 'Ã¢â€šÂ¹18,450', 'Infrastructure view'],
     ['High-risk finance items', '5', 'Founder attention']
   ],
   cashRows: [
     ['Cash position pending', 'No live data', 'Bank balance not connected', 'Monitoring'],
-    ['OpenAI credit forecast', '₹1,200 expected', 'Founder approval if cap exceeded', 'Review Required'],
-    ['Supabase renewal', '₹999 expected', 'Trusted infrastructure category', 'Monitoring'],
-    ['Vercel renewal', '₹1,499 expected', 'CFO + COO confirmation required', 'Attention'],
+    ['OpenAI credit forecast', 'Ã¢â€šÂ¹1,200 expected', 'Founder approval if cap exceeded', 'Review Required'],
+    ['Supabase renewal', 'Ã¢â€šÂ¹999 expected', 'Trusted infrastructure category', 'Monitoring'],
+    ['Vercel renewal', 'Ã¢â€šÂ¹1,499 expected', 'CFO + COO confirmation required', 'Attention'],
     ['Low balance warning pending', 'Not connected', 'Use real bank feed later', 'Monitoring']
   ],
   receivablesRows: [
@@ -12601,9 +12710,9 @@ const cfoFinanceData = {
     ['Singapore Buyer', 'CI-SGP-009', 'USD 4,950', 'Review', 'Review Required', 'CFO Command']
   ],
   payableRows: [
-    ['OpenAI', 'Infrastructure credits', '₹1,200', 'Founder Approval Required', 'Payment Vault'],
-    ['Supabase', 'Database subscription', '₹999', 'CFO Auto-renew Eligible', 'Payment Vault'],
-    ['Vercel', 'Hosting renewal', '₹1,499', 'CFO + COO Confirmation', 'Payment Vault'],
+    ['OpenAI', 'Infrastructure credits', 'Ã¢â€šÂ¹1,200', 'Founder Approval Required', 'Payment Vault'],
+    ['Supabase', 'Database subscription', 'Ã¢â€šÂ¹999', 'CFO Auto-renew Eligible', 'Payment Vault'],
+    ['Vercel', 'Hosting renewal', 'Ã¢â€šÂ¹1,499', 'CFO + COO Confirmation', 'Payment Vault'],
     ['Supplier payable pending', 'Procurement', 'Manual review', 'Never auto-pay', 'Supplier Control'],
     ['Freight payable pending', 'Logistics', 'Manual review', 'Never auto-pay', 'Shipment System']
   ],
@@ -12632,18 +12741,92 @@ const cfoFinanceData = {
   ]
 };
 
-function CfoTabWorkspace({ tab, data, reportOutput, onOpenPricing, onOpenPaymentVault, onGenerateReport, onGenerateFounderSummary }) {
+function safeCfoArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function safeCfoString(value) {
+  if (value === null || value === undefined) return '';
+  if (Array.isArray(value)) return safeCfoJoin(value, ' / ');
+  if (typeof value === 'object') {
+    if (value instanceof Date) return value.toLocaleString();
+    const objectLabel = value.message
+      || value.label
+      || value.title
+      || value.name
+      || value.vendor
+      || value.company
+      || value.company_name
+      || value.status
+      || value.description;
+    if (objectLabel) return objectLabel;
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return 'Object record';
+    }
+  }
+  return String(value);
+}
+
+function safeCfoJoin(value, separator = ' ') {
+  return Array.isArray(value)
+    ? value.map((item) => safeCfoString(item)).join(separator)
+    : safeCfoString(value);
+}
+
+function getCfoObjectColumnValue(row, column, index) {
+  if (!row || typeof row !== 'object' || Array.isArray(row)) return safeCfoString(row);
+  const label = String(column || '').toLowerCase();
+  if (label.includes('vendor')) return row.vendor || row.name;
+  if (label.includes('company') || label.includes('buyer')) return row.company || row.company_name || row.buyer || row.buyer_name;
+  if (label.includes('invoice')) return row.invoice || row.invoice_number || row.invoice_id || row.id;
+  if (label.includes('quote')) return row.quote_id || row.quote || row.id;
+  if (label.includes('product')) return row.product || row.product_name;
+  if (label.includes('amount')) return formatCfoInr(row.amount ?? row.amount_inr ?? row.value);
+  if (label.includes('date') || label.includes('due')) return formatLearningDate(row.due_date || row.paid_at || row.created_at || row.date);
+  if (label.includes('receipt')) return row.receipt_status || row.receipt || row.status;
+  if (label.includes('approval')) return row.approval_state || row.approval_status || row.status;
+  if (label.includes('payment status')) return row.payment_status || row.status;
+  if (label.includes('status')) return row.status || row.payment_status || row.approval_status || row.risk_level || row.severity;
+  if (label.includes('category')) return row.category;
+  if (label.includes('linked') || label.includes('module') || label.includes('owner')) return row.linked_module || row.source_module || row.module || row.owner || row.executive_owner || row.category;
+  if (label.includes('risk type') || label === 'risk') return row.risk_type || row.type;
+  if (label.includes('risk level') || label.includes('severity')) return row.risk_level || row.severity;
+  if (label.includes('description') || label.includes('reason') || label.includes('coverage') || label.includes('notes')) return row.description || row.reason || row.summary || row.safe_notes || row.notes;
+  if (label.includes('event')) return row.event_type || row.action_type || row.event;
+  if (label.includes('actor')) return row.actor;
+  if (label.includes('margin')) return row.margin_percent || row.margin;
+  if (label.includes('target')) return row.target_margin;
+
+  const normalizedKey = label.replace(/[^a-z0-9]+(.)/g, (_, chr) => chr.toUpperCase());
+  const snakeKey = label.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  const fallbackValue = row[normalizedKey] ?? row[snakeKey] ?? Object.values(row)[index];
+  return safeCfoString(fallbackValue);
+}
+
+function normalizeCfoTableRow(row, columns = []) {
+  if (Array.isArray(row)) return row.map((cell) => safeCfoString(cell));
+  if (row && typeof row === 'object') return columns.map((column, index) => getCfoObjectColumnValue(row, column, index) || 'Not set');
+  return [safeCfoString(row)];
+}
+
+function normalizeCfoTableRows(rows, columns = []) {
+  return safeCfoArray(rows).map((row) => normalizeCfoTableRow(row, columns));
+}
+
+function CfoTabWorkspace({ tab, data, reportOutput, onOpenPricing, onOpenPaymentVault, onGenerateReport, onGenerateFounderSummary, onInitiatePayment, onSendReportSlack }) {
   if (data.loading) {
     return <section className="pricing-panel cfo-loading-panel"><MetricSkeletonGrid /></section>;
   }
   if (tab === 'Overview') return <CfoOverviewWorkspace data={data} onOpenPricing={onOpenPricing} onOpenPaymentVault={onOpenPaymentVault} onGenerateFounderSummary={onGenerateFounderSummary} />;
   if (tab === 'Cash') return <CfoCashWorkspace data={data} />;
   if (tab === 'Receivables') return <CfoReceivablesWorkspace data={data} />;
-  if (tab === 'Payables') return <CfoPayablesWorkspace data={data} onOpenPaymentVault={onOpenPaymentVault} />;
+  if (tab === 'Payables') return <CfoPayablesWorkspace data={data} onInitiatePayment={onInitiatePayment} />;
   if (tab === 'Margins') return <CfoMarginsWorkspace data={data} onOpenPricing={onOpenPricing} />;
   if (tab === 'Risks') return <CfoRisksWorkspace data={data} onOpenPricing={onOpenPricing} />;
-  if (tab === 'Payment Vault') return <CfoPaymentVaultInteractiveTab data={data} />;
-  return <CfoReportsWorkspace output={reportOutput} onGenerate={onGenerateReport} onFounderSummary={onGenerateFounderSummary} />;
+  if (tab === 'Payment Vault') return <CfoPaymentVaultWorkspace data={data} onInitiatePayment={onInitiatePayment} />;
+  return <CfoReportsWorkspace output={reportOutput} onGenerate={onGenerateReport} onFounderSummary={onGenerateFounderSummary} onSendReportSlack={onSendReportSlack} />;
 }
 
 function CfoOverviewTab({ onOpenPricing }) {
@@ -12658,7 +12841,7 @@ function CfoOverviewTab({ onOpenPricing }) {
       </div>
       <div className="cfo-finance-grid two">
         <CfoFinancePanel title="Approval Control" subtitle="Founder-sensitive finance queue" icon={FileCheck2} rows={['Low margin quotations require founder approval.', 'Invoice release remains blocked until approval.', 'Document release must route through Director Queue.', 'Payment caps remain INR-governed.']} />
-        <CfoFinancePanel title="Payment Vault Summary" subtitle="Infrastructure spend and renewals" icon={CircleDollarSign} rows={['Auto-pay allowed only for trusted infrastructure vendors.', 'Above ₹1,500 requires founder approval.', 'OTP is never stored or logged.', 'Receipts remain audit-controlled.']} />
+        <CfoFinancePanel title="Payment Vault Summary" subtitle="Infrastructure spend and renewals" icon={CircleDollarSign} rows={['Auto-pay allowed only for trusted infrastructure vendors.', 'Above Ã¢â€šÂ¹1,500 requires founder approval.', 'OTP is never stored or logged.', 'Receipts remain audit-controlled.']} />
       </div>
       <button className="tactical-button" onClick={onOpenPricing}>Open Quotations Pricing Engine</button>
     </section>
@@ -12726,27 +12909,39 @@ function CfoReportsTab({ output, onGenerate }) {
   );
 }
 
+function formatCfoInr(value) {
+  if (typeof value === 'string' && value.trim()) return value;
+  return `INR ${Number(value || 0).toLocaleString('en-IN')}`;
+}
+
+function hasCfoMoney(pnl = {}) {
+  return ['revenue', 'cogs', 'infrastructure', 'gross_profit', 'net_profit'].some((key) => Number(pnl[key] || 0) !== 0);
+}
+
+function CfoEmptyState({ message }) {
+  return <EmptyState icon={CircleDollarSign} title={message} />;
+}
+
 function CfoOverviewWorkspace({ data, onOpenPricing, onOpenPaymentVault, onGenerateFounderSummary }) {
-  const summary = data.summary || {};
+  const dashboard = data.dashboard || {};
+  const monthly = dashboard.monthly_pnl || data.monthlyPnl || {};
+  const weekly = dashboard.weekly_pnl || data.weeklyPnl || {};
+  const summary = dashboard.summary || {};
+  const recurring = safeCfoArray(data.recurringPayments).length ? safeCfoArray(data.recurringPayments) : safeCfoArray(dashboard.recurring_payments);
   const metrics = [
-    ['Pending quote approvals', summary.pendingQuoteApprovals ?? 4, 'Founder review active'],
-    ['Margin risk alerts', summary.marginRiskAlerts ?? 3, 'Below 20% or freight sensitive'],
-    ['Invoice release approvals', summary.invoiceReleaseApprovals ?? 2, 'Invoice gates active'],
-    ['Payment Vault summary', summary.paymentVaultSummary || 'INR 0', 'Infrastructure spend monitor'],
-    ['Renewal/payment alerts', summary.renewalPaymentAlerts ?? 3, 'INR caps active'],
-    ['OpenAI credit renewal', summary.openaiCreditRenewalStatus || 'Attention', 'CTO trigger, CFO execution'],
-    ['High-risk workflows', summary.highRiskWorkflows ?? 5, 'Founder attention'],
-    ['Financial approvals', 'Controlled', 'No unrestricted auto-payments']
+    ['Monthly Revenue', monthly.revenue_formatted || formatCfoInr(monthly.revenue)],
+    ['Monthly Net Profit', monthly.net_profit_formatted || formatCfoInr(monthly.net_profit)],
+    ['Weekly Revenue', weekly.revenue_formatted || formatCfoInr(weekly.revenue)],
+    ['Pending Payments', summary.pending_payments ?? 0]
   ];
+  const hasLiveData = hasCfoMoney(monthly) || hasCfoMoney(weekly) || recurring.some((row) => row.last_paid || Number(row.amount || 0) > 0);
   return (
     <section className="cfo-finance-workspace">
       <div className="cfo-finance-grid metrics">
-        {metrics.map(([label, value, note]) => <article key={label}><span>{label}</span><strong>{value}</strong><small>{note}</small></article>)}
+        {metrics.map(([label, value]) => <article key={label}><span>{label}</span><strong>{value}</strong></article>)}
       </div>
-      <div className="cfo-finance-grid two">
-        <CfoFinancePanel title="Approval Control" subtitle="Founder-sensitive finance queue" icon={FileCheck2} rows={['Low margin quotations require founder approval.', 'Invoice release remains blocked until approval.', 'Document release must route through Director Queue.', 'Payment caps remain INR-governed.']} />
-        <CfoFinancePanel title="CFO Recommendations" subtitle="Commercial control actions" icon={Sparkles} rows={summary.recommendations || ['Review margin exceptions.', 'Keep invoice release blocked until approval.', 'Validate infrastructure renewals under INR caps.']} />
-      </div>
+      {!hasLiveData ? <CfoEmptyState message="Connect Supabase payments table to see live data" /> : null}
+      <CfoRecurringPaymentsList rows={recurring} />
       <div className="cfo-report-actions">
         <button className="tactical-button" onClick={onOpenPricing}>Open Quotations Pricing Engine</button>
         <button className="ghost-button" onClick={onOpenPaymentVault}>Open Payment Vault Summary</button>
@@ -12757,59 +12952,211 @@ function CfoOverviewWorkspace({ data, onOpenPricing, onOpenPaymentVault, onGener
 }
 
 function CfoCashWorkspace({ data }) {
-  const renewalRows = (data.renewals || []).map(([vendor, date, amount, category, status]) => [vendor, amount, `${category} / ${date}`, status]);
+  const weekly = data.weeklyPnl || {};
+  const monthly = data.monthlyPnl || {};
+  const rows = [
+    ['Revenue', 'revenue', 'revenue_formatted'],
+    ['COGS', 'cogs', 'cogs_formatted'],
+    ['Infrastructure cost', 'infrastructure', 'infrastructure_formatted'],
+    ['Gross Profit', 'gross_profit', 'gross_profit_formatted'],
+    ['Net Profit', 'net_profit', 'net_profit_formatted']
+  ];
+  const allZero = !hasCfoMoney(weekly) && !hasCfoMoney(monthly);
   return (
     <section className="cfo-finance-workspace">
-      <CfoFinanceTable title="Cash Control" subtitle="Bank balances are pendings until connected" columns={['Item', 'Amount / State', 'Finance note', 'Status']} rows={[['Cash position pending', 'No live data', 'Bank balance not connected', 'Monitoring'], ...renewalRows, ['Low balance warning pending', 'Not connected', 'Use real bank feed later', 'Monitoring']]} />
-      <div className="cfo-finance-grid two">
-        <CfoFinancePanel title="Infrastructure Spending" subtitle="Renewal forecast" icon={TimerReset} rows={['OpenAI credits projected for review.', 'Supabase renewal requires CFO + COO confirmation if above ₹1,000.', 'Vercel renewal can remain under safe cap if amount stays below ₹1,000.', 'No supplier, freight, customs, tax, or arbitrary invoice auto-payment.']} />
-        <CfoFinancePanel title="CFO Notes" subtitle="Cash governance" icon={FileText} rows={['Do not claim real bank balance until bank feed exists.', 'Manual payments require audit record.', 'Founder remains OTP owner.', 'CFO executes payment after approval path clears.']} />
+      {allZero ? <CfoEmptyState message="No payments or invoices recorded yet. Data appears when leads are marked Won and payments are logged." /> : null}
+      <CfoPnlTable title="Weekly P&L" pnl={weekly} rows={rows} />
+      <CfoPnlTable title="Monthly P&L" pnl={monthly} rows={rows} />
+    </section>
+  );
+}
+
+function CfoPnlTable({ title, pnl, rows }) {
+  return (
+    <section className="pricing-panel cfo-finance-table-panel">
+      <div className="approval-section-header"><div><span>{title}</span><h2>Revenue, costs, and profit</h2></div><FileText size={18} /></div>
+      <div className="cfo-finance-table" style={{ '--cfo-cols': 2 }}>
+        <div className="cfo-finance-table-head"><span>Line</span><span>INR Value</span></div>
+        {rows.map(([label, key, formattedKey]) => (
+          <div key={key}><strong>{label}</strong><span>{pnl?.[formattedKey] || formatCfoInr(pnl?.[key])}</span></div>
+        ))}
       </div>
     </section>
   );
 }
 
 function CfoReceivablesWorkspace({ data }) {
-  return <section className="cfo-finance-workspace"><CfoFinanceTable title="Receivables" subtitle="Buyer invoice follow-up pendings. No payment is marked received without backend confirmation." columns={['Invoice', 'Buyer', 'Amount', 'Due date', 'Owner', 'Status', 'Shipment']} rows={data.receivables || []} /></section>;
-}
-
-function CfoPayablesWorkspace({ data, onOpenPaymentVault }) {
+  const rows = safeCfoArray(data.receivables);
   return (
     <section className="cfo-finance-workspace">
-      <CfoFinanceTable title="Payables" subtitle="Vendor, subscription, and payable approval control" columns={['Vendor', 'Category', 'Amount', 'Approval state', 'Linked module']} rows={data.payables || cfoFinanceData.payableRows} />
-      <CfoFinancePanel title="Payment Vault Connection" subtitle="Governed payment routing" icon={Database} rows={['Infrastructure renewals route to Payment Vault.', 'Supplier, freight, customs, tax, salaries, refunds are never auto-paid.', 'New vendors always require founder approval.', 'High-risk vendors always require founder approval.']} />
-      <button className="tactical-button" onClick={onOpenPaymentVault}>Review Payment Vault</button>
+      {rows.length ? (
+        <CfoFinanceTable title="Receivables" subtitle="Open buyer receivables from Supabase lead status" columns={['Company', 'Amount', 'Status', 'Date']} rows={rows.map((row) => {
+          const item = row || {};
+          return [item.company || item.company_name || 'Company pending', formatCfoInr(item.amount), item.status || 'Open', formatLearningDate(item.created_at || item.date)];
+        })} />
+      ) : <CfoEmptyState message="No open receivables. Receivables appear when leads are marked Active, Negotiation, Won, or Invoiced in Supabase." />}
+    </section>
+  );
+}
+
+function CfoPayablesWorkspace({ data, onInitiatePayment }) {
+  const rows = safeCfoArray(data.payables);
+  const [paymentResult, setPaymentResult] = useState('');
+  async function makePayment(row) {
+    const response = await onInitiatePayment({
+      vendor: row.vendor,
+      amount: row.amount,
+      category: row.category || 'Other',
+      description: `Payable payment for ${row.vendor}`
+    });
+    setPaymentResult(response.label || response.data?.status || response.error || 'Payment processed.');
+  }
+  return (
+    <section className="cfo-finance-workspace">
+      {rows.length ? (
+        <section className="pricing-panel cfo-finance-table-panel">
+          <div className="approval-section-header"><div><span>Payables</span><h2>Pending vendor payments</h2></div><Database size={18} /></div>
+          <div className="cfo-finance-table" style={{ '--cfo-cols': 6 }}>
+            <div className="cfo-finance-table-head">{['Vendor', 'Amount', 'Status', 'Category', 'Date', 'Action'].map((column) => <span key={column}>{column}</span>)}</div>
+            {rows.map((row, index) => {
+              const item = row || {};
+              return (
+              <div key={item.id || `${item.vendor || 'vendor'}-${item.created_at || index}`}>
+                <strong>{item.vendor || 'Vendor pending'}</strong>
+                <span>{formatCfoInr(item.amount)}</span>
+                <span>{item.status || 'Pending'}</span>
+                <span>{item.category || 'Other'}</span>
+                <span>{formatLearningDate(item.created_at || item.paid_at)}</span>
+                <span><button className="ghost-button" onClick={() => makePayment(item)}>Make Payment</button></span>
+              </div>
+              );
+            })}
+          </div>
+        </section>
+      ) : <CfoEmptyState message="No pending payables." />}
+      {paymentResult ? <pre className="cfo-report-output">{paymentResult}</pre> : null}
     </section>
   );
 }
 
 function CfoMarginsWorkspace({ data, onOpenPricing }) {
-  const rows = data.marginAnalytics?.byProduct || cfoFinanceData.marginRows.map(([product, , destination, margin, status]) => [product, destination, margin, status]);
+  const productRows = safeCfoArray(data.marginAnalytics?.byProduct);
+  const riskyQuotes = safeCfoArray(data.marginAnalytics?.riskyQuotes);
   return (
     <section className="cfo-finance-workspace">
-      <CfoFinanceTable title="Margin Intelligence" subtitle="Product, country, buyer, and destination margin review" columns={['Product', 'Destination', 'Margin', 'Status']} rows={rows} />
-      <div className="cfo-margin-bars">{rows.map(([product, destination, margin, status]) => <div key={`${product}-${destination}`}><span>{product} / {destination}</span><i><b style={{ width: `${Math.min(100, Number(String(margin).replace('%', '')) * 3)}%` }} /></i><strong>{margin}</strong><small>{status}</small></div>)}</div>
-      <CfoFinanceTable title="Freight & FX Impact" subtitle="Risk inputs affecting commercial margin" columns={['Lane / basis', 'Impact', 'CFO note']} rows={data.marginAnalytics?.freightImpact || [['CIF quotes', 'Freight required', 'Validate before release']]} />
+      {productRows.length || riskyQuotes.length ? null : <CfoEmptyState message="Margin data appears when quotes are generated through the Pricing Engine." />}
+      {productRows.length ? <CfoFinanceTable title="By Product" subtitle="Product margin analytics" columns={['Product', 'Margin %']} rows={productRows.map((row) => {
+        const item = row || {};
+        return [item.product || item[0] || 'Product pending', item.margin_percent || item.margin || item[1] || '0%'];
+      })} /> : null}
+      {riskyQuotes.length ? <CfoFinanceTable title="Risky Quotes" subtitle="Quotes below target margin" columns={['Quote', 'Product', 'Margin', 'Target']} rows={riskyQuotes.map((row) => {
+        const item = row || {};
+        return [item.quote_id || item.id || 'Quote pending', item.product || 'Product pending', item.margin_percent || item.margin || '0%', item.target_margin || 'Target pending'];
+      })} /> : null}
       <button className="tactical-button" onClick={onOpenPricing}>Open Quotations</button>
     </section>
   );
 }
 
 function CfoRisksWorkspace({ data, onOpenPricing }) {
+  const risks = safeCfoArray(data.risks);
   return (
     <section className="cfo-finance-workspace">
-      <CfoFinanceTable title="Finance Risk Register" subtitle="Commercial approval, payment, and pricing risks" columns={['Risk', 'Severity', 'Reason']} rows={data.risks || cfoFinanceData.riskRows} />
-      <div className="cfo-finance-grid two">
-        <CfoFinancePanel title="Approval Logic" subtitle="Founder-controlled gates" icon={TriangleAlert} rows={['Margin < 20% requires founder approval.', 'Payment > ₹1,500 requires founder approval.', 'Unknown vendor or high-risk buyer requires founder approval.', 'Aggressive pricing or high freight uncertainty requires review.']} />
-        <CfoFinancePanel title="Recommended CFO Action" subtitle="Next decisions" icon={Workflow} rows={['Prioritize pricing and invoice approvals before buyer release.', 'Confirm freight/insurance for CIF quotes.', 'Keep manual FX overrides auditable.', 'Escalate critical missing cost inputs.']} />
-      </div>
+      {risks.length ? (
+        <section className="pricing-panel cfo-finance-table-panel">
+          <div className="approval-section-header"><div><span>Finance Risk Register</span><h2>Detected commercial and payment risks</h2></div><TriangleAlert size={18} /></div>
+          <div className="cfo-finance-table" style={{ '--cfo-cols': 5 }}>
+            <div className="cfo-finance-table-head">{['Risk type', 'Vendor', 'Amount', 'Risk level', 'Description'].map((column) => <span key={column}>{column}</span>)}</div>
+            {risks.map((risk, index) => {
+              const item = risk || {};
+              return (
+              <div key={item.id || `${item.type || 'risk'}-${item.vendor || index}`}>
+                <strong>{item.type || 'Financial Risk'}</strong>
+                <span>{item.vendor || 'Vendor pending'}</span>
+                <span>{formatCfoInr(item.amount)}</span>
+                <span><SeverityBadge severity={item.risk_level || 'Low'} /></span>
+                <span>{item.description || 'No description recorded.'}</span>
+              </div>
+              );
+            })}
+          </div>
+        </section>
+      ) : <CfoEmptyState message="No financial risks detected." />}
       <button className="tactical-button" onClick={onOpenPricing}>Review Pricing Risks</button>
+    </section>
+  );
+}
+
+function CfoPaymentVaultWorkspace({ data, onInitiatePayment }) {
+  const vault = data.paymentVault || {};
+  const metrics = safeCfoArray(vault.metrics);
+  const recentPayments = safeCfoArray(vault.recentPayments);
+  const workflowSteps = safeCfoArray(vault.workflowSteps);
+  const [form, setForm] = useState({ vendor: '', amount: '', category: 'Hosting', description: '' });
+  const [result, setResult] = useState('');
+
+  function update(field, value) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  async function submitPayment() {
+    const response = await onInitiatePayment({
+      vendor: form.vendor,
+      amount: form.amount,
+      category: form.category,
+      description: form.description
+    });
+    setResult(response.label || response.data?.status || response.error || 'Payment request processed.');
+  }
+
+  return (
+    <section className="cfo-finance-workspace">
+      <div className="cfo-finance-grid metrics">
+        {metrics.map((metric, index) => {
+          const item = metric || {};
+          return <article key={`${item.label || item[0] || 'metric'}-${index}`}><span>{item.label || item[0] || `Metric ${index + 1}`}</span><strong>{item.value ?? item[1] ?? 'Not set'}</strong></article>;
+        })}
+      </div>
+      <section className="pricing-panel cfo-finance-table-panel">
+        <div className="approval-section-header"><div><span>Recent Payments</span><h2>Payment Vault records</h2></div><FileCheck2 size={18} /></div>
+        {recentPayments.length ? (
+          <div className="cfo-finance-table" style={{ '--cfo-cols': 4 }}>
+            <div className="cfo-finance-table-head">{['Vendor', 'Amount', 'Status', 'Date'].map((column) => <span key={column}>{column}</span>)}</div>
+            {recentPayments.map((row, index) => {
+              const item = row || {};
+              return (
+              <div key={item.id || `${item.vendor || item[0] || 'payment'}-${item.created_at || index}`}>
+                <strong>{item.vendor || item[0] || 'Vendor pending'}</strong>
+                <span>{formatCfoInr(item.amount ?? item[1])}</span>
+                <span>{item.status || item[2] || 'Pending'}</span>
+                <span>{formatLearningDate(item.paid_at || item.created_at || item[3])}</span>
+              </div>
+              );
+            })}
+          </div>
+        ) : <CfoEmptyState message="No recent payments recorded." />}
+      </section>
+      <section className="pricing-panel">
+        <div className="approval-section-header"><div><span>Payment Workflow</span><h2>Approval and OTP-safe sequence</h2></div><Route size={18} /></div>
+        <ol className="cfo-workflow-steps">{workflowSteps.map((step, index) => <li key={`${safeCfoString(step)}-${index}`}>{safeCfoString(step)}</li>)}</ol>
+      </section>
+      <section className="pricing-panel cfo-payment-form">
+        <div className="approval-section-header"><div><span>Initiate Payment</span><h2>Submit INR payment request</h2></div><CircleDollarSign size={18} /></div>
+        <label>Vendor<input value={form.vendor} onChange={(event) => update('vendor', event.target.value)} placeholder="Vendor name" /></label>
+        <label>Amount in INR<input type="number" value={form.amount} onChange={(event) => update('amount', event.target.value)} placeholder="0" /></label>
+        <label>Category<select value={form.category} onChange={(event) => update('category', event.target.value)}>{['Hosting', 'Database', 'AI Credits', 'Email API', 'Domain', 'Other'].map((item) => <option key={item}>{item}</option>)}</select></label>
+        <label>Description<input value={form.description} onChange={(event) => update('description', event.target.value)} placeholder="Payment description" /></label>
+        <button className="tactical-button" onClick={submitPayment}>Submit Payment</button>
+        {result ? <pre className="cfo-report-output">{result}</pre> : null}
+      </section>
     </section>
   );
 }
 
 function CfoPaymentVaultInteractiveTab({ data }) {
   const vault = data.paymentVault || {};
+  const vaultMetrics = safeCfoArray(vault.metrics);
+  const vaultRecentPayments = safeCfoArray(vault.recentPayments);
   const [activeVaultTab, setActiveVaultTab] = useState('Billing Methods');
   const [billingMethods, setBillingMethods] = useState([]);
   const [selectedBillingId, setSelectedBillingId] = useState('');
@@ -12864,7 +13211,13 @@ function CfoPaymentVaultInteractiveTab({ data }) {
         {paymentVaultTabs.map((tab) => <button key={tab} className={activeVaultTab === tab ? 'active' : ''} onClick={() => setActiveVaultTab(tab)}>{tab}</button>)}
       </nav>
       <div className="cfo-finance-grid metrics">
-        {(vault.metrics || []).map(([label, value, status]) => <article key={label}><span>{label}</span><strong>{value}</strong><small>{status}</small></article>)}
+        {vaultMetrics.map((metric, index) => {
+          const item = metric || {};
+          const label = item.label || item[0] || `Metric ${index + 1}`;
+          const value = item.value ?? item[1] ?? 'Not set';
+          const status = item.status || item[2] || 'Monitoring';
+          return <article key={`${label}-${index}`}><span>{label}</span><strong>{value}</strong><small>{status}</small></article>;
+        })}
       </div>
       {activeVaultTab === 'Billing Methods' && (
         <section className="payment-vault-workspace payment-vault-workspace-two secure-billing-workspace cfo-inline-vault-workspace">
@@ -12876,16 +13229,16 @@ function CfoPaymentVaultInteractiveTab({ data }) {
       {activeVaultTab === 'Overview' && (
         <>
           <BillingVaultOverview billingMethods={billingMethods} providerConnected={billingMethods.length > 0} onConnect={() => setConnectModalOpen(true)} />
-          <CfoFinanceTable title="Recent Payment Vault Records" subtitle="CFO-controlled infrastructure payment evidence" columns={['Vendor', 'Amount INR', 'Payment status', 'Receipt status']} rows={vault.recentPayments || [['OpenAI', '₹950', 'OTP Required', 'Receipt Pending']]} />
+          <CfoFinanceTable title="Recent Payment Vault Records" subtitle="CFO-controlled infrastructure payment evidence" columns={['Vendor', 'Amount INR', 'Payment status', 'Receipt status']} rows={vaultRecentPayments.length ? vaultRecentPayments : [['OpenAI', 'Ã¢â€šÂ¹950', 'OTP Required', 'Receipt Pending']]} />
         </>
       )}
-      {activeVaultTab === 'Payments' && <CfoFinanceTable title="Recent Payment Vault Records" subtitle="CFO-controlled infrastructure payment evidence" columns={['Vendor', 'Amount INR', 'Payment status', 'Receipt status']} rows={vault.recentPayments || [['OpenAI', '₹950', 'OTP Required', 'Receipt Pending']]} />}
+      {activeVaultTab === 'Payments' && <CfoFinanceTable title="Recent Payment Vault Records" subtitle="CFO-controlled infrastructure payment evidence" columns={['Vendor', 'Amount INR', 'Payment status', 'Receipt status']} rows={vaultRecentPayments.length ? vaultRecentPayments : [['OpenAI', 'Ã¢â€šÂ¹950', 'OTP Required', 'Receipt Pending']]} />}
       {activeVaultTab === 'Renewals' && <RenewalForecastPanel forecasts={paymentForecastSeed} expanded={paymentForecastSeed[0]?.id} onToggle={() => setNotice('Renewal forecast opened. Payment execution still requires token, INR limit, and approval rule.')} />}
       {activeVaultTab === 'Vendors' && <VendorTrustRegistry vendors={vendorTrustSeed} />}
       {activeVaultTab === 'Receipts' && <ReceiptRepository receipts={paymentReceiptsSeed} onMarkReviewed={(id) => setNotice(`Receipt ${id} marked reviewed locally.`)} />}
       {activeVaultTab === 'Audit' && <BillingAuditPanel audit={billingAudit} />}
       <div className="cfo-finance-grid two">
-        <CfoFinancePanel title="Payment Governance Rules" subtitle="INR-capped and founder-controlled" icon={ShieldCheck} rows={['≤ ₹1,000: CFO-controlled auto-renew only for trusted infrastructure vendors.', '₹1,001-₹1,500: CFO + COO confirmation required.', '> ₹1,500: Director review required.', 'Never auto-pay suppliers, freight, customs, tax, salaries, refunds, or arbitrary invoices.']} />
+        <CfoFinancePanel title="Payment Governance Rules" subtitle="INR-capped and founder-controlled" icon={ShieldCheck} rows={['Ã¢â€°Â¤ Ã¢â€šÂ¹1,000: CFO-controlled auto-renew only for trusted infrastructure vendors.', 'Ã¢â€šÂ¹1,001-Ã¢â€šÂ¹1,500: CFO + COO confirmation required.', '> Ã¢â€šÂ¹1,500: Director review required.', 'Never auto-pay suppliers, freight, customs, tax, salaries, refunds, or arbitrary invoices.']} />
         <CfoFinancePanel title="OTP Security Rule" subtitle="CFO payment confirmation" icon={LockKeyhole} rows={['Founder receives OTP externally.', 'Founder securely shares OTP with CFO.', 'CFO enters OTP once in secure confirmation screen.', 'OTP is never stored, logged, reused, or included in AI memory.']} />
       </div>
       {connectModalOpen && <ConnectBillingMethodModal onCancel={() => setConnectModalOpen(false)} onTokenize={connectCfoBillingMethod} />}
@@ -12895,39 +13248,69 @@ function CfoPaymentVaultInteractiveTab({ data }) {
 
 function CfoPaymentVaultTab({ data }) {
   const vault = data.paymentVault || {};
+  const vaultMetrics = safeCfoArray(vault.metrics);
+  const vaultRecentPayments = safeCfoArray(vault.recentPayments);
+  const vaultWorkflowSteps = safeCfoArray(vault.workflowSteps);
+  const vaultAuditLog = safeCfoArray(vault.auditLog);
   return (
     <section className="cfo-finance-workspace">
       <div className="cfo-finance-grid metrics">
-        {(vault.metrics || []).map(([label, value, status]) => <article key={label}><span>{label}</span><strong>{value}</strong><small>{status}</small></article>)}
+        {vaultMetrics.map((metric, index) => {
+          const item = metric || {};
+          const label = item.label || item[0] || `Metric ${index + 1}`;
+          const value = item.value ?? item[1] ?? 'Not set';
+          const status = item.status || item[2] || 'Monitoring';
+          return <article key={`${label}-${index}`}><span>{label}</span><strong>{value}</strong><small>{status}</small></article>;
+        })}
       </div>
-      <CfoFinanceTable title="Recent Payment Vault Records" subtitle="CFO-controlled infrastructure payment evidence" columns={['Vendor', 'Amount INR', 'Payment status', 'Receipt status']} rows={vault.recentPayments || [['OpenAI', '₹950', 'OTP Required', 'Receipt Pending']]} />
+      <CfoFinanceTable title="Recent Payment Vault Records" subtitle="CFO-controlled infrastructure payment evidence" columns={['Vendor', 'Amount INR', 'Payment status', 'Receipt status']} rows={vaultRecentPayments.length ? vaultRecentPayments : [['OpenAI', 'Ã¢â€šÂ¹950', 'OTP Required', 'Receipt Pending']]} />
       <div className="cfo-finance-grid two">
-        <CfoFinancePanel title="Payment Governance Rules" subtitle="INR-capped and founder-controlled" icon={ShieldCheck} rows={['≤ ₹1,000: CFO-controlled auto-renew only for trusted infrastructure vendors.', '₹1,001-₹1,500: CFO + COO confirmation required.', '> ₹1,500: Founder approval mandatory.', 'Never auto-pay suppliers, freight, customs, tax, salaries, refunds, or arbitrary invoices.']} />
+        <CfoFinancePanel title="Payment Governance Rules" subtitle="INR-capped and founder-controlled" icon={ShieldCheck} rows={['Ã¢â€°Â¤ Ã¢â€šÂ¹1,000: CFO-controlled auto-renew only for trusted infrastructure vendors.', 'Ã¢â€šÂ¹1,001-Ã¢â€šÂ¹1,500: CFO + COO confirmation required.', '> Ã¢â€šÂ¹1,500: Founder approval mandatory.', 'Never auto-pay suppliers, freight, customs, tax, salaries, refunds, or arbitrary invoices.']} />
         <CfoFinancePanel title="OTP Security Rule" subtitle="CFO payment confirmation" icon={LockKeyhole} rows={['Founder receives OTP externally.', 'Founder securely shares OTP with CFO.', 'CFO enters OTP once in secure confirmation screen.', 'OTP is never stored, logged, reused, or included in AI memory.']} />
       </div>
-      <CfoFinancePanel title="Payment Workflow" subtitle="CTO detects, CFO executes" icon={Route} rows={vault.workflowSteps || ['CTO detects renewal.', 'COO confirms need.', 'CFO validates and executes.', 'Founder approval/OTP if required.', 'CFO stores receipt in Payment Vault.']} />
-      <CfoFinanceTable title="Payment Audit Visibility" subtitle="Audit records never contain OTP values" columns={['Actor', 'Event', 'Notes']} rows={vault.auditLog || [['CFO Command', 'Vault update', 'Receipt pending']]} />
+      <CfoFinancePanel title="Payment Workflow" subtitle="CTO detects, CFO executes" icon={Route} rows={vaultWorkflowSteps.length ? vaultWorkflowSteps : ['CTO detects renewal.', 'COO confirms need.', 'CFO validates and executes.', 'Founder approval/OTP if required.', 'CFO stores receipt in Payment Vault.']} />
+      <CfoFinanceTable title="Payment Audit Visibility" subtitle="Audit records never contain OTP values" columns={['Actor', 'Event', 'Notes']} rows={vaultAuditLog.length ? vaultAuditLog : [['CFO Command', 'Vault update', 'Receipt pending']]} />
     </section>
   );
 }
 
-function CfoReportsWorkspace({ output, onGenerate, onFounderSummary }) {
+function CfoReportsWorkspace({ output, onGenerate, onFounderSummary, onSendReportSlack }) {
   return (
     <section className="cfo-finance-workspace">
-      <CfoFinanceTable title="Reports" subtitle="Draft CFO reporting center" columns={['Report', 'Status', 'Coverage']} rows={cfoFinanceData.reportRows} />
       <div className="cfo-report-actions">
         <button className="tactical-button" onClick={onGenerate}>Generate Report</button>
-        <button className="ghost-button" onClick={onGenerate}>Export Draft Report</button>
+        <button className="ghost-button" onClick={onSendReportSlack}>Send Report to Slack</button>
         <button className="ghost-button" onClick={onFounderSummary}>Founder Financial Summary</button>
       </div>
-      {output && <pre className="cfo-report-output">{output}</pre>}
+      {output ? <pre className="cfo-report-output">{output}</pre> : <CfoEmptyState message="Generate CFO report to view finance summary." />}
     </section>
   );
 }
 
 function CfoIntelligencePanel({ data, onOpenPricing, onOpenPaymentVault }) {
-  const risks = (data.risks || cfoFinanceData.riskRows).slice(0, 6);
-  const renewals = (data.renewals || []).slice(0, 4);
+  const sourceRisks = safeCfoArray(data.risks).length ? safeCfoArray(data.risks) : cfoFinanceData.riskRows;
+  const risks = safeCfoArray(sourceRisks).slice(0, 6).map((risk) => Array.isArray(risk)
+    ? risk
+    : (() => {
+      const item = risk || {};
+      return [
+        item.type || item.risk_type || 'Financial Risk',
+        item.risk_level || item.severity || 'Low',
+        item.description || item.reason || item.vendor || 'No description recorded.'
+      ];
+    })());
+  const renewals = safeCfoArray(data.renewals).slice(0, 4).map((row) => Array.isArray(row)
+    ? row
+    : (() => {
+      const item = row || {};
+      return [
+        item.vendor || item.name || 'Renewal',
+        item.due_date || item.created_at || item.frequency || 'Pending date',
+        formatCfoInr(item.amount),
+        item.status || item.category || 'Monitoring',
+        item.category || item.frequency || ''
+      ];
+    })());
   const [openedItem, setOpenedItem] = useState('');
   return (
     <aside className="pricing-panel cfo-intelligence-panel">
@@ -12943,11 +13326,15 @@ function CfoIntelligencePanel({ data, onOpenPricing, onOpenPaymentVault }) {
       {openedItem && <div className="cfo-inline-detail"><strong>Risk opened</strong><span>{openedItem}</span><small>Route to pricing, Payment Vault, or Director approval if this risk blocks release.</small></div>}
       <div className="cfo-intelligence-subpanel">
         <strong>Renewal Risks</strong>
-        {(renewals.length ? renewals : [['OpenAI credits', '2026-05-31', '₹950', 'Attention']]).map((row) => <button type="button" key={row.join('-')} onClick={() => setOpenedItem(`Renewal: ${row.join(' / ')}`)}>{row[0]} / {row[2]} / {row[4] || row[3]}</button>)}
+        {(renewals.length ? renewals : [['OpenAI credits', '2026-05-31', 'Ã¢â€šÂ¹950', 'Attention']]).map((row, index) => {
+          const rowKey = safeCfoJoin(row, '-');
+          const rowDetail = safeCfoJoin(row, ' / ');
+          return <button type="button" key={`${rowKey}-${index}`} onClick={() => setOpenedItem(`Renewal: ${rowDetail}`)}>{row[0]} / {row[2]} / {row[4] || row[3]}</button>;
+        })}
       </div>
       <div className="cfo-intelligence-subpanel">
         <strong>Approval Logic</strong>
-        {['Margin < 20% requires founder approval.', 'Payment > ₹1,500 requires founder approval.', 'Unknown vendor or high-risk buyer requires founder approval.', 'Aggressive pricing or freight uncertainty requires review.'].map((item) => <button type="button" key={item} onClick={() => setOpenedItem(item)}>{item}</button>)}
+        {['Margin < 20% requires founder approval.', 'Payment > Ã¢â€šÂ¹1,500 requires founder approval.', 'Unknown vendor or high-risk buyer requires founder approval.', 'Aggressive pricing or freight uncertainty requires review.'].map((item) => <button type="button" key={item} onClick={() => setOpenedItem(item)}>{item}</button>)}
       </div>
       <div className="cfo-report-actions">
         <button className="tactical-button" onClick={onOpenPricing}>Review Quotations</button>
@@ -12959,10 +13346,14 @@ function CfoIntelligencePanel({ data, onOpenPricing, onOpenPaymentVault }) {
 
 function CfoFinancePanel({ title, subtitle, icon: Icon, rows }) {
   const [selectedRow, setSelectedRow] = useState('');
+  const safeRows = safeCfoArray(rows);
   return (
     <section className="pricing-panel cfo-finance-panel">
       <div className="approval-section-header"><div><span>{title}</span><h2>{subtitle}</h2></div><Icon size={18} /></div>
-      <div className="approval-memory-list cfo-action-list">{rows.map((row) => <button type="button" key={row} onClick={() => setSelectedRow(row)}>{row}</button>)}</div>
+      <div className="approval-memory-list cfo-action-list">{safeRows.map((row, index) => {
+        const label = safeCfoString(row);
+        return <button type="button" key={`${label}-${index}`} onClick={() => setSelectedRow(label)}>{label}</button>;
+      })}</div>
       {selectedRow && (
         <div className="cfo-inline-detail">
           <strong>{title}</strong>
@@ -12976,21 +13367,27 @@ function CfoFinancePanel({ title, subtitle, icon: Icon, rows }) {
 
 function CfoFinanceTable({ title, subtitle, columns, rows }) {
   const [selectedRow, setSelectedRow] = useState(null);
+  const safeColumns = safeCfoArray(columns);
+  const safeRows = normalizeCfoTableRows(rows, safeColumns);
+  const selectedKey = selectedRow ? safeCfoJoin(selectedRow, '-') : '';
   return (
     <section className="pricing-panel cfo-finance-table-panel">
       <div className="approval-section-header"><div><span>{title}</span><h2>{subtitle}</h2></div><CircleDollarSign size={18} /></div>
-      <div className="cfo-finance-table" style={{ '--cfo-cols': columns.length }}>
-        <div className="cfo-finance-table-head">{columns.map((column) => <span key={column}>{column}</span>)}</div>
-        {rows.map((row) => (
-          <button type="button" key={row.join('-')} className={selectedRow?.join('-') === row.join('-') ? 'selected' : ''} onClick={() => setSelectedRow(row)}>
-            {row.map((cell, index) => index === 0 ? <strong key={`${row[0]}-${index}`}>{cell}</strong> : <span key={`${row[0]}-${index}`}>{cell}</span>)}
-          </button>
-        ))}
+      <div className="cfo-finance-table" style={{ '--cfo-cols': safeColumns.length || 1 }}>
+        <div className="cfo-finance-table-head">{safeColumns.map((column) => <span key={column}>{column}</span>)}</div>
+        {safeRows.map((row, rowIndex) => {
+          const rowKey = safeCfoJoin(row, '-') || `row-${rowIndex}`;
+          return (
+            <button type="button" key={`${rowKey}-${rowIndex}`} className={selectedKey === rowKey ? 'selected' : ''} onClick={() => setSelectedRow(row)}>
+              {row.map((cell, index) => index === 0 ? <strong key={`${rowKey}-${index}`}>{cell}</strong> : <span key={`${rowKey}-${index}`}>{cell}</span>)}
+            </button>
+          );
+        })}
       </div>
       {selectedRow && (
         <div className="cfo-inline-detail">
           <strong>{selectedRow[0]}</strong>
-          <span>{columns.map((column, index) => `${column}: ${selectedRow[index] || 'Not set'}`).join(' / ')}</span>
+          <span>{safeCfoJoin(safeColumns.map((column, index) => `${column}: ${selectedRow[index] || 'Not set'}`), ' / ')}</span>
           <small>Opened from {title}. Review status, owner, amount, and approval requirements before any payment or buyer-facing action.</small>
         </div>
       )}
@@ -13085,7 +13482,7 @@ function PricingSelect({ label, value, options, error, onChange }) {
 function CommercialAssumptionsPanel({ inputs, costRows, risk }) {
   const productKey = marketProductKey(inputs.product_name === otherPricingOption ? inputs.custom_product_name : inputs.product_name);
   const marketPrice = pricingMarketFallbacks[productKey];
-  const included = costRows.filter((row) => row.included).map((row) => row.label).join(', ') || 'None';
+  const included = safeCfoJoin(safeCfoArray(costRows).filter((row) => row.included).map((row) => row.label), ', ') || 'None';
   const missingOldLogic = ['HSN preset', 'MOQ preset', 'supplier cluster', 'product freight preset', 'country payment preset', 'country risk profile'];
   const assumptions = [
     ['Destination Port', inputs.destination_port || 'Auto-selected after country'],
@@ -13107,7 +13504,7 @@ function CommercialAssumptionsPanel({ inputs, costRows, risk }) {
       </div>
       <div className="missing-logic-box">
         <strong>Old logic not found for</strong>
-        <p>{missingOldLogic.join(', ')}. These are not invented in the commercial core.</p>
+        <p>{safeCfoJoin(missingOldLogic, ', ')}. These are not invented in the commercial core.</p>
       </div>
     </section>
   );
@@ -13991,8 +14388,8 @@ function InvoiceWorkspaceHeader({ invoice, blockers, canRelease, onSaveDraft, on
     <section className="invoice-workspace-header">
       <div>
         <span>Professional Invoice Workspace</span>
-        <h2>{invoice.invoice_number || 'Draft invoice'} · {invoice.invoice_type}</h2>
-        <p>{invoice.export_mode} · IGST 0% under LUT · {blockers.length ? `${blockers.length} critical blocker(s)` : 'Validation clear'}</p>
+        <h2>{invoice.invoice_number || 'Draft invoice'} Ã‚Â· {invoice.invoice_type}</h2>
+        <p>{invoice.export_mode} Ã‚Â· IGST 0% under LUT Ã‚Â· {blockers.length ? `${blockers.length} critical blocker(s)` : 'Validation clear'}</p>
       </div>
       <div className="invoice-action-bar">
         <button className="ghost-button" onClick={onSaveDraft}>Save Draft</button>
@@ -14082,11 +14479,11 @@ function LUTInvoicePanel({ snapshot, navigate }) {
   const inactive = !['Active', 'Verified'].includes(snapshot.lut_status);
   const notVerified = snapshot.lut_founder_verified_status !== 'Verified';
   const message = incomplete
-    ? 'LUT incomplete — invoice release blocked.'
+    ? 'LUT incomplete Ã¢â‚¬â€ invoice release blocked.'
     : expired
-      ? 'LUT expired — invoice release blocked.'
+      ? 'LUT expired Ã¢â‚¬â€ invoice release blocked.'
       : inactive
-        ? 'LUT status needs review — invoice release blocked.'
+        ? 'LUT status needs review Ã¢â‚¬â€ invoice release blocked.'
         : notVerified
           ? 'Founder verification required before invoice release.'
           : 'LUT data available for invoice release validation.';
@@ -14147,7 +14544,7 @@ function ValidationChecklist({ validation, navigate }) {
   const failed = validation.filter((check) => check.status === 'Failed');
   const groups = ['Company', 'LUT', 'Buyer', 'Product', 'Export', 'Approval', 'Commercial', 'Bank', 'Packing', 'Release', 'Document Type', 'Invoice', 'System'];
   const grouped = groups.map((group) => [group, validation.filter((check) => check.group === group)]).filter(([, rows]) => rows.length);
-  return <section className="invoice-side-panel validation-checklist-panel"><div className="approval-section-header"><div><span>Validation Checklist</span><h2>{failed.length ? `${failed.length} blockers` : 'Validation Passed'}</h2></div><TriangleAlert size={18} /></div><div className="validation-list grouped">{grouped.map(([group, rows]) => <div className="validation-group" key={group}><h3>{group}</h3>{rows.map((check) => <div className={check.status.toLowerCase()} key={check.key}><strong>{check.status === 'Passed' ? '✓' : 'Blocked'} {check.message}</strong><span>{check.owner}</span>{check.status === 'Failed' && <button onClick={() => navigate(check.group === 'LUT' || check.group === 'Company' ? '/export-os/company-master-data' : check.group === 'Commercial' ? '/export-os/pricing-engine' : '/export-os/director')}>Fix</button>}</div>)}</div>)}</div></section>;
+  return <section className="invoice-side-panel validation-checklist-panel"><div className="approval-section-header"><div><span>Validation Checklist</span><h2>{failed.length ? `${failed.length} blockers` : 'Validation Passed'}</h2></div><TriangleAlert size={18} /></div><div className="validation-list grouped">{grouped.map(([group, rows]) => <div className="validation-group" key={group}><h3>{group}</h3>{rows.map((check) => <div className={check.status.toLowerCase()} key={check.key}><strong>{check.status === 'Passed' ? 'Ã¢Å“â€œ' : 'Blocked'} {check.message}</strong><span>{check.owner}</span>{check.status === 'Failed' && <button onClick={() => navigate(check.group === 'LUT' || check.group === 'Company' ? '/export-os/company-master-data' : check.group === 'Commercial' ? '/export-os/pricing-engine' : '/export-os/director')}>Fix</button>}</div>)}</div>)}</div></section>;
 }
 
 function ApprovalRoutingPanel({ invoice, blockers, navigate, onValidate, onCreateApproval }) {
@@ -14220,7 +14617,7 @@ function normalizeKanbanStatus(status = 'To Do') {
   return 'To Do';
 }
 
-function KanbanBoard({ tasks = [], onStatusChange }) {
+function KanbanBoard({ tasks = [], onStatusChange, onCreateTask }) {
   const { onDragStart, onDragEnd, onDragOver, onDragLeave, onDropCol, overCol } = useDragDrop((task, newStatus) => onStatusChange(task, newStatus));
   return (
     <div className="kanban-board" role="region" aria-label="Task board">
@@ -14230,7 +14627,13 @@ function KanbanBoard({ tasks = [], onStatusChange }) {
           <div key={col.key} className={`kanban-col ${overCol === col.key ? 'drag-over' : ''}`} onDragOver={(e) => onDragOver(e, col.key)} onDragLeave={onDragLeave} onDrop={(e) => onDropCol(e, col.key)} aria-label={`${col.label} column, ${colTasks.length} tasks`}>
             <header className="kanban-col-header"><span className="kanban-col-dot" style={{ background: col.color }} aria-hidden="true" /><span className="kanban-col-title">{col.label}</span><span className="kanban-col-count">{colTasks.length}</span></header>
             <div className="kanban-cards stagger-list">
-              {colTasks.length === 0 && <div className="kanban-empty">Drop tasks here</div>}
+              {colTasks.length === 0 && (
+                <div className="kanban-empty task-kanban-empty">
+                  <ClipboardCheck size={22} />
+                  <strong>No {col.label.toLowerCase()} tasks</strong>
+                  <button onClick={onCreateTask}>Create Task</button>
+                </div>
+              )}
               {colTasks.map((task) => {
                 const due = task.due_date ? new Date(task.due_date) : null;
                 const validDue = due && !Number.isNaN(due.getTime());
@@ -14264,8 +14667,19 @@ function TaskFollowupEngine({ navigate, onBack }) {
   const [note, setNote] = useState('');
   const [dailyPlan, setDailyPlan] = useState('');
   const [founderSummary, setFounderSummary] = useState('');
+  const [taskNotice, setTaskNotice] = useState('');
+  const [showNewTaskForm, setShowNewTaskForm] = useState(false);
+  const [newTaskDraft, setNewTaskDraft] = useState({
+    title: '',
+    owner: 'COO Command',
+    priority: 'High',
+    dueDate: 'Today',
+    description: ''
+  });
   const selectedTask = tasks.find((task) => task.id === selectedId) || tasks[0];
-  const filters = ['All', 'COO', 'CFO', 'CTO', 'CMO', 'Founder Approval', 'Lead Intake', 'Pricing', 'Invoice', 'Documents', 'Shipments', 'Marketing', 'Technical', 'Overdue', 'Blocked', 'High Priority'];
+  const openTaskCount = tasks.filter((task) => !['Done', 'Completed'].includes(String(task.status || ''))).length;
+  const escalatedTaskCount = tasks.filter((task) => ['Escalated', 'Waiting Founder Approval', 'Revision Required'].includes(task.status)).length;
+  const filters = ['All', 'My Tasks', 'Overdue', 'Blocked Only', 'Due Today', 'COO', 'CFO', 'CTO', 'CMO', 'Founder Approval', 'Lead Intake', 'Pricing', 'Invoice', 'Documents', 'Shipments', 'Marketing', 'Technical', 'Blocked', 'High Priority'];
   const handleTaskSearch = React.useCallback((event) => setSearch(event.target.value), []);
   const handleTaskFilterChange = React.useCallback((filter) => setActiveFilter(filter), []);
   const filteredTasks = tasks.filter((task) => {
@@ -14275,8 +14689,11 @@ function TaskFollowupEngine({ navigate, onBack }) {
       || task.owner_command.startsWith(activeFilter)
       || task.workflow_source.includes(activeFilter)
       || task.department === activeFilter
+      || (activeFilter === 'My Tasks' && String(task.owner_command || '').includes('Founder'))
       || (activeFilter === 'Founder Approval' && task.escalation_level.includes('Founder'))
       || (activeFilter === 'Overdue' && task.due_date === 'Overdue')
+      || (activeFilter === 'Blocked Only' && task.status === 'Blocked')
+      || (activeFilter === 'Due Today' && task.due_date === 'Today')
       || (activeFilter === 'Blocked' && task.status === 'Blocked')
       || (activeFilter === 'High Priority' && ['High', 'Critical'].includes(task.priority))
       || (activeFilter === 'Invoice' && task.workflow_source.includes('Invoice'))
@@ -14314,6 +14731,18 @@ function TaskFollowupEngine({ navigate, onBack }) {
     const result = await updateWorkflowTaskStatus(demoTenantId, selectedTask.id, status, notes, 'COO Command');
     const updated = result.data || { ...selectedTask, status, updated_at: 'Now' };
     setTasks((current) => current.map((task) => task.id === selectedTask.id ? updated : task));
+    if (status === 'Blocked') {
+      await sendSlackNotification({
+        type: 'Task Blocked',
+        priority: 'WARNING',
+        reference: selectedTask.id,
+        buyer: selectedTask.title,
+        status: 'Blocked',
+        actionRequired: selectedTask.blocking_reason || notes || selectedTask.next_action,
+        source: 'Task Engine'
+      });
+      setTaskNotice('Blocked task notification sent to Slack.');
+    }
     if (notes) {
       await addTaskComment(demoTenantId, selectedTask.id, notes, 'COO Command');
       setNote('');
@@ -14334,9 +14763,21 @@ function TaskFollowupEngine({ navigate, onBack }) {
     setNote('');
   }
 
-  async function escalateSelectedTask(task, notes = '') {
+  async function escalateSelectedTask(task, notes = '', notifySlack = true) {
     await escalateWorkflowTask(demoTenantId, task.id, notes || task.blocking_reason || task.escalation_level, 'Founder / COO');
     setTasks((current) => current.map((item) => item.id === task.id ? { ...item, status: 'Escalated', updated_at: 'Now' } : item));
+    if (notifySlack) {
+      await sendSlackNotification({
+        type: 'Task Escalated',
+        priority: 'URGENT',
+        reference: task.id,
+        buyer: task.title,
+        status: 'Escalated',
+        actionRequired: 'Founder review required',
+        source: 'Task Engine'
+      });
+      setTaskNotice('Escalation notification sent to Slack.');
+    }
   }
 
   async function routeTaskApproval(task, notes = '') {
@@ -14362,13 +14803,85 @@ function TaskFollowupEngine({ navigate, onBack }) {
         coo_notes: notes || 'COO requests founder decision before workflow moves forward.'
       }
     });
-    await escalateSelectedTask(task, notes);
+    await sendSlackNotification({
+      type: 'Founder Approval Required',
+      priority: 'URGENT',
+      reference: task.id,
+      buyer: task.title,
+      status: 'Pending Founder Approval',
+      actionRequired: 'Open Director Command to approve',
+      source: 'Task Engine'
+    });
+    setTaskNotice('Founder approval notification sent to Slack.');
+    await escalateSelectedTask(task, notes, false);
     navigate('/export-os/director');
   }
 
-  function generateDailyPlan() {
-    const due = tasks.find((task) => task.due_date === 'Today') || tasks[0];
-    setDailyPlan(`1. Priority Task: ${due.title}\n2. Owner: ${due.owner_command}\n3. Deadline: ${due.due_date}\n4. Risk: ${due.priority}\n5. Required Follow-up: ${due.next_action}\n6. Escalation Point: ${due.escalation_level}`);
+  async function createNewTask() {
+    if (!newTaskDraft.title.trim()) {
+      setTaskNotice('Task title is required.');
+      return;
+    }
+    const result = await createTaskFromWorkflow({
+      tenant_id: demoTenantId,
+      title: newTaskDraft.title.trim(),
+      description: newTaskDraft.description.trim() || 'Manual task created from Task Engine.',
+      workflow_source: 'Task Engine',
+      linked_record_id: `TASK-${Date.now()}`,
+      linked_label: newTaskDraft.title.trim(),
+      linked_route: '/export-os/tasks',
+      department: newTaskDraft.owner === 'Founder' ? 'Founder Office' : newTaskDraft.owner.replace(' Command', ''),
+      owner_command: newTaskDraft.owner,
+      assigned_role: newTaskDraft.owner,
+      priority: newTaskDraft.priority,
+      status: 'New',
+      due_date: newTaskDraft.dueDate,
+      blocking_reason: '',
+      next_action: newTaskDraft.description.trim() || 'Review and complete task.',
+      buyer: newTaskDraft.title.trim(),
+      product: 'Task Engine'
+    });
+    const created = result.data || {
+      id: `task-local-${Date.now()}`,
+      title: newTaskDraft.title.trim(),
+      description: newTaskDraft.description.trim(),
+      workflow_source: 'Task Engine',
+      linked_record_id: `TASK-${Date.now()}`,
+      linked_label: newTaskDraft.title.trim(),
+      department: newTaskDraft.owner === 'Founder' ? 'Founder Office' : newTaskDraft.owner.replace(' Command', ''),
+      owner_command: newTaskDraft.owner,
+      assigned_to: newTaskDraft.owner,
+      priority: newTaskDraft.priority,
+      status: 'New',
+      due_date: newTaskDraft.dueDate,
+      escalation_level: newTaskDraft.owner === 'Founder' ? 'Founder review' : `${newTaskDraft.owner} follow-up`,
+      blocking_reason: '',
+      next_action: newTaskDraft.description.trim() || 'Review and complete task.',
+      buyer: newTaskDraft.title.trim(),
+      product: 'Task Engine',
+      created_at: 'Now',
+      updated_at: 'Now'
+    };
+    setTasks((current) => current.some((task) => task.id === created.id) ? current : [created, ...current]);
+    setSelectedId(created.id);
+    setShowNewTaskForm(false);
+    setNewTaskDraft({ title: '', owner: 'COO Command', priority: 'High', dueDate: 'Today', description: '' });
+    setTaskNotice(`${created.title} created.`);
+  }
+
+  async function generateDailyPlan() {
+    const result = await generateCOODailyPlan(demoTenantId);
+    const planText = result.data || '';
+    setDailyPlan(planText);
+    await sendSlackNotification({
+      type: 'COO Daily Plan',
+      priority: 'INFO',
+      reference: 'DAILY-PLAN',
+      status: 'Generated',
+      actionRequired: planText,
+      source: 'COO Command'
+    });
+    setTaskNotice('Plan sent to Slack âœ“');
   }
 
   function prepareFounderSummary() {
@@ -14377,8 +14890,25 @@ function TaskFollowupEngine({ navigate, onBack }) {
 
   return (
     <ExportOSShell className="operational-export-shell task-engine-shell">
-      <TaskEngineHeader onBack={onBack} />
-      <div className="invoice-model-strip">{taskEngineModels.map((model) => <code key={model}>{model}</code>)}</div>
+      <TaskEngineHeader onBack={onBack} onNewTask={() => setShowNewTaskForm(true)} />
+      <div className="invoice-model-strip">
+        {taskEngineModels.map((model) => (
+          <code key={model}>
+            {model}
+            {model === 'tasks' && <span className="task-tab-count-badge">{openTaskCount}</span>}
+            {model === 'task_escalations' && <span className="task-tab-count-badge">{escalatedTaskCount}</span>}
+          </code>
+        ))}
+      </div>
+      {taskNotice && <div className="coo-action-notice">{taskNotice}</div>}
+      {showNewTaskForm && (
+        <NewTaskInlineForm
+          draft={newTaskDraft}
+          setDraft={setNewTaskDraft}
+          onCreate={createNewTask}
+          onCancel={() => setShowNewTaskForm(false)}
+        />
+      )}
       <TaskSummaryCards tasks={tasks} />
       <section className="task-engine-layout">
         <aside className="task-left-stack">
@@ -14402,7 +14932,7 @@ function TaskFollowupEngine({ navigate, onBack }) {
             </div>
           </div>
           {taskView === 'board'
-            ? <KanbanBoard tasks={filteredTasks} onStatusChange={updateTaskFromBoard} />
+            ? <KanbanBoard tasks={filteredTasks} onStatusChange={updateTaskFromBoard} onCreateTask={() => setShowNewTaskForm(true)} />
             : <TaskBoard tasks={filteredTasks} selectedId={selectedTask?.id} onSelect={setSelectedId} />}
           <DailyFollowupPanel tasks={tasks} output={dailyPlan} onGenerate={generateDailyPlan} />
         </main>
@@ -14418,7 +14948,7 @@ function TaskFollowupEngine({ navigate, onBack }) {
   );
 }
 
-function TaskEngineHeader({ onBack }) {
+function TaskEngineHeader({ onBack, onNewTask }) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000);
@@ -14431,9 +14961,56 @@ function TaskEngineHeader({ onBack }) {
         <div className="coo-verified"><ShieldCheck size={16} /><span>Founder session verified</span></div>
         <div className="coo-status"><Workflow size={15} /><strong>Task Engine: Monitoring</strong></div>
         <div className="coo-time"><CalendarClock size={16} /><span>{now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span></div>
+        <button className="tactical-button" onClick={onNewTask}>New Task</button>
         <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
       </div>
     </header>
+  );
+}
+
+function CfoRecurringPaymentsList({ rows }) {
+  const safeRows = safeCfoArray(rows);
+  return (
+    <section className="pricing-panel cfo-finance-table-panel">
+      <div className="approval-section-header"><div><span>Recurring Payments</span><h2>Infrastructure subscriptions and renewal watch</h2></div><TimerReset size={18} /></div>
+      {safeRows.length ? (
+        <div className="cfo-finance-table" style={{ '--cfo-cols': 5 }}>
+          <div className="cfo-finance-table-head">{['Vendor', 'Category', 'Frequency', 'Last Paid', 'Auto Pay'].map((column) => <span key={column}>{column}</span>)}</div>
+          {safeRows.map((row, index) => (
+            <div key={row.id || row.vendor || `recurring-${index}`}>
+              <strong>{row.vendor || row[0] || 'Vendor pending'}</strong>
+              <span>{row.category || row[1] || 'Infrastructure'}</span>
+              <span>{row.frequency || row[2] || 'Pending'}</span>
+              <span>{row.last_paid ? formatLearningDate(row.last_paid) : row[3] || 'Not recorded'}</span>
+              <span><StatusBadge label={row.auto_pay ? 'Auto Pay' : 'Manual'} state={row.auto_pay ? 'online' : 'attention'} /></span>
+            </div>
+          ))}
+        </div>
+      ) : <CfoEmptyState message="Connect Supabase payments table to see live data" />}
+    </section>
+  );
+}
+
+function NewTaskInlineForm({ draft, setDraft, onCreate, onCancel }) {
+  const update = (key, value) => setDraft((current) => ({ ...current, [key]: value }));
+  return (
+    <section className="task-panel new-task-inline-form">
+      <div className="approval-section-header">
+        <div><span>New Task</span><h2>Create operational follow-up</h2></div>
+        <ClipboardCheck size={18} />
+      </div>
+      <div className="new-task-form-grid">
+        <label>Title<input value={draft.title} onChange={(event) => update('title', event.target.value)} placeholder="Task title" /></label>
+        <label>Owner<select value={draft.owner} onChange={(event) => update('owner', event.target.value)}>{['COO Command', 'CFO Command', 'CTO Command', 'CMO Command', 'CIO Command', 'Founder'].map((item) => <option key={item}>{item}</option>)}</select></label>
+        <label>Priority<select value={draft.priority} onChange={(event) => update('priority', event.target.value)}>{['Critical', 'High', 'Medium', 'Low'].map((item) => <option key={item}>{item}</option>)}</select></label>
+        <label>Due Date<select value={draft.dueDate} onChange={(event) => update('dueDate', event.target.value)}>{['Today', 'Tomorrow', 'This Week'].map((item) => <option key={item}>{item}</option>)}</select></label>
+        <label className="new-task-description">Description<textarea value={draft.description} onChange={(event) => update('description', event.target.value)} placeholder="Describe the task, blocker, or follow-up context" /></label>
+      </div>
+      <div className="task-action-grid">
+        <button className="tactical-button" onClick={onCreate}>Create Task</button>
+        <button className="ghost-button" onClick={onCancel}>Cancel</button>
+      </div>
+    </section>
   );
 }
 
@@ -15002,8 +15579,8 @@ const lutFieldList = [
   ];
 
 function getLutBlockMessage(lut) {
-  if (!lut?.lut_arn || !lut?.financial_year || !lut?.valid_from || !lut?.valid_to || !lut?.document_url) return 'LUT incomplete — invoice release blocked.';
-  if (new Date(lut.valid_to) < new Date()) return 'LUT expired — invoice release blocked.';
+  if (!lut?.lut_arn || !lut?.financial_year || !lut?.valid_from || !lut?.valid_to || !lut?.document_url) return 'LUT incomplete Ã¢â‚¬â€ invoice release blocked.';
+  if (new Date(lut.valid_to) < new Date()) return 'LUT expired Ã¢â‚¬â€ invoice release blocked.';
   if (!lut.founder_verified) return 'Founder verification required before invoice release.';
   return 'LUT data ready for draft invoice validation.';
 }
@@ -15570,16 +16147,16 @@ const paymentGovernanceRules = {
 const trustedInfrastructureVendors = ['OpenAI credits', 'Supabase', 'Vercel', 'Cloudflare', 'Domain / SSL renewals', 'Email provider', 'Automation tools'];
 const neverAutoPayCategories = ['Supplier payments', 'Freight', 'Customs', 'Tax', 'Salaries', 'Refunds', 'Unknown invoices', 'Bank transfers', 'Manual vendor invoices'];
 const paymentApprovalBands = [
-  ['Safe auto-pay', '₹0-₹1,000', 'Trusted infrastructure vendor only', 'CFO can approve after COO confirms operational need'],
-  ['Controlled auto-pay', '₹1,001-₹1,500', 'Trusted infrastructure vendor only', 'CFO + COO confirmation required before auto-pay'],
-  ['Founder approval required', 'Above ₹1,500', 'Any vendor', 'Founder approval required before payment'],
+  ['Safe auto-pay', 'Ã¢â€šÂ¹0-Ã¢â€šÂ¹1,000', 'Trusted infrastructure vendor only', 'CFO can approve after COO confirms operational need'],
+  ['Controlled auto-pay', 'Ã¢â€šÂ¹1,001-Ã¢â€šÂ¹1,500', 'Trusted infrastructure vendor only', 'CFO + COO confirmation required before auto-pay'],
+  ['Founder approval required', 'Above Ã¢â€šÂ¹1,500', 'Any vendor', 'Founder approval required before payment'],
   ['Auto-pay blocked', 'Any amount', 'Unknown, high-risk, or non-infrastructure', 'Route to Director Command Center']
 ];
 const paymentVaultRecords = [
-  ['OpenAI credits', '₹950', 'AI workflow credit top-up', 'Trusted Infrastructure', 'CTO requirement -> COO necessity -> CFO validation/execution', 'Receipt pending', 'CFO Command', 'Requirement raised', 'Confirmed', 'Ready to initiate', 'Not required', 'Pending until gateway OTP completes', 'Draft audit event'],
-  ['Supabase', '₹1,250', 'Database platform renewal buffer', 'Trusted Infrastructure', 'CTO requirement -> COO + CFO confirmation', 'Invoice pending', 'CFO Command', 'Requirement raised', 'Pending', 'Review', 'Not required', 'Pending until CFO + COO confirmation', 'Controlled auto-pay review'],
-  ['Freight vendor invoice', '₹1,200', 'Manual shipment invoice', 'Freight', 'Blocked -> Founder Review', 'Not uploaded', 'Not paid', 'Blocked', 'Blocked', 'Blocked', 'Required', 'No payment timestamp', 'Non-infrastructure category blocked'],
-  ['Unknown SaaS vendor', '₹800', 'Unverified renewal request', 'Unknown Vendor', 'Blocked -> Founder Review', 'Missing', 'Not paid', 'Pending', 'Pending', 'Blocked', 'Required', 'No payment timestamp', 'New vendor approval required']
+  ['OpenAI credits', 'Ã¢â€šÂ¹950', 'AI workflow credit top-up', 'Trusted Infrastructure', 'CTO requirement -> COO necessity -> CFO validation/execution', 'Receipt pending', 'CFO Command', 'Requirement raised', 'Confirmed', 'Ready to initiate', 'Not required', 'Pending until gateway OTP completes', 'Draft audit event'],
+  ['Supabase', 'Ã¢â€šÂ¹1,250', 'Database platform renewal buffer', 'Trusted Infrastructure', 'CTO requirement -> COO + CFO confirmation', 'Invoice pending', 'CFO Command', 'Requirement raised', 'Pending', 'Review', 'Not required', 'Pending until CFO + COO confirmation', 'Controlled auto-pay review'],
+  ['Freight vendor invoice', 'Ã¢â€šÂ¹1,200', 'Manual shipment invoice', 'Freight', 'Blocked -> Founder Review', 'Not uploaded', 'Not paid', 'Blocked', 'Blocked', 'Blocked', 'Required', 'No payment timestamp', 'Non-infrastructure category blocked'],
+  ['Unknown SaaS vendor', 'Ã¢â€šÂ¹800', 'Unverified renewal request', 'Unknown Vendor', 'Blocked -> Founder Review', 'Missing', 'Not paid', 'Pending', 'Pending', 'Blocked', 'Required', 'No payment timestamp', 'New vendor approval required']
 ].map(([vendor_name, amount_inr, payment_reason, category, approval_path, receipt_invoice, paid_by, cto_confirmation, coo_confirmation, cfo_confirmation, founder_approval, payment_timestamp, audit_trail], index) => ({
   id: `payment-vault-${index}`,
   vendor_name,
@@ -15629,238 +16206,300 @@ const cioDataSourceRequests = [
 }));
 
 function CTOCommandPage({ navigate, onBack }) {
-  const [dashboard, setDashboard] = useState(null);
-  const [activeTab, setActiveTab] = useState('Overview');
-  const [detail, setDetail] = useState(null);
-  const [notice, setNotice] = useState('No live data connected. Awaiting production integration sync.');
-  const [savedSecrets, setSavedSecrets] = useState(() => readCtoSavedSecrets());
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedServiceId, setSelectedServiceId] = useState('openai');
-  const [lastAutoSync, setLastAutoSync] = useState(null);
+  const [healthSummary, setHealthSummary] = useState(null);
+  const [liveStatuses, setLiveStatuses] = useState([]);
+  const [incidents, setIncidents] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [inputs, setInputs] = useState({});
+  const [saveState, setSaveState] = useState({});
+  const [notice, setNotice] = useState('Integration health not checked yet.');
 
-  async function refreshCTODashboard(reason = 'manual') {
-    const result = await getCTODashboard(demoTenantId);
-    setDashboard(result.data);
-    setLastAutoSync(new Date());
-    if (reason === 'auto' && Object.keys(readCtoSavedSecrets()).length) {
-      setNotice('Auto sync checked saved CTO integrations. Live rows update when the backend connector returns verified data.');
-    }
-  }
+  const envValue = React.useCallback((name) => (typeof import.meta !== 'undefined' ? import.meta.env?.[name] : '') || '', []);
+
+  const refreshCTOStatus = React.useCallback(async () => {
+    setNotice('Running live CTO integration health check...');
+    const [healthResult, statusRows, incidentResult, subscriptionResult] = await Promise.all([
+      getSystemHealthSummary(demoTenantId),
+      getLiveIntegrationStatus(demoTenantId),
+      getIncidents(demoTenantId),
+      getSubscriptionWatch()
+    ]);
+    setHealthSummary(healthResult.data);
+    setLiveStatuses(statusRows || []);
+    setIncidents(incidentResult.data || []);
+    setSubscriptions(subscriptionResult.data || []);
+    setNotice(`Health check complete at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
-    getCTODashboard(demoTenantId).then((result) => {
+    Promise.all([
+      getSystemHealthSummary(demoTenantId),
+      getLiveIntegrationStatus(demoTenantId),
+      getIncidents(demoTenantId),
+      getSubscriptionWatch()
+    ]).then(([healthResult, statusRows, incidentResult, subscriptionResult]) => {
       if (!mounted) return;
-      setDashboard(result.data);
-      setLastAutoSync(new Date());
+      setHealthSummary(healthResult.data);
+      setLiveStatuses(statusRows || []);
+      setIncidents(incidentResult.data || []);
+      setSubscriptions(subscriptionResult.data || []);
+      setNotice('Live integration status loaded.');
+    }).catch((error) => {
+      if (!mounted) return;
+      setNotice(error?.message || 'Unable to load CTO integration health.');
     });
-    const syncTimer = window.setInterval(() => {
-      if (mounted) refreshCTODashboard('auto');
-    }, 60000);
-    return () => {
-      mounted = false;
-      window.clearInterval(syncTimer);
-    };
+    return () => { mounted = false; };
   }, []);
 
-  const health = dashboard?.health || ctoHealthSystems.map((item) => ({ name: item.name, status: item.status, metric: item.metric, note: item.note }));
-  const integrations = dashboard?.integrations || integrationServicesSeed;
-  const queue = dashboard?.automationQueue || [];
-  const incidents = dashboard?.incidents || ctoIncidents.map((item) => ({ title: item.title, severity: item.severity, affected_module: item.module, business_impact: item.impact, next_action: item.action, owner: 'CTO Command', escalation_target: 'Founder if unresolved', id: item.id }));
-  const subscriptions = dashboard?.subscriptionWatch || [];
-  const deployments = dashboard?.deploymentStatus || [];
-  const auditLog = dashboard?.auditLog || ctoTimeline.map(([time, event, status], index) => ({ id: `timeline-${index}`, time, event, actor: 'CTO Command', status }));
-  const cmoMediaStack = dashboard?.cmoMediaStack || [];
-  const cmoSocialIntegrations = dashboard?.cmoSocialIntegrations || [];
-  const cmoPublishingWorkflow = dashboard?.cmoPublishingWorkflow || [];
-  const supabaseConnection = dashboard?.supabaseConnection || {
-    live: false,
-    status: backendStatus.mode === 'Connected' ? 'Verification Pending' : 'Connect Supabase to activate',
-    health: backendStatus.mode === 'Connected' ? 'Verification Pending' : 'Configuration Missing',
-    message: backendStatus.message,
-    lastChecked: 'No live check yet',
-    projectRef: supabaseConfigStatus.projectRef
-  };
-  const summary = dashboard?.summary || { activeIncidents: incidents.filter((item) => ['High', 'Critical'].includes(item.severity)).length, failedWorkflows: 0, creditRisks: 0 };
-  const liveConnected = Boolean(supabaseConnection.live);
-  const configuredSecrets = Object.values(savedSecrets).filter((secret) => secret?.apiKey || secret?.maskedKey);
-  const connectedSecrets = Object.values(savedSecrets).filter((secret) => secret?.verificationStatus === 'Connected');
-  const hasConfiguredIntegration = configuredSecrets.length > 0;
-  const hasLiveIntegration = liveConnected || connectedSecrets.length > 0;
-  const hasPendingIntegration = hasConfiguredIntegration && !hasLiveIntegration;
-  const liveIntegrationNames = connectedSecrets.map((secret) => secret.serviceName).filter(Boolean);
-  const configuredIntegrationNames = configuredSecrets.map((secret) => secret.serviceName).filter(Boolean);
-  const healthState = resolveSystemHealth(health, incidents);
-  const secretSyncLabel = latestSecretSyncTime(savedSecrets);
-  const syncLabel = liveConnected ? supabaseConnection.lastChecked || latestSyncTime(integrations, auditLog) : secretSyncLabel || supabaseConnection.lastChecked || (lastAutoSync ? 'Auto check active' : 'No recent sync');
-  const handleCtoTabChange = React.useCallback((tab) => setActiveTab(tab), []);
-
-  function retryQueueItem(label) {
-    setDashboard((current) => current ? { ...current, automationQueue: current.automationQueue.map((item) => item.workflow_name === label ? { ...item, queue_status: 'Retry Pending', retry_status: 'Retry prepared locally' } : item) } : current);
-    setNotice(`${label} retry prepared locally. External automation was not executed.`);
+  function statusFor(serviceName) {
+    return liveStatuses.find((item) => String(item.service || '').toLowerCase() === serviceName.toLowerCase());
   }
 
-  async function createPaymentTrigger(item) {
+  function maskedValue(value = '') {
+    if (!value) return 'Not set';
+    if (value.includes('supabase.co')) {
+      return value.replace(/^https:\/\/(.{3}).*(.{3})\.supabase\.co$/i, 'https://$1...$2.supabase.co');
+    }
+    if (value.length <= 10) return 'Configured';
+    return `${value.slice(0, 4)}...${value.slice(-4)}`;
+  }
+
+  function integrationStatus(service) {
+    if (service.id === 'supabase') {
+      const urlSet = Boolean(envValue('VITE_SUPABASE_URL'));
+      const anonSet = Boolean(envValue('VITE_SUPABASE_ANON_KEY'));
+      if (urlSet && anonSet) return { label: 'LIVE', tone: 'live' };
+      if (urlSet || anonSet) return { label: 'PARTIAL', tone: 'partial' };
+      return { label: 'NOT SET', tone: 'not-set' };
+    }
+    if (service.id === 'openai') {
+      return envValue('VITE_OPENAI_API_KEY') ? { label: 'LIVE', tone: 'live' } : { label: 'NOT SET', tone: 'not-set' };
+    }
+    if (service.id === 'vercel') {
+      return envValue('VERCEL_URL') ? { label: 'LIVE', tone: 'live' } : { label: 'PARTIAL', tone: 'partial' };
+    }
+    const row = statusFor(service.name);
+    if (row?.status === 'live') return { label: 'LIVE', tone: 'live' };
+    if (row?.status === 'partial') return { label: 'PARTIAL', tone: 'partial' };
+    if (row?.status === 'unconfigured' || row?.status === 'error') return { label: service.id === 'slack' && row?.message?.includes('Missing') ? 'PARTIAL' : 'NOT SET', tone: service.id === 'slack' && row?.message?.includes('Missing') ? 'partial' : 'not-set' };
+    return { label: 'NOT SET', tone: 'not-set' };
+  }
+
+  const integrationCards = [
+    {
+      id: 'supabase',
+      logo: 'SB',
+      name: 'Supabase',
+      description: 'Primary database, auth, storage, audit logs, and workflow state.',
+      current: maskedValue(envValue('VITE_SUPABASE_URL')),
+      fields: [
+        { id: 'supabase_url', label: 'Supabase URL', placeholder: 'https://project.supabase.co', type: 'text' },
+        { id: 'supabase_anon_key', label: 'Anon key', placeholder: 'Paste anon public key', type: 'password' }
+      ]
+    },
+    {
+      id: 'openai',
+      logo: 'AI',
+      name: 'OpenAI',
+      description: 'AI generation, analysis, captions, content quality review, and automation support.',
+      current: maskedValue(envValue('VITE_OPENAI_API_KEY')),
+      fields: [{ id: 'openai', label: 'OpenAI API key', placeholder: 'Paste OpenAI API key', type: 'password' }]
+    },
+    {
+      id: 'slack',
+      logo: 'SL',
+      name: 'Slack',
+      description: 'Founder alerts, CMO approvals, operational reports, and incident notifications.',
+      current: statusFor('Slack')?.message || 'Server-side env only',
+      fields: [
+        { id: 'slack_bot_token', label: 'Bot token', placeholder: 'xoxb-...', type: 'password' },
+        { id: 'slack_channel_id', label: 'Channel ID', placeholder: 'C0B692ZMGSZ', type: 'text' },
+        { id: 'slack_signing_secret', label: 'Signing secret', placeholder: 'Paste signing secret', type: 'password' }
+      ]
+    },
+    {
+      id: 'resend',
+      logo: 'RS',
+      name: 'Resend',
+      description: 'Transactional buyer email, notifications, receipts, and operational summaries.',
+      current: statusFor('Resend')?.message || 'Server-side env only',
+      fields: [{ id: 'resend', label: 'Resend API key', placeholder: 're_...', type: 'password' }]
+    },
+    {
+      id: 'twilio',
+      logo: 'WA',
+      name: 'Twilio',
+      description: 'WhatsApp command interface and buyer/founder messaging infrastructure.',
+      current: statusFor('Twilio')?.message || 'Server-side env only',
+      fields: [
+        { id: 'twilio_account_sid', label: 'Account SID', placeholder: 'AC...', type: 'password' },
+        { id: 'twilio_auth_token', label: 'Auth token', placeholder: 'Paste auth token', type: 'password' }
+      ]
+    },
+    {
+      id: 'vercel',
+      logo: 'VC',
+      name: 'Vercel',
+      description: 'Hosting, preview deployments, cron jobs, and serverless API routes.',
+      current: envValue('VERCEL_URL') || 'Local development',
+      readOnly: true,
+      fields: []
+    }
+  ];
+
+  const liveCount = integrationCards.filter((service) => integrationStatus(service).label === 'LIVE').length;
+  const computedOverall = liveCount === integrationCards.length ? 'Healthy' : liveCount >= 3 ? 'Degraded' : 'Critical';
+  const overallStatus = healthSummary?.overall ? healthSummary.overall.replace(/\b\w/g, (letter) => letter.toUpperCase()) : computedOverall;
+  const lastChecked = healthSummary?.lastChecked ? new Date(healthSummary.lastChecked).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Not checked';
+
+  async function saveProviderValue(fieldId) {
+    const value = String(inputs[fieldId] || '').trim();
+    if (!value) {
+      setSaveState((current) => ({ ...current, [fieldId]: 'Enter a value before saving.' }));
+      return;
+    }
+    setSaveState((current) => ({ ...current, [fieldId]: 'Saving...' }));
+    try {
+      const response = await fetch('/api/cto/provider-env/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ serviceId: fieldId, value })
+      });
+      const result = await response.json().catch(() => ({}));
+      setSaveState((current) => ({
+        ...current,
+        [fieldId]: result.ok ? 'Saved âœ“ Restart dev server to apply' : result.message || 'Save failed'
+      }));
+      if (result.ok) setInputs((current) => ({ ...current, [fieldId]: '' }));
+    } catch (error) {
+      setSaveState((current) => ({ ...current, [fieldId]: error?.message || 'Save failed' }));
+    }
+  }
+
+  async function sendHealthReport() {
+    const summaryLines = integrationCards.map((service) => `${service.name}: ${integrationStatus(service).label}`).join('\n');
+    const result = await sendSlackNotification({
+      type: 'High Priority Alert',
+      priority: overallStatus === 'Critical' ? 'URGENT' : overallStatus === 'Degraded' ? 'WARNING' : 'INFO',
+      reference: 'CTO-HEALTH',
+      buyer: 'GOPU OS',
+      status: overallStatus,
+      eta: lastChecked,
+      actionRequired: `CTO integration summary:\n${summaryLines}`,
+      source: 'CTO Command'
+    });
+    setNotice(result?.ok === false ? 'Slack report could not be sent. Check Slack server env.' : 'CTO health report sent to Slack.');
+  }
+
+  async function handleCreatePaymentRequirement(item = {}) {
+    const vendor = item.service || item.vendor || item.name || 'Infrastructure vendor';
     const result = await createPaymentRequirement({
       tenant_id: demoTenantId,
-      title: `Payment requirement: ${item.service}`,
-      vendor: item.service,
-      category: 'Trusted infrastructure renewal / credits',
+      title: `Payment requirement: ${vendor}`,
+      vendor,
+      category: item.category || 'Trusted infrastructure renewal / credits',
       priority: item.usage >= 95 ? 'Critical' : 'High',
-      reason: item.renewal_note
+      reason: item.renewal_note || item.reason || 'Renewal or usage risk requires CFO payment review.'
     });
-    setNotice(`${result.data?.title || 'Payment requirement'} created. CTO does not execute payment.`);
-  }
-
-  function openDetail(type, title, rows = [], meta = {}) {
-    setDetail({ type, title, rows, ...meta });
-  }
-
-  function openAddIntegration(serviceId = 'openai') {
-    setSelectedServiceId(serviceId);
-    setModalOpen(true);
-  }
-
-  function saveIntegrationFromModal({ serviceId, serviceName, apiKey, environment, verificationStatus, verificationMessage, verificationResult }) {
-    const targetId = serviceId || selectedServiceId || 'openai';
-    const provider = ctoProviderCatalog[targetId] || {};
-    saveIntegrationSecret(targetId, {
-      serviceName: serviceName || integrations.find((item) => item.id === targetId)?.service_name || targetId,
-      apiKey,
-      secondary: provider.loginAccount || ctoDefaultLoginEmail,
-      environment,
-      notes: `${verificationMessage || `Modal save requested with ${verificationStatus || 'Verification Pending'} state.`} Login/account: ${provider.loginAccount || ctoDefaultLoginEmail}.`,
-      verificationResult
-    });
-    setModalOpen(false);
-    refreshCTODashboard('manual');
-  }
-
-  async function saveIntegrationSecret(serviceId, payload) {
-    const savedAt = new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
-    const baseSecret = {
-      ...payload,
-      savedAt,
-      maskedKey: maskSecretPreview(payload.apiKey),
-      verificationStatus: 'Verification Running',
-      verificationMessage: `Testing connection for up to ${CTO_FAST_VERIFICATION_TIMEOUT_MS / 1000} seconds.`
-    };
-    const pendingSecrets = {
-      ...savedSecrets,
-      [serviceId]: baseSecret
-    };
-    setSavedSecrets(pendingSecrets);
-    window.localStorage.setItem('ctoIntegrationSecrets', JSON.stringify(pendingSecrets));
-    setNotice(`${payload.serviceName} credentials saved. First sync is queued now and CTO auto-check runs every 60 seconds.`);
-    setDetail((current) => current ? {
-      ...current,
-      savedSecret: pendingSecrets[serviceId],
-      rows: current.rows.map(([label, value]) => {
-        if (label === 'Status') return ['Status', 'Verification Running'];
-        if (label === 'Last Check') return ['Last Check', savedAt];
-        if (label === 'Action') return ['Action', 'Testing now'];
-        if (label === 'Detail') return ['Detail', `Testing connection for up to ${CTO_FAST_VERIFICATION_TIMEOUT_MS / 1000} seconds.`];
-        return [label, value];
-      })
-    } : current);
-
-    const envSave = await saveCtoProviderEnvValue(serviceId, payload.apiKey);
-    const preverified = payload.verificationResult?.maskedKey === maskSecretPreview(payload.apiKey);
-    const result = preverified ? payload.verificationResult : await verifyIntegrationSecret(serviceId, payload.apiKey);
-    const verifiedAt = new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
-    const verifiedSecrets = {
-      ...pendingSecrets,
-      [serviceId]: {
-        ...baseSecret,
-        savedAt: verifiedAt,
-        verificationStatus: result.status,
-        verificationMessage: envSave.ok ? `${result.message} ${envSave.message}` : `${result.message} ${envSave.message || ''}`.trim()
-      }
-    };
-    setSavedSecrets(verifiedSecrets);
-    window.localStorage.setItem('ctoIntegrationSecrets', JSON.stringify(verifiedSecrets));
-    setLastAutoSync(new Date());
-    const envNotice = envSave.ok ? ` ${envSave.message}` : envSave.message ? ` ${envSave.message}` : '';
-    setNotice(result.status === 'Connected' ? `${payload.serviceName} is live. Auto sync remains active every 60 seconds.${envNotice}` : `${payload.serviceName} verification pending/failed: ${result.message}${envNotice}`);
-    setDetail((current) => current ? {
-      ...current,
-      savedSecret: verifiedSecrets[serviceId],
-      rows: current.rows.map(([label, value]) => {
-        if (label === 'Status') return ['Status', result.status];
-        if (label === 'Last Check') return ['Last Check', verifiedAt];
-        if (label === 'Action') return ['Action', result.status === 'Connected' ? 'Live' : 'Fix key'];
-        if (label === 'Detail') return ['Detail', result.message];
-        return [label, value];
-      })
-    } : current);
+    setNotice(`${result.data?.title || 'Payment requirement'} created for ${vendor}.`);
   }
 
   return (
     <ExportOSShell
       className="cto-shell"
-      liveDataConnected={hasLiveIntegration}
-      statusMessage={hasLiveIntegration ? `Live integration connected: ${liveIntegrationNames[0] || 'CTO source'}` : hasPendingIntegration ? `Integration saved: ${configuredIntegrationNames[0] || 'CTO source'} verification pending` : 'No live data connected'}
+      liveDataConnected={liveCount > 0}
+      statusMessage={`CTO integrations: ${liveCount}/6 live`}
     >
       <header className="deck-header cto-header">
         <div className="deck-header-copy">
           <Breadcrumb items={[{ label: 'Command Deck', onClick: onBack }, { label: 'CTO Command' }]} />
           <h1>CTO Command</h1>
-          <p>Operational reliability workspace for integrations, workflows, incidents, payment risk, deployment readiness, and audit control.</p>
+          <p>Live integration health. All connections in one place.</p>
         </div>
         <div className="deck-header-controls">
-          <div className="coo-verified"><ShieldCheck size={16} /><span>Founder session verified</span></div>
-          <button className="ghost-button deck-logout" onClick={() => openAddIntegration('openai')}><KeyRound size={15} />Add Integration</button>
-          <button className="ghost-button deck-logout" onClick={() => navigate('/export-os/executives/cto/integrations')}><KeyRound size={15} />{ctoLabels.integrationVaultButton}</button>
+          <button className="tactical-button" onClick={refreshCTOStatus}><Activity size={15} />Run Health Check</button>
+          <button className="ghost-button deck-logout" onClick={sendHealthReport}><Send size={15} />Send Report to Slack</button>
           <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
         </div>
       </header>
 
-      {!hasConfiguredIntegration && !hasLiveIntegration && <div className="cto-connection-banner">{supabaseConnection.message || 'No live data connected. Awaiting integration.'}</div>}
-      {hasPendingIntegration && <div className="cto-connection-banner pending">Integration saved: {configuredIntegrationNames.join(', ') || 'CTO source'}. Verification must complete before this becomes LIVE.</div>}
-      {hasLiveIntegration && !liveConnected && <div className="cto-connection-banner connected">Live integration connected: {liveIntegrationNames.join(', ') || 'CTO source'}. Supabase final check still requires Data API verification.</div>}
-      <CTOSupabaseFinalCheck connection={supabaseConnection} />
-      <div className="cto-auto-sync-strip">
-        <strong>CTO data sync:</strong>
-        <span>{liveConnected ? 'Supabase is live and CTO will use connected workflow data where available.' : supabaseConfigStatus.hasUrl || supabaseConfigStatus.hasAnonKey ? 'Supabase configuration detected, but CTO final live query is not passing yet.' : 'Add Supabase URL and anon key to .env, restart the app, then CTO will re-check the live connection.'}</span>
-      </div>
-      <CTOSummaryBar health={healthState} summary={summary} lastSync={syncLabel} liveConnected={liveConnected} />
-      <CTOTabBar activeTab={activeTab} onSelect={handleCtoTabChange} />
+      <section className="cto-health-bar">
+        <div><span>Services Live</span><strong>{liveCount}/6</strong></div>
+        <div><span>Overall Status</span><strong>{overallStatus}</strong></div>
+        <div><span>Last Checked</span><strong>{lastChecked}</strong></div>
+        <p>{notice}</p>
+      </section>
 
-      <main className={`cto-command-layout ${activeTab !== 'Overview' ? 'cto-focused-layout' : ''}`}>
-        {['Overview', 'Integrations'].includes(activeTab) && (
-          <section className="cto-left-stack">
-            <CTOIntegrationsTable services={integrations} liveConnected={liveConnected} savedSecrets={savedSecrets} onSaveSecret={saveIntegrationSecret} onOpen={openDetail} compact={activeTab === 'Overview'} />
-          </section>
-        )}
+      <section className="cto-integration-grid" aria-label="CTO integration cards">
+        {integrationCards.map((service) => {
+          const status = integrationStatus(service);
+          return (
+            <article key={service.id} className={`cto-integration-card ${status.tone}`}>
+              <div className="cto-integration-header">
+                <div>
+                  <span className="cto-logo-text">{service.logo}</span>
+                  <strong className="cto-integration-name">{service.name}</strong>
+                </div>
+                <StatusBadge label={status.label} state={status.tone === 'live' ? 'online' : status.tone === 'partial' ? 'attention' : 'error'} />
+              </div>
+              <p className="cto-integration-desc">{service.description}</p>
+              <div className="cto-current-value"><span>Current</span><strong>{service.current}</strong></div>
+              {service.readOnly ? (
+                <div className="cto-readonly-note">Auto-detected from hosting runtime. No local key entry required.</div>
+              ) : service.fields.map((field) => (
+                <label className="cto-integration-input-row" key={field.id}>
+                  <span>{field.label}</span>
+                  <input
+                    className="cto-integration-input"
+                    type={field.type}
+                    placeholder={field.placeholder}
+                    value={inputs[field.id] || ''}
+                    onChange={(event) => setInputs((current) => ({ ...current, [field.id]: event.target.value }))}
+                  />
+                  <button className="ghost-button" type="button" onClick={() => saveProviderValue(field.id)}>Save</button>
+                  {saveState[field.id] && <em>{saveState[field.id]}</em>}
+                </label>
+              ))}
+            </article>
+          );
+        })}
+      </section>
 
-        {['Overview', 'Workflows'].includes(activeTab) && (
-          <section className="cto-center-stack">
-            <WorkflowReliabilityPanel queue={queue} systems={health} liveConnected={liveConnected} onRetry={retryQueueItem} onOpen={openDetail} />
-            <CTOPublishingWorkflowPanel workflow={cmoPublishingWorkflow} onOpen={openDetail} compact />
-          </section>
-        )}
+      <section className="cto-bottom-grid cto-simple-bottom">
+        <article className="cto-panel">
+          <CTOSectionHeader title="Recent Incidents" icon={AlertTriangle} />
+          {incidents.length ? (
+            <div className="cto-simple-list">
+              {incidents.map((incident, index) => (
+                <div key={incident.id || `${incident.title}-${index}`}>
+                  <strong>{incident.title || incident.incident_title || incident.affected_module || 'Technical incident'}</strong>
+                  <span>{incident.severity || incident.status || 'Attention'}</span>
+                  <p>{incident.next_action || incident.business_impact || incident.description || 'Review incident and assign owner.'}</p>
+                </div>
+              ))}
+            </div>
+          ) : <p className="cto-empty-state">No incidents. All systems operational.</p>}
+          <button className="ghost-button" type="button" onClick={() => setNotice('Create Incident is ready for live incident intake wiring.')}>Create Incident</button>
+        </article>
 
-        {['Overview', 'Incidents', 'Payments & Renewals'].includes(activeTab) && (
-          <aside className="cto-right-stack">
-            {['Overview', 'Incidents'].includes(activeTab) && <CriticalIncidentsPanel incidents={incidents} liveConnected={liveConnected} onOpen={openDetail} />}
-            {['Overview', 'Payments & Renewals'].includes(activeTab) && <SubscriptionPaymentWatch items={subscriptions} liveConnected={liveConnected} savedSecrets={savedSecrets} onOpen={openDetail} onCreateRequirement={createPaymentTrigger} />}
-          </aside>
-        )}
-      </main>
-      {['Overview', 'Deployments', 'Audit'].includes(activeTab) && <section className="cto-bottom-grid">
-        {activeTab === 'Overview' && <CIODataSourceSetupPanel requests={cioDataSourceRequests} savedSecrets={savedSecrets} onSaveSecret={saveIntegrationSecret} onOpen={openDetail} compact />}
-        {['Overview', 'Deployments'].includes(activeTab) && <DeploymentReadinessPanel logs={deployments} liveConnected={liveConnected} onOpen={openDetail} />}
-        {['Overview', 'Audit'].includes(activeTab) && <TechnicalAuditTimeline events={auditLog} liveConnected={liveConnected} onOpen={openDetail} notice={notice} />}
-      </section>}
-      <CTODetailDrawer detail={detail} onClose={() => setDetail(null)} />
-      {modalOpen && (
-        <AddIntegrationModal
-          services={integrations}
-          initialServiceId={selectedServiceId}
-          onCancel={() => setModalOpen(false)}
-          onSave={saveIntegrationFromModal}
-        />
-      )}
+        <article className="cto-panel">
+          <CTOSectionHeader title="Payment Requirements" icon={CircleDollarSign} />
+          {subscriptions.length ? (
+            <div className="cto-simple-list">
+              {subscriptions.map((item, index) => (
+                <div key={item.id || item.service || index}>
+                  <strong>{item.service || item.vendor || 'Infrastructure service'}</strong>
+                  <span>{item.renewal_note || item.status || 'Renewal watch'}</span>
+                  <p>{item.category || item.plan || 'Trusted infrastructure'} {item.usage ? `/ Usage ${item.usage}%` : ''}</p>
+                  <button className="ghost-button" type="button" onClick={() => handleCreatePaymentRequirement(item)}>Create Payment Requirement</button>
+                </div>
+              ))}
+            </div>
+          ) : <p className="cto-empty-state">No renewal or credit requirements detected.</p>}
+          {!subscriptions.length && <button className="ghost-button" type="button" onClick={() => handleCreatePaymentRequirement()}>Create Payment Requirement</button>}
+        </article>
+      </section>
     </ExportOSShell>
   );
 }
@@ -16805,9 +17444,9 @@ function PaymentGovernancePanel({ compact = false }) {
     <section className={`cto-panel payment-governance-panel ${compact ? 'compact' : ''}`}>
       <div className="approval-section-header"><div><span>Payment Governance</span><h2>CFO execution / Founder OTP authority</h2></div><LockKeyhole size={18} /></div>
       <div className="payment-limit-grid">
-        <div><span>Safe auto-pay</span><strong>₹0-₹1,000</strong><small>Trusted infrastructure only</small></div>
-        <div><span>Controlled cap</span><strong>₹1,001-₹1,500</strong><small>CFO + COO confirmation</small></div>
-        <div><span>Founder required</span><strong>Above ₹1,500</strong><small>No auto-pay above cap</small></div>
+        <div><span>Safe auto-pay</span><strong>Ã¢â€šÂ¹0-Ã¢â€šÂ¹1,000</strong><small>Trusted infrastructure only</small></div>
+        <div><span>Controlled cap</span><strong>Ã¢â€šÂ¹1,001-Ã¢â€šÂ¹1,500</strong><small>CFO + COO confirmation</small></div>
+        <div><span>Founder required</span><strong>Above Ã¢â€šÂ¹1,500</strong><small>No auto-pay above cap</small></div>
         <div><span>OTP owner</span><strong>Founder</strong><small>CFO enters once after founder shares</small></div>
       </div>
       <div className="payment-policy-callout">
@@ -16887,11 +17526,11 @@ function SecurePaymentConfirmationPanel() {
       <div className="approval-section-header"><div><span>OTP Payment Screen</span><h2>Secure CFO confirmation</h2></div><LockKeyhole size={18} /></div>
       <div className="secure-payment-summary">
         {[
-          ['Vendor', selectedPayment.vendor_name],
-          ['Amount', selectedPayment.amount_inr],
-          ['Reason', selectedPayment.payment_reason],
-          ['Category', selectedPayment.category],
-          ['Approval Chain', selectedPayment.approval_path],
+          ['Vendor', selectedPayment?.vendor_name || 'No payment selected'],
+          ['Amount', selectedPayment?.amount_inr || 'Pending'],
+          ['Reason', selectedPayment?.payment_reason || 'Pending'],
+          ['Category', selectedPayment?.category || 'Pending'],
+          ['Approval Chain', selectedPayment?.approval_path || 'Pending'],
           ['Risk Level', 'Low / trusted infrastructure'],
           ['Payment Status', status]
         ].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}
@@ -16968,11 +17607,11 @@ const paymentRecordsSeed = [];
 const paymentReceiptsSeed = [];
 
 const vendorTrustSeed = [
-  ['OpenAI', 'Trusted Infrastructure', 'Trusted', '₹1,000', 'Allowed under cap', 'Low', 'Pending', 'Usage-based'],
-  ['Supabase', 'Trusted Infrastructure', 'Trusted', '₹1,500', 'Controlled', 'Medium', 'Pending', 'Monthly'],
-  ['Vercel', 'Trusted Infrastructure', 'Trusted', '₹1,000', 'Allowed under cap', 'Low', 'May 24, 2026', 'Monthly'],
-  ['Cloudflare', 'Domain / SSL renewal', 'Review Required', '₹1,500', 'Founder approval over cap', 'High', 'Pending', 'Annual'],
-  ['Unknown SaaS vendor', 'Unknown Vendor', 'Blocked', '₹0', 'Not allowed', 'Critical', 'Never paid', 'Unknown']
+  ['OpenAI', 'Trusted Infrastructure', 'Trusted', 'Ã¢â€šÂ¹1,000', 'Allowed under cap', 'Low', 'Pending', 'Usage-based'],
+  ['Supabase', 'Trusted Infrastructure', 'Trusted', 'Ã¢â€šÂ¹1,500', 'Controlled', 'Medium', 'Pending', 'Monthly'],
+  ['Vercel', 'Trusted Infrastructure', 'Trusted', 'Ã¢â€šÂ¹1,000', 'Allowed under cap', 'Low', 'May 24, 2026', 'Monthly'],
+  ['Cloudflare', 'Domain / SSL renewal', 'Review Required', 'Ã¢â€šÂ¹1,500', 'Founder approval over cap', 'High', 'Pending', 'Annual'],
+  ['Unknown SaaS vendor', 'Unknown Vendor', 'Blocked', 'Ã¢â€šÂ¹0', 'Not allowed', 'Critical', 'Never paid', 'Unknown']
 ].map(([vendorName, category, trustLevel, monthlyLimit, autoPayEligibility, riskLevel, lastPayment, renewalFrequency], index) => ({ id: `vendor-${index}`, vendorName, category, trustLevel, monthlyLimit, autoPayEligibility, riskLevel, lastPayment, renewalFrequency }));
 
 const paymentForecastSeed = [];
@@ -17033,7 +17672,7 @@ function buildRenewalDashboardItems(payments = paymentRecordsSeed, forecasts = p
 
 const paymentRiskSeed = [
   ['Missing receipt', 'Medium', 'Resend receipt still pending review.', 'CFO Command'],
-  ['Founder approval missing', 'High', 'Cloudflare amount exceeds ₹1,500 cap.', 'Founder'],
+  ['Founder approval missing', 'High', 'Cloudflare amount exceeds Ã¢â€šÂ¹1,500 cap.', 'Founder'],
   ['Duplicate renewal risk', 'Low', 'No duplicate charge detected; monitor next cycle.', 'CFO Command'],
   ['Failed payment retry', 'Medium', 'WhatsApp API payment processing should be checked after OTP step.', 'CFO Command']
 ].map(([title, severity, detail, owner], index) => ({ id: `payment-risk-${index}`, title, severity, detail, owner }));
@@ -17074,6 +17713,7 @@ const billingAuditSeed = [
 const billingMethodConnectedSeed = [];
 
 function renewalRequestFromPayment(payment = null) {
+  if (!payment) return null;
   return {
     id: `renewal-${payment.id}`,
     source: payment.linkedWorkflows?.[0] || 'Director queue',
@@ -17103,6 +17743,7 @@ function normalizeBillingRule(rule) {
 }
 
 function renewalRuleForRequest(request, rules = billingVendorRuleSeed) {
+  if (!request) return null;
   return normalizeBillingRule(rules.find((rule) => rule.vendor_name === request.vendor) || {
     vendor_name: request.vendor,
     vendor_type: request.serviceType || 'Unknown',
@@ -17134,6 +17775,7 @@ function resolveRenewalDecision(request, method, rule) {
 }
 
 function safeRenewalAuditNote(request, method, decision, receiptStatus = 'Receipt Pending') {
+  if (!request || !decision) return 'No renewal request selected. No card number, CVV, OTP value, or banking password stored.';
   return `${request.vendor} / ${formatInr(request.requiredAmountInr)} / ${decision.approvalRequirement} / token ${method?.payment_token_reference || 'not connected'} / OTP ${decision.otpRequirement} / receipt ${receiptStatus}. No card number, CVV, OTP value, or banking password stored.`;
 }
 
@@ -17155,7 +17797,7 @@ function PaymentVaultDashboard({ navigate, onBack, view = 'payment-vault', payme
     if (view === 'payment-audit') return 'Audit';
     return 'Overview';
   });
-  const selectedPayment = payments.find((payment) => payment.id === selectedId) || payments[0];
+  const selectedPayment = payments.find((payment) => payment.id === selectedId) || null;
   const selectedBillingMethod = billingMethods.find((method) => method.id === selectedBillingId) || billingMethods[0] || null;
   const selectedRenewalRule = renewalRuleForRequest(selectedRenewalRequest, billingVendorRules);
   const selectedRenewalDecision = resolveRenewalDecision(selectedRenewalRequest, selectedBillingMethod, selectedRenewalRule);
@@ -17198,20 +17840,22 @@ function PaymentVaultDashboard({ navigate, onBack, view = 'payment-vault', payme
   }
 
   function uploadReceiptLocal(paymentIdToUpdate) {
+    if (!selectedPayment) return;
     setPayments((current) => current.map((payment) => payment.id === paymentIdToUpdate ? { ...payment, receiptStatus: 'Receipt Pending' } : payment));
     setReceipts((current) => [{
       id: `receipt-${Date.now()}`,
-      vendor: selectedPayment.vendor,
+      vendor: selectedPayment?.vendor,
       documentType: 'Uploaded receipt local',
       date: new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }),
-      amount: formatInr(selectedPayment.amountInr),
-      linkedPayment: selectedPayment.id,
+      amount: formatInr(selectedPayment?.amountInr),
+      linkedPayment: selectedPayment?.id,
       uploadedBy: 'CTO Command',
       vaultStatus: 'Pending Review'
     }, ...current]);
   }
 
   function connectBillingMethodLocal(metadata = {}) {
+    if (!selectedRenewalRequest) return;
     const amountInr = moneyNumber(metadata.amountInr) || 1000;
     const vendorName = metadata.vendorName || selectedRenewalRequest.vendor;
     const tokenizedMethod = {
@@ -17256,11 +17900,13 @@ function PaymentVaultDashboard({ navigate, onBack, view = 'payment-vault', payme
   }
 
   function openRenewalRequest(payment = selectedPayment) {
+    if (!payment) return;
     setSelectedRenewalRequest(renewalRequestFromPayment(payment));
     setConnectModalOpen(true);
   }
 
   function addRenewalAudit(eventType, actor = 'Payment Vault') {
+    if (!selectedRenewalRequest || !selectedRenewalDecision) return;
     setBillingAudit((current) => [{
       id: `billing-audit-${Date.now()}`,
       billing_method_id: selectedBillingMethod?.id || 'payment-provider-pending',
@@ -17272,6 +17918,7 @@ function PaymentVaultDashboard({ navigate, onBack, view = 'payment-vault', payme
   }
 
   function saveRenewalRule(metadata = {}) {
+    if (!selectedRenewalRequest) return;
     const vendorName = metadata.vendorName || selectedRenewalRequest.vendor;
     setBillingVendorRules((current) => current.map((rule) => rule.vendor_name === vendorName ? {
       ...rule,
@@ -17308,7 +17955,7 @@ function PaymentVaultDashboard({ navigate, onBack, view = 'payment-vault', payme
           <LockKeyhole size={18} />
           <strong>GOPU OS stores only tokenized payment references.</strong>
           <span>Raw card numbers, CVV, OTPs, API keys, banking passwords, and banking credentials are never stored or displayed.</span>
-          <button className="tactical-button" onClick={() => openRenewalRequest(selectedPayment)}>Renewal Payment Method</button>
+          <button className="tactical-button" onClick={() => openRenewalRequest(selectedPayment)} disabled={!selectedPayment}>Renewal Payment Method</button>
         </section>
         <nav className="payment-vault-tabs" aria-label="Payment Vault sections">
           {paymentVaultTabs.map((tab) => <button key={tab} className={activeTab === tab ? 'active' : ''} onClick={() => setActiveTab(tab)}>{tab}</button>)}
@@ -17328,7 +17975,7 @@ function PaymentVaultDashboard({ navigate, onBack, view = 'payment-vault', payme
           auditFilter={auditFilter}
           expandedForecast={expandedForecast}
           onOpenPayment={openPayment}
-          onUploadReceipt={() => uploadReceiptLocal(selectedPayment.id)}
+          onUploadReceipt={() => uploadReceiptLocal(selectedPayment?.id)}
           onMarkReceiptReviewed={markReceiptReviewed}
           onOpenBillingMethod={setSelectedBillingId}
           onConnectBillingMethod={() => openRenewalRequest(selectedPayment)}
@@ -17360,10 +18007,11 @@ function PaymentVaultDashboard({ navigate, onBack, view = 'payment-vault', payme
 }
 
 function PaymentVaultWorkspace({ tab, payments, forecasts = paymentForecastSeed, receipts, billingMethods, billingVendorRules, billingAudit, selectedBillingMethod, paymentProviderConnected, selectedPayment, filteredAudit, auditFilter, expandedForecast, onOpenPayment, onUploadReceipt, onMarkReceiptReviewed, onOpenBillingMethod, onConnectBillingMethod, onOpenRenewalRequest, selectedRenewalRequest, selectedRenewalDecision, selectedRenewalRule, onAuditFilter, onToggleForecast }) {
+  const selectedPaymentId = selectedPayment?.id || null;
   if (tab === 'Payments') {
     return (
       <section className="payment-vault-workspace payment-vault-workspace-two">
-        <PaymentRecordsTable payments={payments} selectedId={selectedPayment.id} onOpen={onOpenPayment} onOpenRenewal={(payment) => onOpenRenewalRequest(payment)} />
+        <PaymentRecordsTable payments={payments} selectedId={selectedPaymentId} onOpen={onOpenPayment} onOpenRenewal={(payment) => onOpenRenewalRequest(payment)} />
         <PaymentDetailPanel payment={selectedPayment} onUploadReceipt={onUploadReceipt} />
         <PaymentRiskPanel risks={paymentRiskSeed} />
       </section>
@@ -17394,7 +18042,7 @@ function PaymentVaultWorkspace({ tab, payments, forecasts = paymentForecastSeed,
         <RenewalsLimitsDashboard
           payments={payments}
           forecasts={forecasts}
-          onView={(item) => onOpenPayment(payments.find((payment) => payment.vendor === item.name)?.id || selectedPayment.id)}
+          onView={(item) => onOpenPayment(payments.find((payment) => payment.vendor === item.name)?.id || selectedPaymentId)}
           onRenewNow={(item) => onOpenRenewalRequest(payments.find((payment) => payment.vendor === item.name) || selectedPayment)}
           onMarkPaid={() => {}}
         />
@@ -17406,7 +18054,7 @@ function PaymentVaultWorkspace({ tab, payments, forecasts = paymentForecastSeed,
       <PaymentSummaryCards payments={payments} receipts={receipts} />
       <BillingVaultOverview billingMethods={billingMethods} providerConnected={paymentProviderConnected} rules={billingVendorRules} onConnect={onConnectBillingMethod} />
       <RenewalPaymentRequestCard request={selectedRenewalRequest} method={selectedBillingMethod} rule={selectedRenewalRule} decision={selectedRenewalDecision} onOpen={() => onOpenRenewalRequest(selectedPayment)} />
-      <PaymentRecordsTable payments={payments} selectedId={selectedPayment.id} onOpen={onOpenPayment} onOpenRenewal={(payment) => onOpenRenewalRequest(payment)} />
+      <PaymentRecordsTable payments={payments} selectedId={selectedPaymentId} onOpen={onOpenPayment} onOpenRenewal={(payment) => onOpenRenewalRequest(payment)} />
       <VendorTrustRegistry vendors={vendorTrustSeed} />
       <RenewalForecastPanel forecasts={forecasts} expanded={expandedForecast} onToggle={onToggleForecast} />
       <PaymentRiskPanel risks={paymentRiskSeed} />
@@ -17574,9 +18222,9 @@ function BillingSecurityRulesPanel({ rules = billingVendorRuleSeed }) {
     <section className="payment-vault-panel billing-rules-panel">
       <div className="approval-section-header"><div><span>Auto-Renew Security Rules</span><h2>Limits and OTP policy</h2></div><ShieldCheck size={18} /></div>
       <div className="billing-rule-list">
-        <span>≤ ₹1,000: safe auto-renew allowed only for trusted infrastructure vendors with approved token and no risk flag.</span>
-        <span>₹1,001-₹1,500: CFO + COO confirmation required.</span>
-        <span>&gt; ₹1,500: Director review required.</span>
+        <span>Ã¢â€°Â¤ Ã¢â€šÂ¹1,000: safe auto-renew allowed only for trusted infrastructure vendors with approved token and no risk flag.</span>
+        <span>Ã¢â€šÂ¹1,001-Ã¢â€šÂ¹1,500: CFO + COO confirmation required.</span>
+        <span>&gt; Ã¢â€šÂ¹1,500: Director review required.</span>
         <span>Unknown vendor or high-risk vendor: blocked.</span>
         <span>OTP is entered once, submitted to provider, then cleared immediately. Audit never records OTP value.</span>
       </div>
@@ -17693,7 +18341,7 @@ function ConnectBillingMethodModal({ request = renewalRequestFromPayment(), bill
       amountInr: safeAmount,
       cardName: cardName.trim(),
       bankName: bankName.trim(),
-      maskedReference: `${cardBrand} •••• ${last4}`,
+      maskedReference: `${cardBrand} Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢ ${last4}`,
       expiryMonth: expiryMonth.padStart(2, '0').slice(0, 2),
       expiryYear
     });
@@ -17794,6 +18442,7 @@ function PaymentRecordsTable({ payments, selectedId, onOpen, onOpenRenewal }) {
 }
 
 function PaymentDetailPanel({ payment, onUploadReceipt }) {
+  if (!payment) return <div className="empty-state"><p>Select a payment from the list to view details.</p></div>;
   return (
     <section className="payment-vault-panel payment-detail-panel">
       <div className="approval-section-header"><div><span>Payment Detail</span><h2>{payment.vendor}</h2></div><FileCheck2 size={18} /></div>
@@ -18077,7 +18726,7 @@ function getPaymentState(status) {
 }
 
 function formatInr(value) {
-  return `₹${Number(value || 0).toLocaleString('en-IN')}`;
+  return `Ã¢â€šÂ¹${Number(value || 0).toLocaleString('en-IN')}`;
 }
 
 function WorkflowGuidanceEngine({ navigate, onBack, initialView = 'Workflow Guidance' }) {
@@ -19237,7 +19886,7 @@ function MobilePaymentPanel({ data, navigate }) {
 }
 
 function MobileBriefingPanel({ data, navigate }) {
-  return <div className="mobile-screen-stack"><MobileExecutiveSummary summaries={data.executiveSummaries} navigate={navigate} /><section className="mobile-card"><div className="mobile-section-title"><span>Founder Action Plan</span><strong>Today’s mobile briefing</strong></div><div className="mobile-brief-list">{data.briefingPlan.map((item) => <span key={item}>{item}</span>)}</div><div className="mobile-card-actions"><button onClick={() => navigate('/export-os/morning-briefing')}>Open Full Briefing</button><button onClick={() => navigate('/export-os/director')}>Open Director Queue</button></div></section></div>;
+  return <div className="mobile-screen-stack"><MobileExecutiveSummary summaries={data.executiveSummaries} navigate={navigate} /><section className="mobile-card"><div className="mobile-section-title"><span>Founder Action Plan</span><strong>TodayÃ¢â‚¬â„¢s mobile briefing</strong></div><div className="mobile-brief-list">{data.briefingPlan.map((item) => <span key={item}>{item}</span>)}</div><div className="mobile-card-actions"><button onClick={() => navigate('/export-os/morning-briefing')}>Open Full Briefing</button><button onClick={() => navigate('/export-os/director')}>Open Director Queue</button></div></section></div>;
 }
 
 const warehouseInventorySeed = [];
@@ -19291,12 +19940,14 @@ function WarehouseDashboard({ navigate, onBack, view = 'warehouse', inventoryId 
   const [dispatchPlan, setDispatchPlan] = useState('');
   const [timeline, setTimeline] = useState(warehouseTimelineSeed);
   const [actionNotice, setActionNotice] = useState('');
-  const selectedItem = inventory.find((item) => item.id === selectedId) || inventory[0];
+  const selectedItem = inventory.find((item) => item.id === selectedId) || null;
   const filteredInventory = filter === 'All' ? inventory : inventory.filter((item) => item.status === filter || item.product === filter);
   const lowStockCount = inventory.filter((item) => item.status === 'Low Stock').length + packingMaterialSeed.filter((item) => item.status === 'Low Stock').length;
   const currentDateTime = new Date().toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' });
 
-  function openInventory(id) {
+  function openInventory(itemOrId) {
+    const id = typeof itemOrId === 'object' ? itemOrId?.id : itemOrId;
+    if (!id) return;
     setSelectedId(id);
     navigate(`/export-os/warehouse/${id}`);
   }
@@ -19308,8 +19959,13 @@ function WarehouseDashboard({ navigate, onBack, view = 'warehouse', inventoryId 
   }
 
   function allocateStock(id) {
+    if (!id) {
+      setActionNotice('Select an inventory item before allocating stock.');
+      return;
+    }
     setInventory((current) => current.map((item) => item.id === id ? { ...item, status: 'Reserved', reserved: Math.max(item.reserved, 250) } : item));
     const item = inventory.find((row) => row.id === id) || selectedItem;
+    if (!item) return;
     setActionNotice(`${item.product} allocation prepared for COO review. Final dispatch remains blocked until linked shipment checks pass.`);
     setTimeline((current) => [['Warehouse Engine', 'Now', `${item.batch} stock allocation prepared`, 'Review Required'], ...current]);
   }
@@ -19340,7 +19996,7 @@ function WarehouseDashboard({ navigate, onBack, view = 'warehouse', inventoryId 
         </div>
         <div className="deck-header-controls">
           <div className="coo-verified"><ShieldCheck size={16} /><span>Founder session verified</span></div>
-          <div className="coo-status"><PackageCheck size={16} /><strong>Stock Value: ₹18.4L Local</strong></div>
+          <div className="coo-status"><PackageCheck size={16} /><strong>Stock Value: Ã¢â€šÂ¹18.4L Local</strong></div>
           <StatusBadge label={`${lowStockCount} low stock`} state="attention" />
           <StatusBadge label={`${shipmentAllocationSeed.length} dispatch pending`} state="progress" />
           <span className="deck-time-chip">{currentDateTime}</span>
@@ -19353,11 +20009,11 @@ function WarehouseDashboard({ navigate, onBack, view = 'warehouse', inventoryId 
       <main className="warehouse-layout">
         <section className="warehouse-left-stack">
           <WarehouseSummaryCards inventory={inventory} />
-          <ShipmentAllocationPanel allocations={shipmentAllocationSeed} navigate={navigate} onAllocate={() => allocateStock(selectedItem.id)} />
+          <ShipmentAllocationPanel allocations={shipmentAllocationSeed} navigate={navigate} onAllocate={() => allocateStock(selectedItem?.id)} />
           <PackingMaterialControl materials={packingMaterialSeed} />
         </section>
         <section className="warehouse-center-stack">
-          <InventoryGrid inventory={filteredInventory} selectedId={selectedItem.id} filter={filter} onFilter={setFilter} onOpen={openInventory} />
+          <InventoryGrid inventory={filteredInventory} selectedId={selectedItem?.id} filter={filter} onFilter={setFilter} onOpen={openInventory} />
           <StockMovementPanel movements={stockMovementSeed} />
           <BatchTrackingPanel batches={batchTrackingSeed} expanded={expandedBatch} onExpand={setExpandedBatch} onReserve={reserveBatch} />
           <WarehouseTimeline events={timeline} />
@@ -19398,7 +20054,7 @@ function InventoryGrid({ inventory, selectedId, filter, onFilter, onOpen }) {
       <div className="warehouse-filter-row">{filters.map((item) => <button className={filter === item ? 'active' : ''} key={item} onClick={() => onFilter(item)}>{item}</button>)}</div>
       <div className="inventory-grid-list">
         {inventory.map((item) => (
-          <button key={item.id} className={selectedId === item.id ? 'selected' : ''} onClick={() => onOpen(item.id)}>
+          <button key={item.id} className={selectedId === item.id ? 'selected' : ''} onClick={() => onOpen(item)}>
             <strong>{item.product}</strong>
             <span>{item.grade} / {item.batch}</span>
             <span>{item.available} {item.unit} available / {item.reserved} {item.unit} reserved</span>
@@ -19413,6 +20069,7 @@ function InventoryGrid({ inventory, selectedId, filter, onFilter, onOpen }) {
 }
 
 function InventoryDetailPanel({ item }) {
+  if (!item) return <div className="empty-state"><p>Select an item from the list to view details.</p></div>;
   return (
     <section className="warehouse-panel">
       <div className="approval-section-header"><div><span>Inventory Detail</span><h2>{item.batch}</h2></div><PackageCheck size={18} /></div>
@@ -19446,7 +20103,7 @@ function ShipmentAllocationPanel({ allocations, navigate, onAllocate }) {
 }
 
 function BatchTrackingPanel({ batches, expanded, onExpand, onReserve }) {
-  return <section className="warehouse-panel"><div className="approval-section-header"><div><span>Batch Tracking</span><h2>Batch risk and age</h2></div><ClipboardList size={18} /></div><div className="batch-tracking-list">{batches.map((batch) => <button key={batch.id} className={expanded === batch.id ? 'expanded' : ''} onClick={() => onExpand(batch.id)}><div><strong>{batch.batch}</strong><StatusBadge label={batch.reviewStatus} state={getWarehouseState(batch.reviewStatus)} /></div><span>{batch.supplier} / {batch.inwardDate} / {batch.location}</span>{expanded === batch.id && <small>Quality: {batch.qualityStatus} / Reserved: {batch.reservedShipments} / Age: {batch.stockAge}</small>}<em onClick={(event) => { event.stopPropagation(); onReserve(batch.batch); }}>Reserve Batch</em></button>)}</div></section>;
+  return <section className="warehouse-panel"><div className="approval-section-header"><div><span>Batch Tracking</span><h2>Batch risk and age</h2></div><ClipboardList size={18} /></div><div className="batch-tracking-list">{batches.map((batch) => <button key={batch?.id} className={expanded === batch?.id ? 'expanded' : ''} onClick={() => onExpand(batch?.id)}><div><strong>{batch?.batch}</strong><StatusBadge label={batch?.reviewStatus} state={getWarehouseState(batch?.reviewStatus)} /></div><span>{batch?.supplier} / {batch?.inwardDate} / {batch?.location}</span>{expanded === batch?.id && <small>Quality: {batch?.qualityStatus} / Reserved: {batch?.reservedShipments} / Age: {batch?.stockAge}</small>}<em onClick={(event) => { event.stopPropagation(); onReserve(batch?.batch); }}>Reserve Batch</em></button>)}</div></section>;
 }
 
 function QualityHoldPanel({ holds }) {
@@ -19532,7 +20189,7 @@ function SupplierProcurementDashboard({ navigate, onBack, view = 'suppliers', su
   const [requests, setRequests] = useState(procurementRequestSeed);
   const [followups, setFollowups] = useState(supplierFollowupSeed);
   const [notice, setNotice] = useState('');
-  const selectedSupplier = suppliers.find((supplier) => supplier.id === selectedId) || suppliers[0];
+  const selectedSupplier = suppliers.find((supplier) => supplier.id === selectedId) || null;
   const visibleSuppliers = filter === 'All' ? suppliers : suppliers.filter((supplier) => supplier.status === filter || supplier.risk === filter);
   const pendingConfirmations = followups.filter((item) => ['Pending Confirmation', 'Delayed', 'Quality Issue'].includes(item.status)).length;
   const procurementRisks = requests.filter((item) => ['Blocked', 'Supplier Contact Needed'].includes(item.status) || item.priority === 'Critical').length;
@@ -19560,10 +20217,14 @@ function SupplierProcurementDashboard({ navigate, onBack, view = 'suppliers', su
   }
 
   function createSupplierFollowup() {
+    if (!selectedSupplier) {
+      setNotice('Select a supplier before creating a follow-up.');
+      return;
+    }
     const followup = {
       id: `followup-local-${Date.now()}`,
-      supplier: selectedSupplier.name,
-      product: selectedSupplier.products[0],
+      supplier: selectedSupplier?.name,
+      product: selectedSupplier?.products?.[0],
       confirmation: 'Confirm stock availability and dispatch-ready date',
       deadline: 'Today 18:00',
       owner: 'COO Command',
@@ -19571,7 +20232,7 @@ function SupplierProcurementDashboard({ navigate, onBack, view = 'suppliers', su
       status: 'Pending Confirmation'
     };
     setFollowups((current) => [followup, ...current]);
-    setNotice(`Follow-up prepared for ${selectedSupplier.name}. No supplier confirmation is claimed.`);
+    setNotice(`Follow-up prepared for ${selectedSupplier?.name}. No supplier confirmation is claimed.`);
   }
 
   function updateConfirmationStatus(productId) {
@@ -19579,8 +20240,12 @@ function SupplierProcurementDashboard({ navigate, onBack, view = 'suppliers', su
   }
 
   function escalateSupplierDelay() {
-    setSuppliers((current) => current.map((supplier) => supplier.id === selectedSupplier.id ? { ...supplier, status: 'Delayed', risk: 'High' } : supplier));
-    setNotice(`${selectedSupplier.name} delay escalation prepared for COO review.`);
+    if (!selectedSupplier) {
+      setNotice('Select a supplier before escalating delay.');
+      return;
+    }
+    setSuppliers((current) => current.map((supplier) => supplier.id === selectedSupplier?.id ? { ...supplier, status: 'Delayed', risk: 'High' } : supplier));
+    setNotice(`${selectedSupplier?.name} delay escalation prepared for COO review.`);
   }
 
   function linkProcurementToShipment() {
@@ -19609,7 +20274,7 @@ function SupplierProcurementDashboard({ navigate, onBack, view = 'suppliers', su
 
       <main className="supplier-layout">
         <section className="supplier-left-stack">
-          <SupplierDirectory suppliers={visibleSuppliers} selectedId={selectedSupplier.id} filter={filter} onFilter={setFilter} onOpen={openSupplier} />
+          <SupplierDirectory suppliers={visibleSuppliers} selectedId={selectedSupplier?.id} filter={filter} onFilter={setFilter} onOpen={openSupplier} />
           <SupplierReliabilityScore supplier={selectedSupplier} />
           <SupplierMemoryPanel />
         </section>
@@ -19650,6 +20315,7 @@ function SupplierDirectory({ suppliers, selectedId, filter, onFilter, onOpen }) 
 }
 
 function SupplierDetailPage({ supplier }) {
+  if (!supplier) return <div className="empty-state"><p>Select a supplier from the list to view details.</p></div>;
   return (
     <section className="supplier-panel">
       <div className="approval-section-header"><div><span>Supplier Detail Page</span><h2>{supplier.name}</h2></div><Building2 size={18} /></div>
@@ -19682,6 +20348,7 @@ function SupplierFollowupQueue({ followups, onCreate, onEscalate }) {
 }
 
 function SupplierReliabilityScore({ supplier }) {
+  if (!supplier) return <div className="empty-state"><p>Select a supplier to view reliability details.</p></div>;
   const drivers = [
     ['Response time', supplier.score > 80 ? 'Strong' : 'Needs Review'],
     ['Delivery reliability', supplier.score > 75 ? 'Monitoring' : 'Risk Detected'],
@@ -19863,7 +20530,7 @@ function CIOCommandPage({ navigate, onBack, view = 'overview', importerId }) {
         </div>
         <div className="deck-header-controls">
           <div className="coo-verified"><ShieldCheck size={16} /><span>Founder session verified</span></div>
-          <StatusBadge label={`${summary.activeImporterRecords || 0} sample records`} state="progress" />
+          <StatusBadge label={`SAMPLE IMPORTERS: ${summary.activeImporterRecords || 0}`} state="progress" />
           <StatusBadge label="Live data not connected" state="attention" />
           <div className="coo-time"><CalendarClock size={16} /><span>{now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span></div>
           <button className="ghost-button deck-logout" onClick={onBack}><ArrowLeft size={15} />? Command Deck</button>
@@ -19958,7 +20625,7 @@ function CIOGroupedSelect({ label, value, onChange, options }) {
 }
 
 function LiveDataNotice({ summary }) {
-  return <section className="cio-live-notice"><StatusPulse /><strong>{summary.dataMode || 'Live data not connected — using local/sample records.'}</strong><span>No live importer, trade, LinkedIn, Google, APEDA, Spice Board, or CSV source is claimed as connected.</span></section>;
+  return <section className="cio-live-notice"><StatusPulse /><strong>{summary.dataMode || 'Live data not connected Ã¢â‚¬â€ using local/sample records.'}</strong><span>No live importer, trade, LinkedIn, Google, APEDA, Spice Board, or CSV source is claimed as connected.</span></section>;
 }
 
 function CIOOverviewTab({ data, importers, navigate }) {
@@ -20027,10 +20694,26 @@ function LiveDataStatusPanel({ sources }) {
 }
 
 function ImporterDatabaseTab({ importers, selectedImporter, onOpen, onSelect }) {
+  const topCountries = rankImporterValues(importers, (item) => item.country).slice(0, 5);
+  const topProducts = rankImporterValues(importers, (item) => item.products || item.product_interest || []).slice(0, 5);
   return (
     <section className="cio-database-layout">
       <div className="cio-panel">
+        <div className="cio-sample-banner">
+          <AlertTriangle size={16} />
+          <span>Sample Data - Verify before outreach. Do not treat these records as verified live leads.</span>
+        </div>
         <div className="approval-section-header"><div><span>Importer Database</span><h2>{importers.length} records in current view</h2></div><Building2 size={18} /></div>
+        <div className="cio-importer-insight-grid">
+          <div>
+            <strong>Top 5 Countries</strong>
+            {topCountries.map((item) => <span key={item.label}>{item.label}: {item.count}</span>)}
+          </div>
+          <div>
+            <strong>Top 5 Products</strong>
+            {topProducts.map((item) => <span key={item.label}>{item.label}: {item.count}</span>)}
+          </div>
+        </div>
         <ImporterTable importers={importers} onOpen={onOpen} onSelect={onSelect} />
       </div>
       <ImporterSideDetail importer={selectedImporter} onOpen={onOpen} />
@@ -20040,8 +20723,9 @@ function ImporterDatabaseTab({ importers, selectedImporter, onOpen, onSelect }) 
 
 function ImporterTable({ importers, onOpen, onSelect }) {
   const [page, setPage] = React.useState(1);
-  const PER_PAGE = 20;
+  const PER_PAGE = 50;
   const paged = importers.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(importers.length / PER_PAGE));
   React.useEffect(() => {
     setPage(1);
   }, [importers.length]);
@@ -20062,7 +20746,11 @@ function ImporterTable({ importers, onOpen, onSelect }) {
           <button type="button" className="ghost-button" onClick={() => onOpen(importer.id)}>Open</button>
         </div>
       ))}
-      <Pagination total={importers.length} perPage={PER_PAGE} page={page} onPage={setPage} />
+      <div className="cio-importer-pagination">
+        <button className="ghost-button" disabled={page === 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>Previous</button>
+        <span>Page {page} of {totalPages} / {importers.length} records</span>
+        <button className="ghost-button" disabled={page === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}>Next</button>
+      </div>
     </div>
   );
 }
@@ -20473,10 +21161,10 @@ function BuyerCRMPage({ navigate, onBack, view = 'buyers', buyerId }) {
   const [notes, setNotes] = useState(['Buyer prefers structured quote with shipment assumptions clearly separated.']);
   const [summary, setSummary] = useState('');
   const [notice, setNotice] = useState('');
-  const selectedBuyer = buyers.find((buyer) => buyer.id === selectedId) || buyers[0];
+  const selectedBuyer = buyers.find((buyer) => buyer.id === selectedId) || null;
   const visibleBuyers = buyers.filter((buyer) => {
     const matchesFilter = filter === 'All' || buyer.status === filter || buyer.country === filter || buyer.risk === filter;
-    const haystack = `${buyer.buyerName} ${buyer.company} ${buyer.country} ${buyer.interests.join(' ')}`.toLowerCase();
+    const haystack = `${buyer.buyerName} ${buyer.company} ${buyer.country} ${(buyer.interests || []).join(' ')}`.toLowerCase();
     return matchesFilter && haystack.includes(search.toLowerCase());
   });
   const activeBuyers = buyers.filter((buyer) => ['Active', 'High Value', 'Quote Pending', 'Follow-up Due'].includes(buyer.status) || buyer.relationshipValue === 'High Value').length;
@@ -20493,32 +21181,48 @@ function BuyerCRMPage({ navigate, onBack, view = 'buyers', buyerId }) {
   }, [navigate]);
 
   function createFollowup() {
+    if (!selectedBuyer) {
+      setNotice('Select a buyer before creating a follow-up.');
+      return;
+    }
     const followup = {
       id: `buyer-followup-local-${Date.now()}`,
-      buyer: selectedBuyer.company,
+      buyer: selectedBuyer?.company,
       reason: 'Buyer intelligence follow-up',
       dueDate: 'Today 18:00',
       owner: 'COO Command',
-      priority: selectedBuyer.risk === 'High' ? 'High' : 'Medium',
+      priority: selectedBuyer?.risk === 'High' ? 'High' : 'Medium',
       nextAction: 'Clarify buyer requirement before pricing or document release',
       status: 'Follow-up Due'
     };
     setFollowups((current) => [followup, ...current]);
-    setNotice(`Follow-up created for ${selectedBuyer.company} in Connect Supabase to activate.`);
+    setNotice(`Follow-up created for ${selectedBuyer?.company} in Connect Supabase to activate.`);
   }
 
   function linkBuyerWorkflow() {
-    setNotice(`${selectedBuyer.company} linked to lead, pricing, invoice, and shipment workflows in Connect Supabase to activate. No buyer confirmation is claimed.`);
+    if (!selectedBuyer) {
+      setNotice('Select a buyer before linking workflows.');
+      return;
+    }
+    setNotice(`${selectedBuyer?.company} linked to lead, pricing, invoice, and shipment workflows in Connect Supabase to activate. No buyer confirmation is claimed.`);
   }
 
   function addBuyerNote() {
-    const note = `${new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}: ${selectedBuyer.company} relationship note added under CMO ownership; COO/CFO review only where workflow or commercial risk is involved.`;
+    if (!selectedBuyer) {
+      setNotice('Select a buyer before adding a note.');
+      return;
+    }
+    const note = `${new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}: ${selectedBuyer?.company} relationship note added under CMO ownership; COO/CFO review only where workflow or commercial risk is involved.`;
     setNotes((current) => [note, ...current]);
     setNotice('Buyer communication note added in Connect Supabase to activate.');
   }
 
   function generateBuyerSummary() {
-    setSummary(`Buyer Intelligence Summary\n1. Strategic owner: CMO Command\n2. Company: ${selectedBuyer.company}, ${selectedBuyer.country}\n3. Product interests: ${selectedBuyer.interests.join(', ')}\n4. Relationship value: ${selectedBuyer.relationshipValue}\n5. Commercial risk: ${selectedBuyer.risk}\n6. COO action: keep enquiry, quotation coordination, documents, and shipment communication disciplined.\n7. CFO action: review payment behavior, pricing pressure, margin exposure, and payment-term exceptions.\n8. CTO support: keep CRM automations, WhatsApp workflows, notifications, and follow-up triggers monitored.\n9. Recommended action: ${selectedBuyer.status === 'Risk Review' ? 'Route sensitive claims and terms through Director Command Center.' : 'Prepare structured follow-up and keep buyer intelligence available to pricing, operations, and marketing.'}`);
+    if (!selectedBuyer) {
+      setNotice('Select a buyer before generating a summary.');
+      return;
+    }
+    setSummary(`Buyer Intelligence Summary\n1. Strategic owner: CMO Command\n2. Company: ${selectedBuyer?.company}, ${selectedBuyer?.country}\n3. Product interests: ${(selectedBuyer?.interests || []).join(', ')}\n4. Relationship value: ${selectedBuyer?.relationshipValue}\n5. Commercial risk: ${selectedBuyer?.risk}\n6. COO action: keep enquiry, quotation coordination, documents, and shipment communication disciplined.\n7. CFO action: review payment behavior, pricing pressure, commercial risk, low-margin buyers, payment-term exceptions, and financial exposure.\n8. CTO support: keep CRM automations, WhatsApp workflows, notifications, and follow-up triggers monitored.\n9. Recommended action: ${selectedBuyer?.status === 'Risk Review' ? 'Route sensitive claims and terms through Director Command Center.' : 'Prepare structured follow-up and keep buyer intelligence available to pricing, operations, and marketing.'}`);
     setNotice('Buyer summary generated in Connect Supabase to activate.');
   }
 
@@ -20546,7 +21250,7 @@ function BuyerCRMPage({ navigate, onBack, view = 'buyers', buyerId }) {
       <main className="buyer-layout">
         <section className="buyer-left-stack">
           <BuyerOwnershipPanel />
-          <BuyerDirectory buyers={visibleBuyers} selectedId={selectedBuyer.id} filter={filter} search={search} onFilter={handleBuyerFilterChange} onSearch={handleBuyerSearchChange} onOpen={openBuyer} />
+          <BuyerDirectory buyers={visibleBuyers} selectedId={selectedBuyer?.id} filter={filter} search={search} onFilter={handleBuyerFilterChange} onSearch={handleBuyerSearchChange} onOpen={openBuyer} />
           <BuyerRiskProfile buyer={selectedBuyer} />
           <BuyerPreferencesPanel preferences={buyerPreferenceSeed} />
         </section>
@@ -20956,8 +21660,8 @@ function AnalyticsPanel({ title, subtitle, rows, expanded, onToggle }) {
 }
 
 function FounderRiskDashboard({ risks, selectedRisk, onSelect }) {
-  const selected = risks.find((risk) => risk.id === selectedRisk) || risks[0];
-  return <section className="intelligence-panel"><div className="approval-section-header"><div><span>Founder Risk Dashboard</span><h2>Critical attention</h2></div><TriangleAlert size={18} /></div><div className="founder-risk-list">{risks.map((risk) => <button key={risk.id} className={selectedRisk === risk.id ? 'selected' : ''} onClick={() => onSelect(risk.id)}><div><strong>{risk.title}</strong><SeverityBadge severity={risk.severity} /></div><span>{risk.category}</span></button>)}</div><div className="founder-risk-detail"><strong>{selected.title}</strong><p>{selected.impact}</p><small>Risk drilldown is local-only and does not claim issue resolution.</small></div></section>;
+  const selected = risks.find((risk) => risk.id === selectedRisk) || null;
+  return <section className="intelligence-panel"><div className="approval-section-header"><div><span>Founder Risk Dashboard</span><h2>Critical attention</h2></div><TriangleAlert size={18} /></div><div className="founder-risk-list">{risks.map((risk) => <button key={risk.id} className={selectedRisk === risk.id ? 'selected' : ''} onClick={() => onSelect(risk.id)}><div><strong>{risk.title}</strong><SeverityBadge severity={risk.severity} /></div><span>{risk.category}</span></button>)}</div>{selected ? <div className="founder-risk-detail"><strong>{selected?.title}</strong><p>{selected?.impact}</p><small>Risk drilldown is local-only and does not claim issue resolution.</small></div> : <div className="empty-state"><p>Select a risk from the list to view details.</p></div>}</section>;
 }
 
 function StrategicRecommendationsPanel({ onGenerate, output }) {
@@ -21734,7 +22438,7 @@ const cmoModels = [
 
 function CMOCommandPage({ view = 'command', navigate, onBack }) {
   const [now, setNow] = useState(() => new Date());
-  const initialTab = view === 'calendar' ? 'Calendar' : view === 'campaigns' ? 'Campaigns' : 'Overview';
+  const initialTab = view === 'campaigns' ? 'Platforms' : 'Overview';
   const [activeTab, setActiveTab] = useState(initialTab);
   const [data, setData] = useState({
     summary: null,
@@ -21931,11 +22635,32 @@ function CMOCommandPage({ view = 'command', navigate, onBack }) {
     navigate('/export-os/director');
   }
 
-  const tabs = ['Overview', 'Learning Centre', 'YouTube', 'LinkedIn', 'Instagram', 'Facebook', 'Campaigns', 'Outreach', 'Analytics', 'Approvals', 'Calendar'];
+  const tabs = ['Overview', 'Content Queue', 'Published Posts', 'Platforms', 'LinkedIn Composer'];
   const scheduledCount = data.summary?.scheduledContent ?? 'Awaiting analytics';
   const approvalCount = data.summary?.pendingApprovals ?? 'Verification pending';
   const realRunStatus = getCmoRealRunStatus(data);
   const handleCmoTabChange = React.useCallback((tab) => setActiveTab(tab), []);
+
+  async function sendCmoStatusSummary() {
+    const queueItems = getCmoPendingContentItems(data);
+    const publishedItems = getCmoPublishedContentItems(data);
+    const response = await sendSlackNotification({
+      type: 'High Priority Alert',
+      priority: queueItems.length ? 'WARNING' : 'INFO',
+      reference: 'CMO-COMMAND-SUMMARY',
+      status: `${queueItems.length} pending approval / ${publishedItems.length} published`,
+      actionRequired: queueItems.length ? 'Review CMO approval queue before publishing.' : 'No CMO content is currently waiting for founder approval.',
+      source: 'CMO Command'
+    });
+    setOutput(response.ok ? 'CMO status summary sent to Slack.' : 'Slack summary could not be sent. Check Slack integration.');
+  }
+
+  async function handleContentDecision(item, action) {
+    if (!item?.id) return;
+    const response = await updateFounderContentDecision(item.id, action, { tenant_id: item.tenant_id || demoTenantId });
+    setOutput(response.ok ? `Content ${action === 'approve' ? 'approved' : 'rejected for edit'}.` : response.error || 'Content decision failed.');
+    await reloadContentMemoryArchive();
+  }
 
   return (
     <ExportOSShell className="cmo-command-shell" loading={data.loading}>
@@ -21956,46 +22681,299 @@ function CMOCommandPage({ view = 'command', navigate, onBack }) {
         </div>
       </header>
 
-      {data.loading ? <CMOLoadingPanel /> : view === 'command' ? (
-        <CMOCleanCommandDashboard
-          data={data}
-          output={output}
-          navigate={navigate}
-          onGenerateTodayPlan={generateTodayPlan}
-          onArchiveFilter={reloadContentMemoryArchive}
-        />
-      ) : (
+      {data.loading ? <CMOLoadingPanel /> : (
         <>
-          <section className="cmo-tabbar">
-            {tabs.map((tab) => <button key={tab} className={activeTab === tab ? 'active' : ''} onClick={() => handleCmoTabChange(tab)}>{tab}</button>)}
+          <section className="cmo-tabs" role="tablist" aria-label="CMO Command tabs">
+            {tabs.map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab}
+                className={`cmo-tab ${activeTab === tab ? 'active' : ''}`}
+                onClick={() => handleCmoTabChange(tab)}
+              >
+                {tab}
+              </button>
+            ))}
           </section>
 
-          <section className="cmo-controlbar">
-            <div><span>Daily Runs</span><strong>{realRunStatus}</strong></div>
-            <div><span>Growth Objective</span><strong>10% optimization target</strong></div>
-            <div><span>Budget Governance</span><strong>CFO-controlled</strong></div>
-            <div><span>Publishing</span><strong>Approval queue first</strong></div>
-            <StatusBadge label={data.error ? 'Connect Supabase to activate' : 'Growth Intelligence Active'} state={data.error ? 'attention' : 'progress'} />
-          </section>
-
-          <main className="cmo-workspace-layout">
-            <section className="cmo-workspace-main">
-              <CMOTabWorkspace
-                tab={activeTab}
-                data={data}
-                output={output}
-                navigate={navigate}
-                onGenerateTodayPlan={generateTodayPlan}
-                onGenerateReport={generateReport}
-                onGenerateFounderSummary={generateFounderSummary}
-                onRouteBrandRisk={routeBrandRiskToApproval}
-              />
-            </section>
-            <CMOIntelligencePanel data={data} onOpenBuyerCRM={() => navigate('/export-os/buyer-crm')} onOpenApprovalWall={() => navigate('/export-os/director')} />
+          <main className="cmo-tab-content">
+            <CMOFocusedCommandTabs
+              activeTab={activeTab}
+              data={data}
+              output={output}
+              navigate={navigate}
+              realRunStatus={realRunStatus}
+              onNewContent={() => setActiveTab('LinkedIn Composer')}
+              onSchedulePost={() => setActiveTab('LinkedIn Composer')}
+              onViewPublished={() => setActiveTab('Published Posts')}
+              onSendSlack={sendCmoStatusSummary}
+              onContentDecision={handleContentDecision}
+              onCreateApprovalRequest={createApprovalRequest}
+            />
           </main>
         </>
       )}
     </ExportOSShell>
+  );
+}
+
+function getCmoContentItems(data = {}) {
+  return Array.isArray(data.contentMemoryArchive?.items) ? data.contentMemoryArchive.items : [];
+}
+
+function getCmoPendingContentItems(data = {}) {
+  return getCmoContentItems(data).filter((item) => {
+    const approval = String(item.approval_status || item.content_approvals?.[0]?.approval_status || '').toLowerCase();
+    const publish = String(item.publish_status || item.status || '').toLowerCase();
+    return !['approved', 'rejected', 'needs_edit'].includes(approval) && !['published', 'sent'].includes(publish);
+  });
+}
+
+function getCmoPublishedContentItems(data = {}) {
+  return getCmoContentItems(data).filter((item) => ['published', 'sent'].includes(String(item.publish_status || item.status || '').toLowerCase()));
+}
+
+function getCmoConnectedPlatformCount(data = {}) {
+  const steps = Array.isArray(data.cmoAutomationFlow?.steps) ? data.cmoAutomationFlow.steps : [];
+  const livePlatforms = new Set();
+  steps.forEach((step) => {
+    const status = String(step.status || step.healthStatus || '').toLowerCase();
+    if (!['live', 'connected', 'complete'].includes(status)) return;
+    const label = `${step.title || ''} ${step.engine || ''}`.toLowerCase();
+    ['linkedin', 'instagram', 'facebook', 'youtube', 'resend', 'email'].forEach((platform) => {
+      if (label.includes(platform)) livePlatforms.add(platform);
+    });
+  });
+  return livePlatforms.size;
+}
+
+function getCmoTitle(item = {}) {
+  return item.title || item.topic || item.campaign_name || item.content_type || 'Untitled content draft';
+}
+
+function CMOFocusedCommandTabs({ activeTab, data, output, navigate, realRunStatus, onNewContent, onSchedulePost, onViewPublished, onSendSlack, onContentDecision, onCreateApprovalRequest }) {
+  if (activeTab === 'Content Queue') return <CMOContentQueueTab items={getCmoPendingContentItems(data)} onContentDecision={onContentDecision} />;
+  if (activeTab === 'Published Posts') return <CMOPublishedPostsTab items={getCmoPublishedContentItems(data)} />;
+  if (activeTab === 'Platforms') return <CMOPlatformsTab connectedCount={getCmoConnectedPlatformCount(data)} navigate={navigate} />;
+  if (activeTab === 'LinkedIn Composer') return <CMOLinkedInComposerTab onCreateApprovalRequest={onCreateApprovalRequest} />;
+  return (
+    <CMOFocusedOverviewTab
+                data={data}
+                output={output}
+      realRunStatus={realRunStatus}
+      onNewContent={onNewContent}
+      onSchedulePost={onSchedulePost}
+      onViewPublished={onViewPublished}
+      onSendSlack={onSendSlack}
+      navigate={navigate}
+    />
+  );
+}
+
+function CMOFocusedOverviewTab({ data, output, realRunStatus, onNewContent, onSchedulePost, onViewPublished, onSendSlack, navigate }) {
+  const pendingItems = getCmoPendingContentItems(data);
+  const publishedItems = getCmoPublishedContentItems(data);
+  const draftCount = pendingItems.length;
+  const connectedPlatforms = getCmoConnectedPlatformCount(data);
+  const chips = [
+    ['Drafts Ready', draftCount],
+    ['Posts Published', publishedItems.length],
+    ['Pending Approval', data.summary?.pendingApprovals ?? pendingItems.length],
+    ['Platforms Connected', connectedPlatforms]
+  ];
+  return (
+    <section className="cmo-focused-overview">
+      <div className="cmo-stat-chip-row">
+        {chips.map(([label, value]) => (
+          <article key={label} className="cmo-stat-chip">
+            <span>{label}</span>
+            <strong>{value}</strong>
+          </article>
+        ))}
+      </div>
+      <section className="cmo-panel">
+        <div className="approval-section-header"><div><span>CMO Overview</span><h2>Content, approval, and publishing controls</h2></div><Target size={18} /></div>
+        <p>Current run state: {realRunStatus}. Publishing remains blocked until founder approval unlocks the queue.</p>
+        <div className="cmo-action-row">
+          <button className="tactical-button" onClick={onNewContent}>New Content</button>
+          <button className="ghost-button" onClick={onSendSlack}>Send to Slack</button>
+        </div>
+        {output ? <p className="cmo-posting-message">{output}</p> : null}
+      </section>
+      <section className="cmo-panel">
+        <div className="approval-section-header"><div><span>Quick Actions</span><h2>Common CMO workflows</h2></div><Zap size={18} /></div>
+        <div className="cmo-quick-action-grid">
+          <button className="ghost-button" onClick={onNewContent}>Create LinkedIn Post</button>
+          <button className="ghost-button" onClick={() => navigate('/export-os/buyer-crm')}>Draft Buyer Email</button>
+          <button className="ghost-button" onClick={onSchedulePost}>Schedule Post</button>
+          <button className="ghost-button" onClick={onViewPublished}>View Published</button>
+        </div>
+      </section>
+    </section>
+  );
+}
+
+function CMOContentQueueTab({ items, onContentDecision }) {
+  return (
+    <section className="cmo-panel">
+      <div className="approval-section-header"><div><span>Content Queue</span><h2>Founder approval required before publishing</h2></div><ShieldCheck size={18} /></div>
+      {items.length ? (
+        <div className="cmo-simple-list">
+          {items.map((item) => (
+            <article key={item.id} className="cmo-simple-row">
+              <div>
+                <span>{item.platform || 'Platform pending'}</span>
+                <strong>{getCmoTitle(item)}</strong>
+              </div>
+              <StatusBadge label={item.approval_status || 'Pending Approval'} state={getApprovalState(item.approval_status || 'Pending Approval')} />
+              <div className="cmo-row-actions">
+                <button className="tactical-button" onClick={() => onContentDecision(item, 'approve')}>Approve</button>
+                <button className="ghost-button" onClick={() => onContentDecision(item, 'reject')}>Reject</button>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <EmptyState icon={ClipboardCheck} title="No content pending approval." description="Drafts sent for founder review will appear here." />
+      )}
+    </section>
+  );
+}
+
+function CMOPublishedPostsTab({ items }) {
+  return (
+    <section className="cmo-panel">
+      <div className="approval-section-header"><div><span>Published Posts</span><h2>Live content and performance snapshot</h2></div><BarChart3 size={18} /></div>
+      {items.length ? (
+        <div className="cmo-simple-list">
+          {items.map((item) => {
+            const metrics = Array.isArray(item.content_metrics) ? item.content_metrics : [];
+            const stats = metrics.length
+              ? metrics.map((metric) => `${metric.metric_name || 'Metric'}: ${metric.metric_value ?? '0'}`).slice(0, 3).join(' / ')
+              : 'Performance not connected';
+            return (
+              <article key={item.id} className="cmo-simple-row">
+                <div>
+                  <span>{item.platform || 'Platform pending'} / {formatLearningDate(item.published_at_utc || item.published_at || item.created_at)}</span>
+                  <strong>{getCmoTitle(item)}</strong>
+                </div>
+                <span>{stats}</span>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <EmptyState icon={RadioTower} title="No published posts yet." description="Approved and published CMO posts will appear here after the publish engine records them." />
+      )}
+    </section>
+  );
+}
+
+function CMOPlatformsTab({ connectedCount, navigate }) {
+  const platforms = [
+    ['LinkedIn', connectedCount > 0],
+    ['Instagram', false],
+    ['Facebook', false],
+    ['YouTube', false],
+    ['Email/Resend', false]
+  ];
+  return (
+    <section className="cmo-tab-stack">
+      <div className="cmo-platform-grid">
+        {platforms.map(([platform, connected]) => (
+          <article key={platform} className="cmo-platform-card">
+            <div>
+              <span className={`cmo-platform-dot ${connected ? 'live' : ''}`} />
+              <strong>{platform}</strong>
+            </div>
+            <StatusBadge label={connected ? 'Live' : 'Not Connected'} state={connected ? 'online' : 'idle'} />
+            <button className="ghost-button" onClick={() => navigate('/export-os/executives/cto')}>Configure</button>
+          </article>
+        ))}
+      </div>
+      <section className="cmo-panel">
+        <div className="approval-section-header"><div><span>LinkedIn Best Practices</span><h2>Authority posting rules</h2></div><UsersRound size={18} /></div>
+        <div className="approval-memory-list">
+          {[
+            '2-3 posts per week.',
+            'Carousel posts get 3x more engagement.',
+            'Video gets 5x more engagement.',
+            'Use 3-5 hashtags: #IndianExports #SpiceExport #OnionExport #GlobalTrade #B2BImporter'
+          ].map((item) => <span key={item}>{item}</span>)}
+        </div>
+      </section>
+    </section>
+  );
+}
+
+const linkedInComposerHashtags = {
+  'Product Showcase': '#IndianExports #SpiceExport #OnionExport #GlobalTrade #B2BImporter',
+  'Shipment Milestone': '#IndianExports #GlobalTrade #ShipmentTracking #B2BImporter #ExportBusiness',
+  'Market Intelligence': '#GlobalTrade #B2BImporter #IndianExports #MarketIntelligence #ExportBusiness',
+  'Behind the Scenes': '#IndianExports #Manufacturing #ExportBusiness #GlobalTrade #B2BImporter',
+  Educational: '#IndianExports #ExportEducation #GlobalTrade #B2BImporter #SpiceExport'
+};
+
+function CMOLinkedInComposerTab({ onCreateApprovalRequest }) {
+  const [postType, setPostType] = useState('Product Showcase');
+  const [content, setContent] = useState('');
+  const [message, setMessage] = useState('');
+  const hashtags = linkedInComposerHashtags[postType] || linkedInComposerHashtags.Educational;
+
+  async function sendForApproval() {
+    if (!content.trim()) {
+      setMessage('Add LinkedIn content before sending for approval.');
+      return;
+    }
+    const response = await onCreateApprovalRequest({
+      tenant_id: demoTenantId,
+      request_type: 'CMO LinkedIn Content Approval',
+      title: `${postType} LinkedIn post`,
+      department: 'Marketing',
+      executive_owner: 'CMO Command',
+      buyer_name: 'Public LinkedIn audience',
+      risk_level: 'Medium',
+      priority: 'Medium',
+      status: 'Founder Review Required',
+      summary: content.slice(0, 240),
+      source_module: 'cmo-command',
+      category: 'Marketing',
+      details: {
+        platform: 'LinkedIn',
+        post_type: postType,
+        content,
+        hashtags,
+        approval_gate: 'Founder approval required before publishing'
+      }
+    });
+    setMessage(response.ok ? 'LinkedIn draft sent for founder approval.' : response.error || 'Approval request could not be created.');
+  }
+
+  return (
+    <section className="cmo-panel cmo-composer">
+      <div className="approval-section-header"><div><span>LinkedIn Composer</span><h2>Draft founder-safe LinkedIn content</h2></div><Send size={18} /></div>
+      <label>
+        <span>Post Type</span>
+        <select value={postType} onChange={(event) => setPostType(event.target.value)}>
+          {Object.keys(linkedInComposerHashtags).map((type) => <option key={type} value={type}>{type}</option>)}
+        </select>
+      </label>
+      <label>
+        <span>Content</span>
+        <textarea value={content} onChange={(event) => setContent(event.target.value)} placeholder="Draft LinkedIn post content..." rows={9} />
+      </label>
+      <label>
+        <span>Hashtag Suggestions</span>
+        <input value={hashtags} readOnly />
+      </label>
+      <div className="cmo-action-row">
+        <button className="ghost-button" onClick={() => setMessage('Draft saved locally in composer. Send for approval when ready.')}>Save Draft</button>
+        <button className="tactical-button" onClick={sendForApproval}>Send for Approval</button>
+      </div>
+      {message ? <p className="cmo-posting-message">{message}</p> : null}
+    </section>
   );
 }
 
@@ -23674,7 +24652,7 @@ function CMOAutomationFlow({ flow, contentMemoryArchive }) {
                   onOpen={(event) => openStepDetail(event, step)}
                   onKeyDown={(event) => handleStepKeyDown(event, step)}
                 />
-                {index < displaySteps.length - 1 ? <div className="cmo-flow-down" aria-hidden="true">↓</div> : null}
+                {index < displaySteps.length - 1 ? <div className="cmo-flow-down" aria-hidden="true">Ã¢â€ â€œ</div> : null}
               </Fragment>
             );
           }
@@ -23767,7 +24745,7 @@ function CMOAutomationFlow({ flow, contentMemoryArchive }) {
                 {(step.status === 'pending' || step.status === 'waiting') && step.healthMessage ? <p className="cmo-flow-pending">{step.healthMessage}</p> : null}
                 {step.id === 'ai-content-generation' ? <Step2ContentQualityPanel /> : null}
               </article>
-              {index < displaySteps.length - 1 ? <div className="cmo-flow-down" aria-hidden="true">↓</div> : null}
+              {index < displaySteps.length - 1 ? <div className="cmo-flow-down" aria-hidden="true">Ã¢â€ â€œ</div> : null}
             </Fragment>
           );
         })}
@@ -24596,7 +25574,7 @@ function CMOPostingTimeSettings({ preference }) {
 
 function CMOTopStatusStrip({ data }) {
   const items = [
-    ['Today’s Focus', data.summary?.todayRunbook || '9:00 AM IST', CalendarClock],
+    ['TodayÃ¢â‚¬â„¢s Focus', data.summary?.todayRunbook || '9:00 AM IST', CalendarClock],
     ['Growth Objective', '10% Optimization', Target],
     ['Budget Governance', 'CFO-Controlled', CircleDollarSign],
     ['Publishing Rule', 'Approval Queue First', ClipboardCheck],
@@ -24775,7 +25753,7 @@ function CMOApprovalQueueClean({ rows, navigate }) {
         {items.map((row) => (
           <div key={row[0]}>
             <strong>{row[0]}</strong>
-            <p>{row[2]} · {row[4]}</p>
+            <p>{row[2]} Ã‚Â· {row[4]}</p>
             <small>{row[3]}</small>
           </div>
         ))}
@@ -25026,7 +26004,7 @@ function CMOOverviewWorkspaceV2({ data, output, onGenerateTodayPlan, onGenerateF
 function CMOOverviewWorkspace({ data, output, onGenerateTodayPlan, onGenerateFounderSummary, navigate }) {
   const summary = data.summary || {};
   const metrics = [
-    ['Today’s content runbook', summary.todayRunbook || '8:39 AM IST', 'Monitoring'],
+    ['TodayÃ¢â‚¬â„¢s content runbook', summary.todayRunbook || '8:39 AM IST', 'Monitoring'],
     ['Pending approvals', summary.pendingApprovals || 4, 'Founder review queue'],
     ['Campaign activity', summary.campaignActivity || 5, 'Active campaigns'],
     ['Buyer outreach activity', summary.buyerOutreachActivity || 7, 'Buyer CRM linked'],
@@ -25123,7 +26101,7 @@ const campaignObjectives = ['Brand Awareness', 'Lead Generation', 'Website Traff
 
 function formatInrValue(value) {
   const amount = Number(value) || 0;
-  return `₹${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(amount)}`;
+  return `Ã¢â€šÂ¹${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(amount)}`;
 }
 
 function CampaignBudgetPanel({ control, navigate }) {
@@ -25206,7 +26184,7 @@ function CampaignBudgetPanel({ control, navigate }) {
                   <span>{campaign.cpc ? formatInrValue(campaign.cpc) : 'No data'}</span>
                   <span>{campaign.ctr ? `${campaign.ctr.toFixed(2)}%` : 'No data'}</span>
                   <span>{campaign.roi ? `${campaign.roi.toFixed(2)}x` : 'No data'}</span>
-                  <span>{campaign.startDate || 'Not set'} → {campaign.endDate || 'Not set'}</span>
+                  <span>{campaign.startDate || 'Not set'} Ã¢â€ â€™ {campaign.endDate || 'Not set'}</span>
                 </div>
               );
             })}
@@ -25228,11 +26206,11 @@ function CampaignBudgetPanel({ control, navigate }) {
       <section className="campaign-control-grid">
         <article className="cmo-panel">
           <div className="approval-section-header"><div><span>Marketing Calendar</span><h2>Campaign dates, scheduled posts, launches, approvals</h2></div><CalendarDays size={18} /></div>
-          <div className="approval-memory-list">{(campaignControl.schedule?.length ? campaignControl.schedule.map((item) => `${String(item.scheduled_at || '').slice(0, 10)} — ${item.title || item.campaign_name || item.schedule_type} / ${item.status}`) : ['No campaign calendar rows connected yet.']).map((item) => <span key={item}>{item}</span>)}</div>
+          <div className="approval-memory-list">{(campaignControl.schedule?.length ? campaignControl.schedule.map((item) => `${String(item.scheduled_at || '').slice(0, 10)} Ã¢â‚¬â€ ${item.title || item.campaign_name || item.schedule_type} / ${item.status}`) : ['No campaign calendar rows connected yet.']).map((item) => <span key={item}>{item}</span>)}</div>
         </article>
         <article className="cmo-panel">
           <div className="approval-section-header"><div><span>Lead Tracking</span><h2>Inquiries, WhatsApp clicks, visits, importer responses</h2></div><UsersRound size={18} /></div>
-          <div className="approval-memory-list">{(campaignControl.leads?.length ? campaignControl.leads.map((item) => `${item.lead_name || item.importer_name || 'Campaign lead'} — ${item.source || item.lead_source || 'source pending'} / ${item.status || 'New'}`) : ['No campaign leads connected yet.']).map((item) => <span key={item}>{item}</span>)}</div>
+          <div className="approval-memory-list">{(campaignControl.leads?.length ? campaignControl.leads.map((item) => `${item.lead_name || item.importer_name || 'Campaign lead'} Ã¢â‚¬â€ ${item.source || item.lead_source || 'source pending'} / ${item.status || 'New'}`) : ['No campaign leads connected yet.']).map((item) => <span key={item}>{item}</span>)}</div>
         </article>
       </section>
 
@@ -25912,7 +26890,7 @@ function FounderSummaryHero({ onGenerate, generatedNote }) {
     <section className="briefing-hero">
       <div>
         <span className="coo-kicker">Today's Founder Briefing</span>
-        <h2>Executive command intelligence for today’s decisions</h2>
+        <h2>Executive command intelligence for todayÃ¢â‚¬â„¢s decisions</h2>
         <p>Consolidated from COO, CFO, CTO, and CMO command units. Connect Supabase to activate only: no issue is marked resolved and no release action is claimed.</p>
         <div className="briefing-status-chips">
           {['COO Monitoring', 'CFO Review Active', 'CTO Risk Scan', 'CMO Content Runbook'].map((chip) => <StatusBadge key={chip} label={chip} state="progress" />)}
@@ -27651,6 +28629,11 @@ function COOCommandPage({ navigate, onBack, onOpenApprovalWall, onOpenTasks }) {
   const [selectedOperationalItem, setSelectedOperationalItem] = useState(null);
   const [drawerNote, setDrawerNote] = useState('');
   const [activeCOOTab, setActiveCOOTab] = useState('Overview');
+  const [cooSlackNotice, setCooSlackNotice] = useState('');
+  const [lastCOOSlackNotification, setLastCOOSlackNotification] = useState(() => {
+    const rows = getSlackNotificationActivity();
+    return rows.find((item) => String(item.reference || '').startsWith('COO-')) || null;
+  });
 
   async function refreshCOOData() {
     const [summaryResult, boardResult, blockerResult, priorityResult, approvalResult, readinessResult, followupResult] = await Promise.all([
@@ -27698,6 +28681,69 @@ function COOCommandPage({ navigate, onBack, onOpenApprovalWall, onOpenTasks }) {
     setDailyPlan(result.data);
     setActionNotice('COO daily plan prepared in preview mode.');
     setTimeline((current) => [{ id: `timeline-daily-${Date.now()}`, executive_command: 'COO Command', event: 'COO daily plan generated', status: 'Draft Prepared', created_at: new Date().toISOString() }, ...current]);
+  }
+
+  async function sendCOOSlack(payload, successMessage) {
+    const result = await sendSlackNotification({
+      source: 'COO Command',
+      ...payload
+    });
+    setLastCOOSlackNotification(result.data || null);
+    const notConfigured = result.data?.status === 'Provider Not Connected';
+    const message = notConfigured
+      ? 'Slack not configured Ã¢â‚¬â€ add SLACK_BOT_TOKEN to env'
+      : result.ok
+        ? successMessage
+        : 'Slack notification failed safely.';
+    setCooSlackNotice(message);
+    setActionNotice(message);
+    setTimeline((current) => [{ id: `timeline-slack-${Date.now()}`, executive_command: 'COO Command', event: `${payload.type || 'COO Slack notification'}: ${message}`, status: result.data?.status || (result.ok ? 'Sent' : 'Failed'), created_at: new Date().toISOString() }, ...current]);
+    return result;
+  }
+
+  async function sendCOOStatusToSlack() {
+    await sendCOOSlack({
+      type: 'High Priority Alert',
+      priority: summary?.blockedWorkflows ? 'WARNING' : 'INFO',
+      reference: 'COO-DAILY-STATUS',
+      status: `${summary?.activeWorkflows ?? 0} active workflows, ${summary?.blockedWorkflows ?? 0} blocked`,
+      actionRequired: `Due today: ${summary?.dueToday ?? 0}. Supplier follow-ups: ${summary?.supplierFollowups ?? 0}. Founder approvals waiting: ${summary?.founderApprovalsWaiting ?? 0}.`
+    }, 'COO status sent to Slack.');
+  }
+
+  async function sendDailyBriefingToSlack() {
+    const result = await generateCOODailyPlan(demoTenantId);
+    setDailyPlan(result.data);
+    await sendCOOSlack({
+      type: 'High Priority Alert',
+      priority: (summary?.blockedWorkflows || blockers.length) ? 'WARNING' : 'INFO',
+      reference: 'COO-DAILY-BRIEFING',
+      status: 'Daily briefing generated',
+      actionRequired: result.data
+    }, 'Briefing sent to Slack');
+  }
+
+  async function sendSupplierFollowupSlack(item = followups[0] || {}) {
+    await sendCOOSlack({
+      type: 'Supplier Follow-up Required',
+      priority: 'WARNING',
+      reference: `COO-SUPPLIER-${item.id || Date.now()}`,
+      buyer: item.party || item.buyerSupplier || 'Supplier workflow',
+      status: item.status || 'Follow-up required',
+      eta: item.deadline || '',
+      actionRequired: item.nextAction || item.title || 'Supplier follow-up required before shipment movement.'
+    }, 'Supplier follow-up sent to Slack.');
+  }
+
+  async function alertBlockedWorkflowViaSlack(blocker = {}) {
+    await sendCOOSlack({
+      type: 'High Priority Alert',
+      priority: blocker.priority === 'Critical' ? 'URGENT' : 'WARNING',
+      reference: `COO-BLOCKER-${blocker.id || Date.now()}`,
+      buyer: blocker.owner || 'Workflow owner',
+      status: blocker.title || 'Blocked workflow',
+      actionRequired: `Reason: ${blocker.reason || blocker.nextAction || 'Not recorded'}. Owner: ${blocker.owner || 'Not assigned'}.`
+    }, 'Blocked workflow alert sent to Slack.');
   }
 
   async function prepareFounderSummary() {
@@ -27780,14 +28826,15 @@ function COOCommandPage({ navigate, onBack, onOpenApprovalWall, onOpenTasks }) {
 
   return (
     <ExportOSShell className="executive-home-shell coo-command-home-shell" statusMessage={backendStatus.mode === 'Connected' ? 'COO Command live connected' : 'COO Command integration pending'}>
-      <COOOperationsHeader onBack={onBack} summary={summary} />
+      <COOOperationsHeader onBack={onBack} summary={summary} onNewLead={() => navigate('/export-os/leads/new')} onSendDailyBriefing={sendDailyBriefingToSlack} />
       <COOConnectionStatus mode={backendStatus.mode} />
+      <COOSlackAlertsPanel lastNotification={lastCOOSlackNotification} notice={cooSlackNotice} onSendStatus={sendCOOStatusToSlack} />
       <COOTabBar activeTab={activeCOOTab} onSelect={setActiveCOOTab} />
       <COOOperationalSummary summary={summary} inspect={inspectOperationalItem} />
       {activeCOOTab === 'Overview' && (
         <>
           <section className="coo-executive-layout">
-            <COOPriorityQueue queue={priorityQueue} onInspect={inspectOperationalItem} onCreateFollowup={createFollowupTask} />
+            <COOPriorityQueue queue={priorityQueue} onInspect={inspectOperationalItem} onCreateFollowup={createFollowupTask} onAlertBlocked={alertBlockedWorkflowViaSlack} />
             <main className="coo-execution-board">
               <OperationsControlBoard workflows={visibleWorkflows.slice(0, 10)} onOpen={openRoute} onCreateFollowup={createFollowupTask} onInspect={inspectOperationalItem} />
             </main>
@@ -27807,15 +28854,15 @@ function COOCommandPage({ navigate, onBack, onOpenApprovalWall, onOpenTasks }) {
           </section>
           <section className="coo-intelligence-bottom">
             <COOActivityTimeline entries={timeline} onInspect={inspectOperationalItem} />
-            <SupplierShipmentFollowups followups={followups} onCreateFollowup={createFollowupTask} onInspect={inspectOperationalItem} />
+            <SupplierShipmentFollowups followups={followups} onCreateFollowup={createFollowupTask} onInspect={inspectOperationalItem} onSendSlackFollowup={sendSupplierFollowupSlack} />
             <SOPImprovementWatch issues={sopWatch} onDraft={() => setActionNotice('SOP improvement draft prepared in preview mode.')} onInspect={inspectOperationalItem} />
           </section>
           <COOClosingSummaryStrip summary={summary} readiness={readiness} followups={followups} approvals={approvals} />
         </>
       )}
       {activeCOOTab === 'Workflows' && <OperationsControlBoard workflows={visibleWorkflows} onOpen={openRoute} onCreateFollowup={createFollowupTask} onInspect={inspectOperationalItem} />}
-      {activeCOOTab === 'Shipments' && <SupplierShipmentFollowups followups={followups} onCreateFollowup={createFollowupTask} onInspect={inspectOperationalItem} />}
-      {activeCOOTab === 'Tasks' && <COOPriorityQueue queue={priorityQueue} onInspect={inspectOperationalItem} onCreateFollowup={createFollowupTask} />}
+      {activeCOOTab === 'Shipments' && <SupplierShipmentFollowups followups={followups} onCreateFollowup={createFollowupTask} onInspect={inspectOperationalItem} onSendSlackFollowup={sendSupplierFollowupSlack} />}
+      {activeCOOTab === 'Tasks' && <COOPriorityQueue queue={priorityQueue} onInspect={inspectOperationalItem} onCreateFollowup={createFollowupTask} onAlertBlocked={alertBlockedWorkflowViaSlack} />}
       {activeCOOTab === 'Risks' && <CriticalOperationsPanel blockers={blockers} approvals={approvals} followups={followups} onInspect={inspectOperationalItem} onOpenApprovalWall={onOpenApprovalWall} />}
       {activeCOOTab === 'Timeline' && <COOActivityTimeline entries={timeline} onInspect={inspectOperationalItem} />}
       {activeCOOTab === 'SOP Insights' && <SOPImprovementWatch issues={sopWatch} onDraft={() => setActionNotice('SOP improvement draft prepared in preview mode.')} onInspect={inspectOperationalItem} />}
@@ -27899,7 +28946,7 @@ function buildCOOPriorityQueue(priorities = [], blockers = [], approvals = [], f
     .slice(0, 8);
 }
 
-function COOOperationsHeader({ onBack, summary }) {
+function COOOperationsHeader({ onBack, summary, onNewLead, onSendDailyBriefing }) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000);
@@ -27918,9 +28965,35 @@ function COOOperationsHeader({ onBack, summary }) {
         <div className="coo-status"><Workflow size={15} /><strong>{summary?.activeWorkflows ?? '--'} active</strong></div>
         <div className="coo-status"><TriangleAlert size={15} /><strong>{summary?.blockedWorkflows ?? '--'} blocked</strong></div>
         <div className="coo-time"><CalendarClock size={16} /><span>{now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span></div>
+        <button className="tactical-button" onClick={onNewLead}>New Lead</button>
+        <button className="ghost-button" onClick={onSendDailyBriefing}>Send Daily Briefing</button>
         <button className="ghost-button coo-back" onClick={onBack}><ArrowLeft size={15} />Command Deck</button>
       </div>
     </header>
+  );
+}
+
+function COOSlackAlertsPanel({ lastNotification, notice, onSendStatus }) {
+  const providerNotConnected = lastNotification?.status === 'Provider Not Connected';
+  return (
+    <section className="coo-panel coo-slack-alerts-panel">
+      <div className="coo-section-header">
+        <div><span>Slack Alerts</span><h2>COO notification control</h2></div>
+        <Bell size={18} />
+      </div>
+      <div className="coo-slack-alerts-body">
+        <div>
+          <strong>{providerNotConnected ? 'Slack not configured Ã¢â‚¬â€ add SLACK_BOT_TOKEN to env' : 'Send current COO status to Slack'}</strong>
+          <span>
+            {lastNotification
+              ? `Last notification: ${new Date(lastNotification.timestamp).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })} / ${lastNotification.status}`
+              : 'No COO Slack notification sent yet.'}
+          </span>
+          {notice && <small>{notice}</small>}
+        </div>
+        <button className="tactical-button" onClick={onSendStatus}>Send COO Status to Slack</button>
+      </div>
+    </section>
   );
 }
 
@@ -27957,7 +29030,7 @@ function COOOperationalSummary({ summary, inspect }) {
   return <section className="executive-kpi-ticker coo-ops-summary">{rows.map(([label, value, status, linkedRoute, tone]) => <button className={`coo-summary-item tone-${tone}`} onClick={() => inspect({ title: label, status, priority: tone === 'red' ? 'High' : 'Medium', linkedRoute, nextAction: `Open ${label} workflow view.` }, 'Operational Summary')} key={label}><span>{label}</span><strong>{value}</strong><small>{status}</small></button>)}</section>;
 }
 
-function COOPriorityQueue({ queue, onInspect, onCreateFollowup }) {
+function COOPriorityQueue({ queue, onInspect, onCreateFollowup, onAlertBlocked }) {
   const urgentQueue = queue.slice(0, 5);
   return (
     <aside className="coo-panel coo-priority-queue">
@@ -27967,7 +29040,7 @@ function COOPriorityQueue({ queue, onInspect, onCreateFollowup }) {
       </div>
       <div className="coo-priority-table">
         {urgentQueue.map((item) => (
-          <button className="coo-priority-row" onClick={() => onInspect(item.raw, item.type)} key={item.id}>
+          <article className="coo-priority-row" tabIndex={0} role="button" onClick={() => onInspect(item.raw, item.type)} onKeyDown={(event) => event.key === 'Enter' && onInspect(item.raw, item.type)} key={item.id}>
             <span className={`coo-severity-dot severity-${getCOOSeverityState(item.severity)}`} />
             <strong>{item.title}</strong>
             <p>{item.impact}</p>
@@ -27977,7 +29050,10 @@ function COOPriorityQueue({ queue, onInspect, onCreateFollowup }) {
             </dl>
             <small>{item.nextAction}</small>
             <em>{item.severity}</em>
-          </button>
+            {item.type === 'Blocked Workflow' && (
+              <button onClick={(event) => { event.stopPropagation(); onAlertBlocked(item.raw); }}>Alert via Slack</button>
+            )}
+          </article>
         ))}
       </div>
       <button className="coo-inline-action" onClick={() => onCreateFollowup(urgentQueue[0]?.raw || {})}>Create Follow-up</button>
@@ -28067,7 +29143,7 @@ function InvoiceDocumentReadiness({ readiness, onOpen, onInspect }) {
   );
 }
 
-function SupplierShipmentFollowups({ followups, onCreateFollowup, onInspect }) {
+function SupplierShipmentFollowups({ followups, onCreateFollowup, onInspect, onSendSlackFollowup }) {
   return (
     <section className="coo-panel coo-followup-panel">
       <div className="coo-section-header"><div><span>Supplier & Shipment Follow-up</span><h2>Execution dependencies</h2></div><Route size={18} /></div>
@@ -28080,6 +29156,7 @@ function SupplierShipmentFollowups({ followups, onCreateFollowup, onInspect }) {
         ))}
       </div>
       <button className="coo-inline-action" onClick={() => onCreateFollowup(followups[0] || {})}>Create Follow-up</button>
+      <button className="coo-inline-action" onClick={() => onSendSlackFollowup(followups[0] || {})}>Send Follow-up via Slack</button>
     </section>
   );
 }
@@ -28250,7 +29327,7 @@ function OperationalDetailDrawer({ item, note, setNote, onClose, onOpenWorkflow,
           <div className="drawer-timeline"><p>Intake checked.</p><p>{item.status} with owner: {item.owner}.</p><p>Next action: {item.nextAction}</p></div>
         </section>
         <section className="drawer-section director-ai-recommendation">
-          <span>AI Recommendation — Human Review Advised</span>
+          <span>AI Recommendation Ã¢â‚¬â€ Human Review Advised</span>
           <p>{aiRecommendation.summary}</p>
           <div className="director-ai-grid">
             <div><strong>Risk</strong><small>{aiRecommendation.risk}</small></div>
@@ -28597,7 +29674,7 @@ function Stepper({ steps, current, onChange }) {
                 className="stepper-node"
                 onClick={() => done && onChange && onChange(i)}
                 disabled={!done}
-                aria-label={`${step.label}${done ? ' — completed' : active ? ' — current' : ' — upcoming'}`}
+                aria-label={`${step.label}${done ? ' Ã¢â‚¬â€ completed' : active ? ' Ã¢â‚¬â€ current' : ' Ã¢â‚¬â€ upcoming'}`}
               >
                 {done
                   ? <CheckCircle2 size={16} aria-hidden="true" />
@@ -28769,17 +29846,17 @@ function ShipmentWizard({ onComplete, onCancel, buyers = [] }) {
             <h3 id="wizard-s3">Review & Confirm</h3>
             <div className="wizard-review-grid">
               {[
-                ['Buyer',        buyers.find((b) => b.id === form.buyer_id)?.company_name || '—'],
+                ['Buyer',        buyers.find((b) => b.id === form.buyer_id)?.company_name || 'Ã¢â‚¬â€'],
                 ['Product',      form.product_name],
                 ['Quantity',     `${form.quantity} ${form.unit}`],
                 ['Origin',       form.origin],
                 ['Destination',  form.destination],
                 ['Incoterm',     form.incoterm],
                 ['ETD',          form.etd],
-                ['ETA',          form.eta || '—'],
-                ['Vessel',       form.vessel || '—'],
-                ['B/L Number',   form.bl_number || '—'],
-                ['Packing',      form.packing_type || '—'],
+                ['ETA',          form.eta || 'Ã¢â‚¬â€'],
+                ['Vessel',       form.vessel || 'Ã¢â‚¬â€'],
+                ['B/L Number',   form.bl_number || 'Ã¢â‚¬â€'],
+                ['Packing',      form.packing_type || 'Ã¢â‚¬â€'],
               ].map(([label, value]) => (
                 <div key={label} className="wizard-review-row">
                   <span className="wizard-review-label">{label}</span>
@@ -28812,10 +29889,10 @@ const SHIPMENT_STAGE_LIST = [
   'Order Confirmed',
   'Production Ready',
   'Pre-Shipment Inspection',
-  'Customs Clearance — Export',
+  'Customs Clearance Ã¢â‚¬â€ Export',
   'Port Loading',
   'In Transit',
-  'Customs Clearance — Import',
+  'Customs Clearance Ã¢â‚¬â€ Import',
   'Port Discharge',
   'Delivered',
 ];
@@ -28858,7 +29935,7 @@ const ShipmentProgressTracker = React.memo(function ShipmentProgressTracker({ cu
         <div className="tracker-meta">
           <span>ETD <time dateTime={shipment.etd}>{new Date(shipment.etd).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}</time></span>
           {shipment.eta && <span>ETA <time dateTime={shipment.eta}>{new Date(shipment.eta).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}</time></span>}
-          {shipment.vessel && <span>Vessel — {shipment.vessel}</span>}
+          {shipment.vessel && <span>Vessel Ã¢â‚¬â€ {shipment.vessel}</span>}
         </div>
       )}
     </div>
@@ -29097,3 +30174,4 @@ appRoot.render(
     </GlobalErrorBoundary>
   </React.StrictMode>
 );
+
